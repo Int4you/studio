@@ -355,18 +355,18 @@ export default function PromptForgeApp() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-2xl">
                 <ImageIcon className="text-primary" />
-                <span>Website Mockups</span>
+                <span>Application Mockups</span>
               </CardTitle>
-              <CardDescription>Visual concepts for your application's website.</CardDescription>
+              <CardDescription>Visual concepts for your application.</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col items-center gap-6 p-6">
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6">
               {mockupImages.map((imageUrl, index) => (
                 <img 
                   key={index}
                   src={imageUrl} 
-                  alt={`Generated website mockup ${index + 1}`} 
-                  className="rounded-lg border border-border shadow-lg max-w-full h-auto object-contain"
-                  data-ai-hint="app mockup"
+                  alt={`Generated mobile app mockup ${index + 1}`} 
+                  className="rounded-lg border border-border shadow-lg w-full h-auto object-contain"
+                  data-ai-hint="mobile mockup"
                 />
               ))}
             </CardContent>

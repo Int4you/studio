@@ -49,20 +49,31 @@ const generateMockupFlow = ai.defineFlow(
 
     const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash-exp', 
-      prompt: `Generate a set of 2-3 high-fidelity, visually engaging, and modern website mockup screens for an application called "${input.appName}".
-These screens should showcase distinct key aspects of the application. For example, a landing page, a core feature in action (like a dashboard or main interaction screen), and a user profile or settings page.
-Present these screens as a cohesive set. If possible, provide separate images for each screen. Alternatively, arrange them in a storyboard format or as a sequence of views within a single composite image if multiple distinct image outputs are not directly supported.
+      prompt: `You are an expert UI/UX designer specializing in creating high-quality mobile application mockups.
+Your task is to generate a set of 3-4 distinct, high-fidelity, visually engaging, and modern mobile app mockup screens for an application called "${input.appName}".
+The design should emulate the quality and style of top-tier consumer mobile applications, featuring a clean, minimalist aesthetic, intuitive navigation, and a professional, polished look. Think of modern apps with clean lines, generous white space, clear typography, and intuitive iconography (like the visual style of a well-designed health and fitness or productivity app).
 
-The design should be sleek, professional, and user-friendly, with intuitive navigation and clear call-to-actions. It should look polished and production-ready.
+Key Requirements for the Mockups:
+1.  **Mobile-First Design**: All screens must be designed for a standard smartphone display (e.g., portrait orientation).
+2.  **Multiple Distinct Screens**: Generate 3 to 4 different screens. These screens should represent a typical user flow or showcase different key functionalities. Examples could include:
+    *   A primary dashboard or home screen.
+    *   A screen demonstrating a core interactive feature (e.g., data entry, content scanning/viewing, a creation process, detailed item view).
+    *   A user profile or settings screen.
+    *   A list view, feed screen, or a navigation/menu screen, if applicable to the app's nature.
+3.  **High-Fidelity & Quality**: Mockups should look close to a final product, with meticulous attention to detail in layout, element spacing, typography (use clear, modern sans-serif fonts), and iconography (use simple, universally understandable icons).
+4.  **UI Elements**: Use common mobile UI elements (buttons with clear affordances, navigation bars - top or bottom, input fields, cards, lists, modals, etc.) appropriately and consistently.
+5.  **Placeholder Content**: Text should be placeholder (e.g., "Lorem Ipsum", "User Name", "Feature Title", "Dashboard Item") but arranged realistically to mimic actual content flow. Images depicted *within* the app mockups (not the mockups themselves) should be abstract, generic placeholders, or thematic to the app's purpose.
+6.  **Cohesive Set**: All screens must share a consistent design language (e.g., corner roundness, shadow styles), color scheme, and typography.
 
-The website should visually represent the following core features:
+The mobile application should visually represent the following core features:
 ${featuresString}
 
 Crucially, apply these UI/UX guidelines meticulously in the design:
 ${uiGuidelinesString}
-      
-Focus on a sophisticated layout, appealing color scheme, and professional typography. Ensure text is placeholder (e.g., lorem ipsum or generic labels like "User Profile", "Dashboard", "Settings", "Feature X", "Learn More") but arranged to mimic real content flow. 
-The overall style should be minimalist yet impactful. Avoid overly simplistic or generic templates; aim for a unique and compelling visual identity.
+
+If no specific color palette is provided in the UI/UX guidelines, adopt a light, clean theme with a single, tastefully chosen accent color for interactive elements and highlights. Ensure excellent readability and accessibility (e.g., sufficient contrast) in your design choices.
+Present these screens as clearly separated individual mobile screen mockups, each looking like a distinct screenshot from a phone. If the model can only output a single composite image, ensure each screen is distinct, well-defined, and clearly demarcated as a separate phone screen within that composite.
+The overall style should be sophisticated, user-centric, and modern, avoiding generic or outdated templates. Aim for a unique and compelling visual identity that looks production-ready.
       `,
       config: {
         responseModalities: ['TEXT', 'IMAGE'], 
