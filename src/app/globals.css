@@ -4,96 +4,98 @@
 
 @layer base {
   :root {
-    --background: 220 20% 97%; /* Light Grayish Blue */
-    --foreground: 240 10% 10%; /* Very Dark Blue/Black */
+    /* PromptForge Style Guideline Colors */
+    --background: 0 0% 95.69%; /* Neutral Gray #F4F4F4 */
+    --foreground: 0 0% 20%;    /* Dark Gray #333333 */
 
     --card: 0 0% 100%; /* White */
-    --card-foreground: 240 10% 10%;
+    --card-foreground: 0 0% 20%; /* Dark Gray #333333 */
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 10%;
+    --popover-foreground: 0 0% 20%;
 
-    --primary: 258 90% 58%; /* Vibrant Purple */
-    --primary-foreground: 0 0% 98%; /* Almost White */
+    --primary: 180 100% 25.1%; /* Teal #008080 */
+    --primary-foreground: 0 0% 98%; /* Almost White for contrast on Teal */
 
-    --secondary: 240 5% 90%; /* Light Gray */
-    --secondary-foreground: 240 10% 20%; /* Dark Gray */
+    --secondary: 0 0% 85%; /* Lighter shade of Dark Gray for secondary elements */
+    --secondary-foreground: 0 0% 10%; /* Darker for text on secondary */
 
-    --muted: 240 5% 94%; /* Lighter Gray */
-    --muted-foreground: 240 5% 45%; /* Medium Gray */
+    --muted: 0 0% 90%; /* Slightly darker than background for muted elements */
+    --muted-foreground: 0 0% 40%; /* Medium Gray for muted text */
 
-    --accent: 173 90% 45%; /* Bright Teal/Cyan */
+    --accent: 180 100% 30%; /* Slightly darker Teal for active/hover states or specific accents */
     --accent-foreground: 0 0% 98%; /* Almost White on Accent */
 
     --destructive: 0 84% 60%; /* Standard Red */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 5% 88%; /* Light Gray Border */
+    --border: 0 0% 80%; /* Border color based on Dark Gray */
     --input: 0 0% 100%; /* White Input Background */
-    --ring: 258 90% 60%; /* Purple for Focus Rings */
+    --ring: 180 100% 25.1%; /* Teal for Focus Rings */
 
-    --chart-1: 258 80% 65%;
-    --chart-2: 173 70% 50%;
-    --chart-3: 220 70% 60%;
-    --chart-4: 30 80% 60%;
-    --chart-5: 330 80% 65%;
+    --chart-1: 180 70% 45%;
+    --chart-2: 180 60% 55%;
+    --chart-3: 180 50% 65%;
+    --chart-4: 0 0% 50%; /* Neutral for charts if needed */
+    --chart-5: 0 0% 60%;
     --radius: 0.5rem;
 
-    /* Sidebar variables - Light Theme */
-    --sidebar-background: 220 15% 95%;
-    --sidebar-foreground: 240 10% 15%;
-    --sidebar-primary: 258 90% 58%;
+    /* Sidebar variables - Light Theme (using PromptForge theme) */
+    --sidebar-background: 0 0% 93%; /* Slightly darker Neutral Gray */
+    --sidebar-foreground: 0 0% 15%; /* Dark Gray */
+    --sidebar-primary: 180 100% 25.1%; /* Teal */
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 173 80% 85%;
-    --sidebar-accent-foreground: 173 100% 25%;
-    --sidebar-border: 220 10% 88%;
-    --sidebar-ring: 258 90% 58%;
+    --sidebar-accent: 180 80% 85%; /* Light Teal for accents */
+    --sidebar-accent-foreground: 180 100% 20%; /* Darker Teal for text on light teal */
+    --sidebar-border: 0 0% 85%;
+    --sidebar-ring: 180 100% 25.1%;
   }
 
   .dark {
-    --background: 240 20% 6%; /* Very Dark Desaturated Blue (near #0A0A0F) */
-    --foreground: 0 0% 95%; /* Light Gray/Off-White */
+    /* Dark Theme for PromptForge (inverted/adapted) */
+    --background: 0 0% 13%;    /* Dark Gray #212121 (example) */
+    --foreground: 0 0% 95.69%; /* Light Neutral Gray #F4F4F4 */
 
-    --card: 240 16% 9%; /* Slightly Lighter Dark (near #12121A) */
-    --card-foreground: 0 0% 95%;
+    --card: 0 0% 10%; /* Darker card background */
+    --card-foreground: 0 0% 95.69%; 
 
-    --popover: 240 16% 8%; /* Dark Popover */
-    --popover-foreground: 0 0% 95%;
+    --popover: 0 0% 8%; 
+    --popover-foreground: 0 0% 95.69%;
 
-    --primary: 258 100% 64%; /* Vibrant Purple (near #7B47FF) */
-    --primary-foreground: 0 0% 98%; /* White text on Purple */
+    --primary: 180 100% 35%; /* Brighter Teal for dark mode */
+    --primary-foreground: 0 0% 10%; /* Dark text on bright Teal */
 
-    --secondary: 240 10% 18%; /* Darker Gray for Secondary Elements */
-    --secondary-foreground: 0 0% 80%; /* Lighter Gray Text */
+    --secondary: 0 0% 25%; /* Medium dark gray */
+    --secondary-foreground: 0 0% 85%; 
 
-    --muted: 240 10% 12%; /* Muted Dark Background */
-    --muted-foreground: 0 0% 65%; /* Muted Text (lighter for dark mode) */
+    --muted: 0 0% 20%; 
+    --muted-foreground: 0 0% 60%; 
 
-    --accent: 173 100% 44%; /* Bright Teal/Cyan (near #00E0C7) */
-    --accent-foreground: 240 20% 8%; /* Dark text on bright Teal */
+    --accent: 180 100% 40%; /* Even brighter Teal for accents */
+    --accent-foreground: 0 0% 8%; 
 
-    --destructive: 0 70% 55%; /* Saturated Red for Destructive actions */
+    --destructive: 0 70% 55%; 
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 10% 15%; /* Subtle Dark Border */
-    --input: 240 10% 11%; /* Dark Input Background */
-    --ring: 258 100% 68%; /* Purple for Focus Rings (slightly lighter for better visibility) */
+    --border: 0 0% 30%; 
+    --input: 0 0% 15%; 
+    --ring: 180 100% 35%; 
     
-    --chart-1: 258 90% 70%;
-    --chart-2: 173 80% 50%;
-    --chart-3: 220 80% 65%;
-    --chart-4: 30 70% 65%;
-    --chart-5: 330 90% 70%;
+    --chart-1: 180 90% 50%;
+    --chart-2: 180 80% 60%;
+    --chart-3: 180 70% 70%;
+    --chart-4: 0 0% 70%; 
+    --chart-5: 0 0% 80%;
 
     /* Sidebar variables - Dark Theme */
-    --sidebar-background: 240 16% 10%;
+    --sidebar-background: 0 0% 10%;
     --sidebar-foreground: 0 0% 90%;
-    --sidebar-primary: 258 100% 64%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 173 100% 44%;
-    --sidebar-accent-foreground: 240 20% 6%;
-    --sidebar-border: 240 10% 20%;
-    --sidebar-ring: 258 100% 64%;
+    --sidebar-primary: 180 100% 35%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 180 100% 30%; /* Darker accent base */
+    --sidebar-accent-foreground: 0 0% 95%; /* Light text on accent */
+    --sidebar-border: 0 0% 25%;
+    --sidebar-ring: 180 100% 35%;
   }
 }
 
@@ -103,5 +105,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: sans-serif; /* Default sans-serif font */
+  }
+  /* Ensure headings and other text elements inherit correctly */
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-foreground;
   }
 }
