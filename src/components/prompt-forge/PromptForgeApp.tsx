@@ -8,13 +8,13 @@ import type { GenerateMockupInput, GenerateMockupOutput } from '@/ai/flows/gener
 import { generateMockup } from '@/ai/flows/generate-mockup-flow';
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
 import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 
@@ -160,7 +160,7 @@ export default function PromptForgeApp() {
     if (!proposal) return;
     setIsLoadingMockup(true);
     setError(null);
-    setMockupImages(null);
+    setMockupImages(null); // Clear previous mockups before generating new ones
 
     try {
       const input: GenerateMockupInput = {
@@ -405,14 +405,14 @@ export default function PromptForgeApp() {
         </section>
       )}
 
-      {isLoadingMockup && (
+      {isLoadingMockup && !mockupImages && ( // Show main loader only if no images are currently displayed
         <div className="flex justify-center items-center py-8">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
           <p className="ml-4 text-muted-foreground">Generating mockup...</p>
         </div>
       )}
 
-      {mockupImages && mockupImages.length > 0 && !isLoadingMockup && (
+      {mockupImages && mockupImages.length > 0 && (
         <section id="mockup-display" className="space-y-6">
           <Card className="shadow-lg">
             <CardHeader>
@@ -420,7 +420,10 @@ export default function PromptForgeApp() {
                 <ImageIcon className="text-primary" />
                 <span>Application Mockups</span>
               </CardTitle>
-              <CardDescription>Visual concepts for your application. {mockupImages.length} screen(s) generated.</CardDescription>
+              <CardDescription>
+                Visual concepts for your application. {mockupImages.length} screen(s) generated.
+                {isLoadingMockup && " Regenerating..."} 
+              </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6">
               {mockupImages.map((imageUrl, index) => (
@@ -433,7 +436,25 @@ export default function PromptForgeApp() {
                     />
                 </div>
               ))}
+               {isLoadingMockup && mockupImages.length > 0 && ( // Spinner inside content if images exist
+                <div className="col-span-full flex justify-center items-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="ml-3 text-muted-foreground">Generating new variations...</p>
+                </div>
+              )}
             </CardContent>
+            {!isLoadingMockup && ( // Show button only when not loading
+              <CardFooter className="border-t pt-6">
+                <Button onClick={handleGenerateMockup} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto">
+                  {isLoadingMockup ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                  )}
+                  Generate New Mockups
+                </Button>
+              </CardFooter>
+            )}
           </Card>
         </section>
       )}
@@ -450,4 +471,3 @@ export default function PromptForgeApp() {
     </div>
   );
 }
-
