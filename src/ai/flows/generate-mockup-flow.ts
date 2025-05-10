@@ -50,7 +50,7 @@ const generateMockupFlow = ai.defineFlow(
     const uiGuidelinesString = input.uiUxGuidelines.map(g => `- ${g.category}: ${g.guideline}`).join('\n');
 
     const promptText = `You are an expert UI/UX designer specializing in creating high-quality mobile application mockups.
-Your task is to generate a set of 3-4 distinct, individual, high-fidelity, visually engaging, and modern mobile app mockup screens for an application called "${input.appName}".
+Your primary task is to generate a minimum of THREE (3) distinct mobile app mockup screens, and up to FOUR (4) if appropriate, for an application called "${input.appName}". Each screen must be individual, high-fidelity, visually engaging, and modern.
 The model **must** output each screen as a distinct, separate image. For example, if 3 screens are generated, there should be 3 image outputs.
 
 {{#if referenceImageDataUri}}
@@ -61,7 +61,7 @@ Use the following image as a strong visual and stylistic reference for the mocku
 
 Key Requirements for the Mockups:
 1.  **Mobile-First Design**: All screens must be designed for a standard smartphone display (e.g., portrait orientation).
-2.  **Multiple Distinct Screens**: Generate 3 to 4 different screens. These screens should represent a typical user flow or showcase different key functionalities. Examples could include:
+2.  **Multiple Distinct Screens**: You **must** generate at least THREE (3) and up to FOUR (4) different screens. These screens should represent a typical user flow or showcase different key functionalities. Examples could include:
     *   A primary dashboard or home screen.
     *   A screen demonstrating a core interactive feature (e.g., data entry, content scanning/viewing, a creation process, detailed item view).
     *   A user profile or settings screen.
@@ -116,16 +116,9 @@ The overall style should be sophisticated, user-centric, and modern, avoiding ge
         imageUrls.push(response.media.url);
       } else {
         console.warn("Image generation returned no media in candidates or top-level response.");
-        // Consider if an error should be thrown or if an empty array is acceptable
-        // For now, let's throw if absolutely nothing is returned, as per previous logic
-        // but if the prompt *might* yield text only (e.g. if image gen fails but text explains why),
-        // this might need adjustment. The current prompt strongly implies images.
-        // throw new Error('Image generation failed or returned no media.');
       }
     }
-    
-    // If still no images, and the prompt expects them, this is an issue.
-    // The original code threw an error. Let's keep that for now if nothing at all is generated.
+        
     if (imageUrls.length === 0) {
         throw new Error('Image generation failed or returned no media. The model may not have produced any images.');
     }
