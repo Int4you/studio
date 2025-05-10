@@ -43,7 +43,7 @@ export default function PromptForgeApp() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
   const [proposal, setProposal] = useState<Proposal | null>(null);
-  const [mockupImage, setMockupImage] = useState<string | null>(null);
+  const [mockupImages, setMockupImages] = useState<string[] | null>(null);
   const [isLoadingIdeas, setIsLoadingIdeas] = useState<boolean>(false);
   const [isLoadingProposal, setIsLoadingProposal] = useState<boolean>(false);
   const [isLoadingMockup, setIsLoadingMockup] = useState<boolean>(false);
@@ -65,7 +65,7 @@ export default function PromptForgeApp() {
     setIdeas([]);
     setSelectedIdea(null);
     setProposal(null);
-    setMockupImage(null);
+    setMockupImages(null);
 
 
     try {
@@ -96,7 +96,7 @@ export default function PromptForgeApp() {
   const handleSelectIdea = (idea: Idea) => {
     setSelectedIdea(idea);
     setProposal(null); 
-    setMockupImage(null);
+    setMockupImages(null);
     setError(null); 
   };
 
@@ -105,7 +105,7 @@ export default function PromptForgeApp() {
     setIsLoadingProposal(true);
     setError(null);
     setProposal(null);
-    setMockupImage(null);
+    setMockupImages(null);
 
     try {
       const input: GenerateDetailedProposalInput = { idea: selectedIdea.title + ": " + selectedIdea.description };
@@ -129,7 +129,7 @@ export default function PromptForgeApp() {
     if (!proposal) return;
     setIsLoadingMockup(true);
     setError(null);
-    setMockupImage(null);
+    setMockupImages(null);
 
     try {
       const input: GenerateMockupInput = {
@@ -138,7 +138,14 @@ export default function PromptForgeApp() {
         uiUxGuidelines: proposal.uiUxGuidelines,
       };
       const result: GenerateMockupOutput = await generateMockup(input);
-      setMockupImage(result.mockupImageUrl);
+      setMockupImages(result.mockupImageUrls);
+       if (!result.mockupImageUrls || result.mockupImageUrls.length === 0) {
+        toast({
+          title: "No Mockups Generated",
+          description: "The AI didn't return any mockups. You might want to try again or adjust the proposal details.",
+          variant: "default",
+        });
+      }
     } catch (err) {
       console.error('Error generating mockup:', err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
@@ -342,23 +349,26 @@ export default function PromptForgeApp() {
         </div>
       )}
 
-      {mockupImage && !isLoadingMockup && (
+      {mockupImages && mockupImages.length > 0 && !isLoadingMockup && (
         <section id="mockup-display" className="space-y-6">
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-2xl">
                 <ImageIcon className="text-primary" />
-                <span>Website Mockup</span>
+                <span>Website Mockups</span>
               </CardTitle>
-              <CardDescription>A visual concept for your application's website.</CardDescription>
+              <CardDescription>Visual concepts for your application's website.</CardDescription>
             </CardHeader>
-            <CardContent className="flex justify-center">
-              <img 
-                src={mockupImage} 
-                alt="Generated website mockup" 
-                className="rounded-md border border-border shadow-md max-w-full h-auto"
-                data-ai-hint="website mockup"
-              />
+            <CardContent className="flex flex-col items-center gap-6 p-6">
+              {mockupImages.map((imageUrl, index) => (
+                <img 
+                  key={index}
+                  src={imageUrl} 
+                  alt={`Generated website mockup ${index + 1}`} 
+                  className="rounded-lg border border-border shadow-lg max-w-full h-auto object-contain"
+                  data-ai-hint="app mockup"
+                />
+              ))}
             </CardContent>
           </Card>
         </section>
@@ -376,3 +386,4 @@ export default function PromptForgeApp() {
     </div>
   );
 }
+
