@@ -1,17 +1,21 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import type { GenerateApplicationIdeasOutput, GenerateDetailedProposalOutput } from '@/ai/flows/generate-application-ideas';
+import type { GenerateApplicationIdeasOutput } from '@/ai/flows/generate-application-ideas';
 import { generateApplicationIdeas } from '@/ai/flows/generate-application-ideas';
 import { generateDetailedProposal } from '@/ai/flows/generate-detailed-proposal';
+import type { GenerateMockupInput, GenerateMockupOutput } from '@/ai/flows/generate-mockup-flow';
+import { generateMockup } from '@/ai/flows/generate-mockup-flow';
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Type, Cpu, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
-import type { GenerateDetailedProposalInput } from '@/ai/flows/generate-detailed-proposal';
+import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
+
 
 interface Idea {
   title: string;
@@ -28,11 +32,7 @@ interface UiUxGuideline {
   guideline: string;
 }
 
-interface Proposal {
-  appName: string;
-  coreFeatures: CoreFeature[];
-  uiUxGuidelines: UiUxGuideline[];
-}
+interface Proposal extends ProposalOutput {} // Use the imported type
 
 interface GroupedUiUxGuidelines {
   [category: string]: UiUxGuideline[];
@@ -43,8 +43,10 @@ export default function PromptForgeApp() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
   const [proposal, setProposal] = useState<Proposal | null>(null);
+  const [mockupImage, setMockupImage] = useState<string | null>(null);
   const [isLoadingIdeas, setIsLoadingIdeas] = useState<boolean>(false);
   const [isLoadingProposal, setIsLoadingProposal] = useState<boolean>(false);
+  const [isLoadingMockup, setIsLoadingMockup] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -63,6 +65,8 @@ export default function PromptForgeApp() {
     setIdeas([]);
     setSelectedIdea(null);
     setProposal(null);
+    setMockupImage(null);
+
 
     try {
       const input: GenerateApplicationIdeasInput = { prompt };
@@ -91,8 +95,9 @@ export default function PromptForgeApp() {
 
   const handleSelectIdea = (idea: Idea) => {
     setSelectedIdea(idea);
-    setProposal(null); // Clear previous proposal when a new idea is selected
-    setError(null); // Clear previous errors
+    setProposal(null); 
+    setMockupImage(null);
+    setError(null); 
   };
 
   const handleGenerateProposal = async () => {
@@ -100,10 +105,11 @@ export default function PromptForgeApp() {
     setIsLoadingProposal(true);
     setError(null);
     setProposal(null);
+    setMockupImage(null);
 
     try {
       const input: GenerateDetailedProposalInput = { idea: selectedIdea.title + ": " + selectedIdea.description };
-      const result: GenerateDetailedProposalOutput = await generateDetailedProposal(input);
+      const result: ProposalOutput = await generateDetailedProposal(input);
       setProposal(result);
     } catch (err) {
       console.error('Error generating proposal:', err);
@@ -118,6 +124,35 @@ export default function PromptForgeApp() {
       setIsLoadingProposal(false);
     }
   };
+
+  const handleGenerateMockup = async () => {
+    if (!proposal) return;
+    setIsLoadingMockup(true);
+    setError(null);
+    setMockupImage(null);
+
+    try {
+      const input: GenerateMockupInput = {
+        appName: proposal.appName,
+        coreFeatures: proposal.coreFeatures,
+        uiUxGuidelines: proposal.uiUxGuidelines,
+      };
+      const result: GenerateMockupOutput = await generateMockup(input);
+      setMockupImage(result.mockupImageUrl);
+    } catch (err) {
+      console.error('Error generating mockup:', err);
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(`Failed to generate mockup: ${errorMessage}`);
+      toast({
+        title: "Error Generating Mockup",
+        description: `An error occurred while generating the mockup: ${errorMessage}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingMockup(false);
+    }
+  };
+
 
   const groupUiUxGuidelines = (guidelines: UiUxGuideline[]): GroupedUiUxGuidelines => {
     return guidelines.reduce((acc, guideline) => {
@@ -142,7 +177,7 @@ export default function PromptForgeApp() {
           </h1>
         </div>
         <p className="text-lg text-muted-foreground">
-          Craft brilliant application ideas and detailed proposals with the power of AI.
+          Craft brilliant application ideas, detailed proposals, and visual mockups with the power of AI.
         </p>
       </header>
 
@@ -253,7 +288,7 @@ export default function PromptForgeApp() {
                   <h3 className="flex items-center gap-2 text-xl font-semibold mb-3">
                     <ListChecks className="text-primary" /> Core Features
                   </h3>
-                  <Accordion type="multiple" className="w-full space-y-2">
+                  <Accordion type="multiple" className="w-full space-y-2" defaultValue={proposal.coreFeatures.map((_, index) => `feature-${index}`)}>
                     {proposal.coreFeatures.map((feature, index) => (
                       <AccordionItem key={index} value={`feature-${index}`} className="bg-background rounded-md border px-4">
                         <AccordionTrigger className="text-base hover:no-underline">{feature.feature}</AccordionTrigger>
@@ -269,7 +304,7 @@ export default function PromptForgeApp() {
                   <h3 className="flex items-center gap-2 text-xl font-semibold mb-3">
                     <Palette className="text-primary" /> UI/UX Guidelines
                   </h3>
-                  <Accordion type="multiple" className="w-full space-y-2">
+                  <Accordion type="multiple" className="w-full space-y-2" defaultValue={Object.keys(groupedUiUxGuidelines).map((_,index) => `category-${index}` )}>
                     {Object.entries(groupedUiUxGuidelines).map(([category, guidelines], catIndex) => (
                       <AccordionItem key={category} value={`category-${catIndex}`} className="bg-background rounded-md border px-4">
                         <AccordionTrigger className="text-base hover:no-underline">{category}</AccordionTrigger>
@@ -284,9 +319,48 @@ export default function PromptForgeApp() {
                     ))}
                   </Accordion>
                 </div>
+                <div className="pt-4">
+                   <Button onClick={handleGenerateMockup} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto">
+                    {isLoadingMockup ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <ImageIcon className="mr-2 h-4 w-4" />
+                    )}
+                    Generate Mockup
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
+        </section>
+      )}
+
+      {isLoadingMockup && (
+        <div className="flex justify-center items-center py-8">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="ml-4 text-muted-foreground">Generating mockup...</p>
+        </div>
+      )}
+
+      {mockupImage && !isLoadingMockup && (
+        <section id="mockup-display" className="space-y-6">
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <ImageIcon className="text-primary" />
+                <span>Website Mockup</span>
+              </CardTitle>
+              <CardDescription>A visual concept for your application's website.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center">
+              <img 
+                src={mockupImage} 
+                alt="Generated website mockup" 
+                className="rounded-md border border-border shadow-md max-w-full h-auto"
+                data-ai-hint="website mockup"
+              />
+            </CardContent>
+          </Card>
         </section>
       )}
       
