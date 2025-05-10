@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
 import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 
@@ -143,7 +143,6 @@ export default function PromptForgeApp() {
       const result: ProposalOutput = await generateDetailedProposal(input);
       setProposal(result);
     } catch (err) {
-      console.error('Error generating proposal:', err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(`Failed to generate proposal: ${errorMessage}`);
       toast({
@@ -156,11 +155,13 @@ export default function PromptForgeApp() {
     }
   };
 
-  const handleGenerateMockup = async () => {
+  const handleGenerateMockup = async (append: boolean = false) => {
     if (!proposal) return;
     setIsLoadingMockup(true);
     setError(null);
-    setMockupImages(null); // Clear previous mockups before generating new ones
+    if (!append) {
+      setMockupImages(null); // Clear previous mockups only if not appending
+    }
 
     try {
       const input: GenerateMockupInput = {
@@ -170,8 +171,16 @@ export default function PromptForgeApp() {
         ...(referenceImageDataUri && { referenceImageDataUri: referenceImageDataUri }),
       };
       const result: GenerateMockupOutput = await generateMockup(input);
-      setMockupImages(result.mockupImageUrls);
-       if (!result.mockupImageUrls || result.mockupImageUrls.length === 0) {
+      
+      const newImageUrls = result.mockupImageUrls || [];
+
+      if (append) {
+        setMockupImages(prev => [...(prev || []), ...newImageUrls]);
+      } else {
+        setMockupImages(newImageUrls);
+      }
+
+       if (newImageUrls.length === 0) {
         toast({
           title: "No Mockups Generated",
           description: "The AI didn't return any mockups. You might want to try again, adjust the proposal, or add/change the reference image.",
@@ -390,7 +399,7 @@ export default function PromptForgeApp() {
                 </div>
 
                 <div className="pt-4">
-                   <Button onClick={handleGenerateMockup} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto">
+                   <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto">
                     {isLoadingMockup ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
@@ -405,7 +414,7 @@ export default function PromptForgeApp() {
         </section>
       )}
 
-      {isLoadingMockup && !mockupImages && ( // Show main loader only if no images are currently displayed
+      {isLoadingMockup && (!mockupImages || mockupImages.length === 0) && ( // Show main loader only if no images are displayed
         <div className="flex justify-center items-center py-8">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
           <p className="ml-4 text-muted-foreground">Generating mockup...</p>
@@ -422,7 +431,7 @@ export default function PromptForgeApp() {
               </CardTitle>
               <CardDescription>
                 Visual concepts for your application. {mockupImages.length} screen(s) generated.
-                {isLoadingMockup && " Regenerating..."} 
+                {isLoadingMockup && " Generating more..."} 
               </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6">
@@ -436,22 +445,22 @@ export default function PromptForgeApp() {
                     />
                 </div>
               ))}
-               {isLoadingMockup && mockupImages.length > 0 && ( // Spinner inside content if images exist
+               {isLoadingMockup && mockupImages.length > 0 && ( // Spinner inside content if images exist and loading more
                 <div className="col-span-full flex justify-center items-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="ml-3 text-muted-foreground">Generating new variations...</p>
+                  <p className="ml-3 text-muted-foreground">Generating more mockups...</p>
                 </div>
               )}
             </CardContent>
-            {!isLoadingMockup && ( // Show button only when not loading
-              <CardFooter className="border-t pt-6">
-                <Button onClick={handleGenerateMockup} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto">
-                  {isLoadingMockup ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                  )}
-                  Generate New Mockups
+            {!isLoadingMockup && ( 
+              <CardFooter className="border-t pt-6 flex flex-col sm:flex-row gap-2 sm:gap-4 justify-start">
+                <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto">
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Generate New Set
+                </Button>
+                <Button onClick={() => handleGenerateMockup(true)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto" variant="outline">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add More Mockups
                 </Button>
               </CardFooter>
             )}
