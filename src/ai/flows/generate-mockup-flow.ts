@@ -65,7 +65,7 @@ Key Requirements for the Mockups:
     *   A screen demonstrating a core interactive feature (e.g., data entry, content scanning/viewing, a creation process, detailed item view).
     *   A user profile or settings screen.
     *   A list view, feed screen, or a navigation/menu screen, if applicable to the app's nature.
-3.  **High-Fidelity & Quality**: Mockups should look close to a final product, with meticulous attention to detail in layout, element spacing, typography (use clear, modern sans-serif fonts), and iconography (use simple, universally understandable icons). The quality should be comparable to professional app store screenshots.
+3.  **High-Fidelity & Quality**: Mockups should look close to a final product, with meticulous attention to detail in layout, element spacing, typography (use clear, modern sans-serif fonts), and iconography (use simple, universally understandable icons). The quality should be comparable to professional app store screenshots or the provided reference image if one was given.
 4.  **UI Elements**: Use common mobile UI elements (buttons with clear affordances, navigation bars - top or bottom, input fields, cards, lists, modals, etc.) appropriately and consistently.
 5.  **Placeholder Content**: Text should be placeholder (e.g., "Lorem Ipsum", "User Name", "Feature Title", "Dashboard Item") but arranged realistically to mimic actual content flow. Images depicted *within* the app mockups (not the mockups themselves) should be abstract, generic placeholders, or thematic to the app's purpose.
 6.  **Cohesive Set**: All screens must share a consistent design language (e.g., corner roundness, shadow styles), color scheme, and typography, potentially inspired by the reference image if provided.
