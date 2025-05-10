@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Generates a website mockup image based on application details.
@@ -50,8 +49,8 @@ const generateMockupFlow = ai.defineFlow(
     const uiGuidelinesString = input.uiUxGuidelines.map(g => `- ${g.category}: ${g.guideline}`).join('\n');
 
     const promptText = `You are an expert UI/UX designer specializing in creating high-quality mobile application mockups.
-Your primary task is to generate a minimum of THREE (3) distinct mobile app mockup screens, and up to FOUR (4) if appropriate, for an application called "${input.appName}". Each screen must be individual, high-fidelity, visually engaging, and modern.
-The model **must** output each screen as a distinct, separate image. For example, if 3 screens are generated, there should be 3 image outputs.
+Your primary task is to generate multiple distinct mobile app mockup screens for an application called "${input.appName}".
+**You MUST generate 3 separate image outputs. If a fourth screen is highly relevant and distinct, you may generate 4 separate image outputs.** Each image output must be a single, individual mobile screen. Do not combine screens into one image.
 
 {{#if referenceImageDataUri}}
 **Style Reference:**
@@ -61,7 +60,7 @@ Use the following image as a strong visual and stylistic reference for the mocku
 
 Key Requirements for the Mockups:
 1.  **Mobile-First Design**: All screens must be designed for a standard smartphone display (e.g., portrait orientation).
-2.  **Multiple Distinct Screens**: You **must** generate at least THREE (3) and up to FOUR (4) different screens. These screens should represent a typical user flow or showcase different key functionalities. Examples could include:
+2.  **Multiple Distinct Screens/Image Outputs**: You **must** generate 3 (or up to 4) different screens, each as a separate image. These screens should represent a typical user flow or showcase different key functionalities. Examples could include:
     *   A primary dashboard or home screen.
     *   A screen demonstrating a core interactive feature (e.g., data entry, content scanning/viewing, a creation process, detailed item view).
     *   A user profile or settings screen.
@@ -79,8 +78,8 @@ ${uiGuidelinesString}
 
 If no specific color palette is provided in the UI/UX guidelines (and no reference image is given or its colors are not suitable), adopt a light, clean theme with a single, tastefully chosen accent color for interactive elements and highlights. Ensure excellent readability and accessibility (e.g., sufficient contrast) in your design choices.
 
-Present these screens as clearly separated individual mobile screen mockups. Each generated screen must be a distinct image output.
-The overall style should be sophisticated, user-centric, and modern, avoiding generic or outdated templates. Aim for a unique and compelling visual identity that looks production-ready.
+**Final Instruction on Output Format:**
+Present these screens as clearly separated individual mobile screen mockups. You must provide 3 (or 4, if appropriate) distinct image outputs. Each image file should contain only one screen.
       `;
 
     const response = await ai.generate({
