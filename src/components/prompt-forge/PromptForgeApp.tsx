@@ -10,9 +10,11 @@ import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
 import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 
@@ -32,7 +34,7 @@ interface UiUxGuideline {
   guideline: string;
 }
 
-interface Proposal extends ProposalOutput {} // Use the imported type
+interface Proposal extends ProposalOutput {} 
 
 interface GroupedUiUxGuidelines {
   [category: string]: UiUxGuideline[];
@@ -50,8 +52,34 @@ export default function PromptForgeApp() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  const [referenceImageFile, setReferenceImageFile] = useState<File | null>(null);
+  const [referenceImageDataUri, setReferenceImageDataUri] = useState<string | null>(null);
+  const [referenceImageInputKey, setReferenceImageInputKey] = useState<string>(`ref-img-${Date.now()}`);
+
+
   const handlePromptChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setPrompt(event.target.value);
+  };
+
+  const handleReferenceImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setReferenceImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReferenceImageDataUri(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setReferenceImageFile(null);
+      setReferenceImageDataUri(null);
+    }
+  };
+
+  const resetReferenceImage = () => {
+    setReferenceImageFile(null);
+    setReferenceImageDataUri(null);
+    setReferenceImageInputKey(`ref-img-${Date.now()}`);
   };
 
   const handleGenerateIdeas = async (event: FormEvent) => {
@@ -66,6 +94,7 @@ export default function PromptForgeApp() {
     setSelectedIdea(null);
     setProposal(null);
     setMockupImages(null);
+    resetReferenceImage();
 
 
     try {
@@ -98,6 +127,7 @@ export default function PromptForgeApp() {
     setProposal(null); 
     setMockupImages(null);
     setError(null); 
+    // Keep reference image if user wants to use it for a new idea's proposal
   };
 
   const handleGenerateProposal = async () => {
@@ -106,6 +136,7 @@ export default function PromptForgeApp() {
     setError(null);
     setProposal(null);
     setMockupImages(null);
+    // Keep reference image if user wants to use it for mockups of this proposal
 
     try {
       const input: GenerateDetailedProposalInput = { idea: selectedIdea.title + ": " + selectedIdea.description };
@@ -136,13 +167,14 @@ export default function PromptForgeApp() {
         appName: proposal.appName,
         coreFeatures: proposal.coreFeatures,
         uiUxGuidelines: proposal.uiUxGuidelines,
+        ...(referenceImageDataUri && { referenceImageDataUri: referenceImageDataUri }),
       };
       const result: GenerateMockupOutput = await generateMockup(input);
       setMockupImages(result.mockupImageUrls);
        if (!result.mockupImageUrls || result.mockupImageUrls.length === 0) {
         toast({
           title: "No Mockups Generated",
-          description: "The AI didn't return any mockups. You might want to try again or adjust the proposal details.",
+          description: "The AI didn't return any mockups. You might want to try again, adjust the proposal, or add/change the reference image.",
           variant: "default",
         });
       }
@@ -326,6 +358,37 @@ export default function PromptForgeApp() {
                     ))}
                   </Accordion>
                 </div>
+                
+                <div className="space-y-4 pt-4 border-t border-border">
+                    <h3 className="flex items-center gap-2 text-xl font-semibold">
+                        <UploadCloud className="text-primary" /> Style Reference (Optional)
+                    </h3>
+                    <div className="space-y-2">
+                        <Label htmlFor="reference-image" className="text-sm font-medium text-muted-foreground">
+                            Upload an image to guide the mockup&apos;s visual style.
+                        </Label>
+                        <Input
+                            id="reference-image"
+                            key={referenceImageInputKey}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleReferenceImageChange}
+                            className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                        />
+                        {referenceImageDataUri && referenceImageFile && (
+                            <div className="mt-2 p-2 border rounded-md bg-muted/50">
+                                <p className="text-xs text-muted-foreground mb-1">Selected: {referenceImageFile.name}</p>
+                                <img 
+                                    src={referenceImageDataUri} 
+                                    alt="Reference preview" 
+                                    className="h-24 w-auto rounded border shadow-sm"
+                                    data-ai-hint="style reference"
+                                />
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 <div className="pt-4">
                    <Button onClick={handleGenerateMockup} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto">
                     {isLoadingMockup ? (
@@ -357,17 +420,18 @@ export default function PromptForgeApp() {
                 <ImageIcon className="text-primary" />
                 <span>Application Mockups</span>
               </CardTitle>
-              <CardDescription>Visual concepts for your application.</CardDescription>
+              <CardDescription>Visual concepts for your application. {mockupImages.length} screen(s) generated.</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6">
               {mockupImages.map((imageUrl, index) => (
-                <img 
-                  key={index}
-                  src={imageUrl} 
-                  alt={`Generated mobile app mockup ${index + 1}`} 
-                  className="rounded-lg border border-border shadow-lg w-full h-auto object-contain"
-                  data-ai-hint="mobile mockup"
-                />
+                <div key={index} className="bg-background p-2 rounded-lg border shadow-sm">
+                    <img 
+                    src={imageUrl} 
+                    alt={`Generated mobile app mockup screen ${index + 1}`} 
+                    className="rounded-md border border-border shadow-lg w-full h-auto object-contain"
+                    data-ai-hint="mobile mockup"
+                    />
+                </div>
               ))}
             </CardContent>
           </Card>

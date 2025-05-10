@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Generates a website mockup image based on application details.
@@ -23,13 +24,14 @@ const GenerateMockupInputSchema = z.object({
       category: z.string(),
       guideline: z.string(),
     })
-  ).describe('UI/UX guidelines for the application.')
+  ).describe('UI/UX guidelines for the application.'),
+  referenceImageDataUri: z.string().optional().describe("An optional reference image (as a data URI) for style guidance. Expected format: 'data:<mimetype>;base64,<encoded_data>'."),
 });
 export type GenerateMockupInput = z.infer<typeof GenerateMockupInputSchema>;
 
 const GenerateMockupOutputSchema = z.object({
   mockupImageUrls: z.array(z.string().describe("A data URI of a generated mockup image. Expected format: 'data:image/png;base64,<encoded_data>'."))
-  .describe('An array of data URIs for the generated mockup images.'),
+  .describe('An array of data URIs for the generated mockup images (one for each distinct screen).'),
 });
 export type GenerateMockupOutput = z.infer<typeof GenerateMockupOutputSchema>;
 
@@ -47,11 +49,15 @@ const generateMockupFlow = ai.defineFlow(
     const featuresString = input.coreFeatures.map(f => `- ${f.feature}: ${f.description}`).join('\n');
     const uiGuidelinesString = input.uiUxGuidelines.map(g => `- ${g.category}: ${g.guideline}`).join('\n');
 
-    const response = await ai.generate({
-      model: 'googleai/gemini-2.0-flash-exp', 
-      prompt: `You are an expert UI/UX designer specializing in creating high-quality mobile application mockups.
-Your task is to generate a set of 3-4 distinct, high-fidelity, visually engaging, and modern mobile app mockup screens for an application called "${input.appName}".
-The design should emulate the quality and style of top-tier consumer mobile applications, featuring a clean, minimalist aesthetic, intuitive navigation, and a professional, polished look. Think of modern apps with clean lines, generous white space, clear typography, and intuitive iconography (like the visual style of a well-designed health and fitness or productivity app).
+    const promptText = `You are an expert UI/UX designer specializing in creating high-quality mobile application mockups.
+Your task is to generate a set of 3-4 distinct, individual, high-fidelity, visually engaging, and modern mobile app mockup screens for an application called "${input.appName}".
+The model **must** output each screen as a distinct, separate image. For example, if 3 screens are generated, there should be 3 image outputs.
+
+{{#if referenceImageDataUri}}
+**Style Reference:**
+Use the following image as a strong visual and stylistic reference for the mockups. Adapt its color palette, typography style, element shapes, and overall modern aesthetic:
+{{media url=referenceImageDataUri}}
+{{/if}}
 
 Key Requirements for the Mockups:
 1.  **Mobile-First Design**: All screens must be designed for a standard smartphone display (e.g., portrait orientation).
@@ -60,10 +66,10 @@ Key Requirements for the Mockups:
     *   A screen demonstrating a core interactive feature (e.g., data entry, content scanning/viewing, a creation process, detailed item view).
     *   A user profile or settings screen.
     *   A list view, feed screen, or a navigation/menu screen, if applicable to the app's nature.
-3.  **High-Fidelity & Quality**: Mockups should look close to a final product, with meticulous attention to detail in layout, element spacing, typography (use clear, modern sans-serif fonts), and iconography (use simple, universally understandable icons).
+3.  **High-Fidelity & Quality**: Mockups should look close to a final product, with meticulous attention to detail in layout, element spacing, typography (use clear, modern sans-serif fonts), and iconography (use simple, universally understandable icons). The quality should be comparable to professional app store screenshots.
 4.  **UI Elements**: Use common mobile UI elements (buttons with clear affordances, navigation bars - top or bottom, input fields, cards, lists, modals, etc.) appropriately and consistently.
 5.  **Placeholder Content**: Text should be placeholder (e.g., "Lorem Ipsum", "User Name", "Feature Title", "Dashboard Item") but arranged realistically to mimic actual content flow. Images depicted *within* the app mockups (not the mockups themselves) should be abstract, generic placeholders, or thematic to the app's purpose.
-6.  **Cohesive Set**: All screens must share a consistent design language (e.g., corner roundness, shadow styles), color scheme, and typography.
+6.  **Cohesive Set**: All screens must share a consistent design language (e.g., corner roundness, shadow styles), color scheme, and typography, potentially inspired by the reference image if provided.
 
 The mobile application should visually represent the following core features:
 ${featuresString}
@@ -71,10 +77,15 @@ ${featuresString}
 Crucially, apply these UI/UX guidelines meticulously in the design:
 ${uiGuidelinesString}
 
-If no specific color palette is provided in the UI/UX guidelines, adopt a light, clean theme with a single, tastefully chosen accent color for interactive elements and highlights. Ensure excellent readability and accessibility (e.g., sufficient contrast) in your design choices.
-Present these screens as clearly separated individual mobile screen mockups, each looking like a distinct screenshot from a phone. If the model can only output a single composite image, ensure each screen is distinct, well-defined, and clearly demarcated as a separate phone screen within that composite.
+If no specific color palette is provided in the UI/UX guidelines (and no reference image is given or its colors are not suitable), adopt a light, clean theme with a single, tastefully chosen accent color for interactive elements and highlights. Ensure excellent readability and accessibility (e.g., sufficient contrast) in your design choices.
+
+Present these screens as clearly separated individual mobile screen mockups. Each generated screen must be a distinct image output.
 The overall style should be sophisticated, user-centric, and modern, avoiding generic or outdated templates. Aim for a unique and compelling visual identity that looks production-ready.
-      `,
+      `;
+
+    const response = await ai.generate({
+      model: 'googleai/gemini-2.0-flash-exp', 
+      prompt: promptText,
       config: {
         responseModalities: ['TEXT', 'IMAGE'], 
       },
@@ -98,14 +109,25 @@ The overall style should be sophisticated, user-centric, and modern, avoiding ge
         }
       }
     }
-
-    // Fallback to top-level media if no images found in parts (maintains compatibility if model returns single image directly)
-    if (imageUrls.length === 0 && response.media && response.media.url) {
-      imageUrls.push(response.media.url);
-    }
     
     if (imageUrls.length === 0) {
-      throw new Error('Image generation failed or returned no media.');
+      // Check top-level media as a fallback, though less likely with new models
+      if (response.media && response.media.url) {
+        imageUrls.push(response.media.url);
+      } else {
+        console.warn("Image generation returned no media in candidates or top-level response.");
+        // Consider if an error should be thrown or if an empty array is acceptable
+        // For now, let's throw if absolutely nothing is returned, as per previous logic
+        // but if the prompt *might* yield text only (e.g. if image gen fails but text explains why),
+        // this might need adjustment. The current prompt strongly implies images.
+        // throw new Error('Image generation failed or returned no media.');
+      }
+    }
+    
+    // If still no images, and the prompt expects them, this is an issue.
+    // The original code threw an error. Let's keep that for now if nothing at all is generated.
+    if (imageUrls.length === 0) {
+        throw new Error('Image generation failed or returned no media. The model may not have produced any images.');
     }
     
     return {mockupImageUrls: imageUrls};
