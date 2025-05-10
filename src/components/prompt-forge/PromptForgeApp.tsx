@@ -216,24 +216,24 @@ export default function PromptForgeApp() {
   const groupedUiUxGuidelines = proposal ? groupUiUxGuidelines(proposal.uiUxGuidelines) : {};
 
   return (
-    <div className="container mx-auto p-4 md:p-8 max-w-4xl space-y-12">
-      <header className="text-center space-y-2">
-        <div className="flex items-center justify-center gap-2">
-          <Cpu className="h-10 w-10 text-primary" />
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-teal-400 text-transparent bg-clip-text">
+    <div className="container mx-auto p-6 md:p-10 max-w-4xl space-y-12">
+      <header className="text-center space-y-4">
+        <div className="flex items-center justify-center gap-3">
+          <Cpu className="h-10 w-10 md:h-12 md:w-12 text-primary" />
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text">
             PromptForge
           </h1>
         </div>
-        <p className="text-lg text-muted-foreground">
+        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
           Craft brilliant application ideas, detailed proposals, and visual mockups with the power of AI.
         </p>
       </header>
 
       <section id="idea-generation" className="space-y-6">
-        <Card className="shadow-lg">
+        <Card className="shadow-lg border-border/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-2xl">
-              <Lightbulb className="text-primary" />
+              <Lightbulb className="text-primary h-6 w-6" />
               <span>Generate Application Ideas</span>
             </CardTitle>
             <CardDescription>Enter a prompt to brainstorm innovative app concepts.</CardDescription>
@@ -275,7 +275,7 @@ export default function PromptForgeApp() {
                 <Card 
                   key={index} 
                   onClick={() => handleSelectIdea(idea)} 
-                  className={`cursor-pointer transition-all duration-200 ease-in-out hover:shadow-xl hover:border-primary ${selectedIdea?.title === idea.title ? 'border-primary ring-2 ring-primary shadow-xl' : 'border-border'}`}
+                  className={`cursor-pointer transition-all duration-200 ease-in-out hover:shadow-xl hover:ring-2 hover:ring-primary/50 ${selectedIdea?.title === idea.title ? 'ring-2 ring-primary shadow-xl border-primary' : 'border-border/50'}`}
                 >
                   <CardHeader>
                     <CardTitle className="text-lg">{idea.title}</CardTitle>
@@ -292,14 +292,14 @@ export default function PromptForgeApp() {
 
       {selectedIdea && (
         <section id="proposal-generation" className="space-y-6">
-          <Card className="shadow-lg">
+          <Card className="shadow-lg border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-2xl">
-                <FileText className="text-primary" />
+                <FileText className="text-primary h-6 w-6" />
                 <span>Detailed Application Proposal</span>
               </CardTitle>
               <CardDescription className="flex items-center gap-2 pt-2">
-                <CheckCircle2 className="text-green-500 h-5 w-5" /> 
+                <CheckCircle2 className="text-primary h-5 w-5" /> 
                 Selected Idea: <span className="font-semibold">{selectedIdea.title}</span>
               </CardDescription>
             </CardHeader>
@@ -323,7 +323,7 @@ export default function PromptForgeApp() {
           )}
 
           {proposal && !isLoadingProposal && (
-            <Card className="shadow-lg">
+            <Card className="shadow-lg border-border/50">
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-8 w-8 text-primary" />
@@ -334,11 +334,11 @@ export default function PromptForgeApp() {
               <CardContent className="space-y-6">
                 <div>
                   <h3 className="flex items-center gap-2 text-xl font-semibold mb-3">
-                    <ListChecks className="text-primary" /> Core Features
+                    <ListChecks className="text-primary h-5 w-5" /> Core Features
                   </h3>
                   <Accordion type="multiple" className="w-full space-y-2" defaultValue={proposal.coreFeatures.map((_, index) => `feature-${index}`)}>
                     {proposal.coreFeatures.map((feature, index) => (
-                      <AccordionItem key={index} value={`feature-${index}`} className="bg-background rounded-md border px-4">
+                      <AccordionItem key={index} value={`feature-${index}`} className="bg-muted/30 dark:bg-muted/10 rounded-md border px-4">
                         <AccordionTrigger className="text-base hover:no-underline">{feature.feature}</AccordionTrigger>
                         <AccordionContent className="text-sm text-muted-foreground pb-4">
                           {feature.description}
@@ -350,11 +350,11 @@ export default function PromptForgeApp() {
 
                 <div>
                   <h3 className="flex items-center gap-2 text-xl font-semibold mb-3">
-                    <Palette className="text-primary" /> UI/UX Guidelines
+                    <Palette className="text-primary h-5 w-5" /> UI/UX Guidelines
                   </h3>
                   <Accordion type="multiple" className="w-full space-y-2" defaultValue={Object.keys(groupedUiUxGuidelines).map((_,index) => `category-${index}` )}>
                     {Object.entries(groupedUiUxGuidelines).map(([category, guidelines], catIndex) => (
-                      <AccordionItem key={category} value={`category-${catIndex}`} className="bg-background rounded-md border px-4">
+                      <AccordionItem key={category} value={`category-${catIndex}`} className="bg-muted/30 dark:bg-muted/10 rounded-md border px-4">
                         <AccordionTrigger className="text-base hover:no-underline">{category}</AccordionTrigger>
                         <AccordionContent className="text-sm text-muted-foreground pb-4">
                           <ul className="list-disc pl-5 space-y-1">
@@ -368,9 +368,9 @@ export default function PromptForgeApp() {
                   </Accordion>
                 </div>
                 
-                <div className="space-y-4 pt-4 border-t border-border">
+                <div className="space-y-4 pt-4 border-t border-border/50">
                     <h3 className="flex items-center gap-2 text-xl font-semibold">
-                        <UploadCloud className="text-primary" /> Style Reference (Optional)
+                        <UploadCloud className="text-primary h-5 w-5" /> Style Reference (Optional)
                     </h3>
                     <div className="space-y-2">
                         <Label htmlFor="reference-image" className="text-sm font-medium text-muted-foreground">
@@ -385,7 +385,7 @@ export default function PromptForgeApp() {
                             className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                         />
                         {referenceImageDataUri && referenceImageFile && (
-                            <div className="mt-2 p-2 border rounded-md bg-muted/50">
+                            <div className="mt-2 p-2 border rounded-md bg-muted/20 dark:bg-muted/10">
                                 <p className="text-xs text-muted-foreground mb-1">Selected: {referenceImageFile.name}</p>
                                 <img 
                                     src={referenceImageDataUri} 
@@ -400,7 +400,7 @@ export default function PromptForgeApp() {
 
                 <div className="pt-4">
                    <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto">
-                    {isLoadingMockup ? (
+                    {isLoadingMockup && !mockupImages ? ( // Show loader only when generating initial set and no images exist
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
                       <ImageIcon className="mr-2 h-4 w-4" />
@@ -414,7 +414,7 @@ export default function PromptForgeApp() {
         </section>
       )}
 
-      {isLoadingMockup && (!mockupImages || mockupImages.length === 0) && ( // Show main loader only if no images are displayed
+      {isLoadingMockup && (!mockupImages || mockupImages.length === 0) && ( // Show main loader only if no images are displayed yet and it's the initial load
         <div className="flex justify-center items-center py-8">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
           <p className="ml-4 text-muted-foreground">Generating mockup...</p>
@@ -423,10 +423,10 @@ export default function PromptForgeApp() {
 
       {mockupImages && mockupImages.length > 0 && (
         <section id="mockup-display" className="space-y-6">
-          <Card className="shadow-lg">
+          <Card className="shadow-lg border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-2xl">
-                <ImageIcon className="text-primary" />
+                <ImageIcon className="text-primary h-6 w-6" />
                 <span>Application Mockups</span>
               </CardTitle>
               <CardDescription>
@@ -436,11 +436,11 @@ export default function PromptForgeApp() {
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6">
               {mockupImages.map((imageUrl, index) => (
-                <div key={index} className="bg-background p-2 rounded-lg border shadow-sm">
+                <div key={index} className="bg-muted/20 dark:bg-muted/10 p-2 rounded-lg border border-border/30 shadow-sm">
                     <img 
                     src={imageUrl} 
                     alt={`Generated mobile app mockup screen ${index + 1}`} 
-                    className="rounded-md border border-border shadow-lg w-full h-auto object-contain"
+                    className="rounded-md border border-border/50 shadow-lg w-full h-auto object-contain"
                     data-ai-hint="mobile mockup"
                     />
                 </div>
@@ -453,7 +453,7 @@ export default function PromptForgeApp() {
               )}
             </CardContent>
             {!isLoadingMockup && ( 
-              <CardFooter className="border-t pt-6 flex flex-col sm:flex-row gap-2 sm:gap-4 justify-start">
+              <CardFooter className="border-t border-border/50 pt-6 flex flex-col sm:flex-row gap-2 sm:gap-4 justify-start">
                 <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto">
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Generate New Set
@@ -469,7 +469,7 @@ export default function PromptForgeApp() {
       )}
       
       {error && (
-        <div role="alert" className="p-4 bg-destructive/10 border border-destructive text-destructive rounded-md flex items-start gap-2">
+        <div role="alert" className="p-4 bg-destructive/10 border border-destructive text-destructive rounded-md flex items-start gap-3">
           <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
           <div>
             <p className="font-semibold">An error occurred:</p>
