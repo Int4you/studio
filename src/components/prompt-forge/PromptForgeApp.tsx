@@ -6,6 +6,9 @@ import { generateApplicationIdeas } from '@/ai/flows/generate-application-ideas'
 import { generateDetailedProposal } from '@/ai/flows/generate-detailed-proposal';
 import type { GenerateMockupInput, GenerateMockupOutput } from '@/ai/flows/generate-mockup-flow';
 import { generateMockup } from '@/ai/flows/generate-mockup-flow';
+import type { GenerateTextToAppPromptInput, GenerateTextToAppPromptOutput } from '@/ai/flows/generate-text-to-app-prompt';
+import { generateTextToAppPrompt } from '@/ai/flows/generate-text-to-app-prompt';
+
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -14,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
 import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 
@@ -46,9 +49,13 @@ export default function PromptForgeApp() {
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [mockupImages, setMockupImages] = useState<string[] | null>(null);
+  const [textToAppPrompt, setTextToAppPrompt] = useState<string | null>(null);
+
   const [isLoadingIdeas, setIsLoadingIdeas] = useState<boolean>(false);
   const [isLoadingProposal, setIsLoadingProposal] = useState<boolean>(false);
   const [isLoadingMockup, setIsLoadingMockup] = useState<boolean>(false);
+  const [isLoadingTextToAppPrompt, setIsLoadingTextToAppPrompt] = useState<boolean>(false);
+  
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -94,6 +101,7 @@ export default function PromptForgeApp() {
     setSelectedIdea(null);
     setProposal(null);
     setMockupImages(null);
+    setTextToAppPrompt(null);
     resetReferenceImage();
 
 
@@ -126,6 +134,7 @@ export default function PromptForgeApp() {
     setSelectedIdea(idea);
     setProposal(null); 
     setMockupImages(null);
+    setTextToAppPrompt(null);
     setError(null); 
     // Keep reference image if user wants to use it for a new idea's proposal
   };
@@ -136,6 +145,7 @@ export default function PromptForgeApp() {
     setError(null);
     setProposal(null);
     setMockupImages(null);
+    setTextToAppPrompt(null);
     // Keep reference image if user wants to use it for mockups of this proposal
 
     try {
@@ -201,6 +211,57 @@ export default function PromptForgeApp() {
     }
   };
 
+  const handleGenerateTextToAppPrompt = async () => {
+    if (!proposal || !selectedIdea) return;
+    setIsLoadingTextToAppPrompt(true);
+    setError(null);
+    setTextToAppPrompt(null);
+
+    try {
+      const input: GenerateTextToAppPromptInput = {
+        appName: proposal.appName,
+        appIdeaDescription: selectedIdea.description,
+        coreFeatures: proposal.coreFeatures,
+        uiUxGuidelines: proposal.uiUxGuidelines,
+      };
+      const result: GenerateTextToAppPromptOutput = await generateTextToAppPrompt(input);
+      setTextToAppPrompt(result.detailedPrompt);
+      toast({
+        title: "AI Developer Prompt Generated!",
+        description: "Your detailed prompt for Text-to-App tools is ready.",
+      });
+    } catch (err) {
+      console.error('Error generating Text-to-App prompt:', err);
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(`Failed to generate Text-to-App prompt: ${errorMessage}`);
+      toast({
+        title: "Error Generating AI Developer Prompt",
+        description: `An error occurred: ${errorMessage}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingTextToAppPrompt(false);
+    }
+  };
+
+  const handleCopyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        toast({
+          title: "Copied to clipboard!",
+          description: "The prompt has been copied to your clipboard.",
+        });
+      })
+      .catch(err => {
+        console.error('Failed to copy text: ', err);
+        toast({
+          title: "Copy Failed",
+          description: "Could not copy text to clipboard.",
+          variant: "destructive",
+        });
+      });
+  };
+
 
   const groupUiUxGuidelines = (guidelines: UiUxGuideline[]): GroupedUiUxGuidelines => {
     return guidelines.reduce((acc, guideline) => {
@@ -225,7 +286,7 @@ export default function PromptForgeApp() {
           </h1>
         </div>
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Craft brilliant application ideas, detailed proposals, and visual mockups with the power of AI.
+          Craft brilliant application ideas, detailed proposals, visual mockups, and AI developer prompts.
         </p>
       </header>
 
@@ -463,6 +524,63 @@ export default function PromptForgeApp() {
                   Add More Mockups
                 </Button>
               </CardFooter>
+            )}
+          </Card>
+        </section>
+      )}
+
+      {proposal && !isLoadingProposal && (
+        <section id="text-to-app-prompt-generation" className="space-y-6">
+          <Card className="shadow-lg border-border/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <Terminal className="text-primary h-6 w-6" />
+                <span>AI Developer Prompt</span>
+              </CardTitle>
+              <CardDescription>
+                Generate a super-detailed prompt for Text-to-App AI tools to code your application.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={handleGenerateTextToAppPrompt} disabled={isLoadingTextToAppPrompt || !proposal || !selectedIdea} className="w-full sm:w-auto">
+                {isLoadingTextToAppPrompt ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Wand2 className="mr-2 h-4 w-4" />
+                )}
+                Generate AI Developer Prompt
+              </Button>
+            </CardContent>
+          
+            {isLoadingTextToAppPrompt && (
+              <div className="flex justify-center items-center py-8 px-6">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="ml-4 text-muted-foreground">Generating AI Developer Prompt...</p>
+              </div>
+            )}
+
+            {textToAppPrompt && !isLoadingTextToAppPrompt && (
+              <CardContent className="space-y-4 pt-4">
+                <h3 className="text-lg font-semibold">Your Generated Text-to-App Prompt:</h3>
+                <div className="relative">
+                  <Textarea
+                    readOnly
+                    value={textToAppPrompt}
+                    rows={15}
+                    className="bg-muted/30 dark:bg-muted/10 resize-y text-sm p-4 pr-12 rounded-md leading-relaxed"
+                    aria-label="Generated Text-to-App Prompt"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-primary"
+                    onClick={() => handleCopyToClipboard(textToAppPrompt)}
+                    title="Copy to Clipboard"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
             )}
           </Card>
         </section>
