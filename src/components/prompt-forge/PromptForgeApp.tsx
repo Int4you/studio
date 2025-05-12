@@ -24,6 +24,7 @@ import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCir
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
 import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 import { format } from 'date-fns';
+import Link from 'next/link';
 
 
 interface Idea {
@@ -43,7 +44,7 @@ interface UiUxGuideline {
 
 interface Proposal extends ProposalOutput {} 
 
-type CurrentView = 'home' | 'library';
+type CurrentView = 'app' | 'library'; // Renamed 'home' to 'app' for clarity within the app context
 
 export default function PromptForgeApp() {
   const [prompt, setPrompt] = useState<string>('');
@@ -67,7 +68,7 @@ export default function PromptForgeApp() {
 
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<CurrentView>('home');
+  const [currentView, setCurrentView] = useState<CurrentView>('app'); // Default to 'app' view
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -382,7 +383,7 @@ export default function PromptForgeApp() {
         resetReferenceImage();
       }
       setCurrentProjectId(project.id);
-      setCurrentView('home'); // Switch to home view
+      setCurrentView('app'); // Switch to app view
       
       toast({
         title: "Project Loaded",
@@ -425,15 +426,15 @@ export default function PromptForgeApp() {
     <>
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 max-w-4xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
             <Cpu className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold tracking-tight">
               <span className="bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text">PromptForge</span>
             </h1>
-          </div>
+          </Link>
           <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as CurrentView)} className="w-auto">
             <TabsList className="bg-transparent p-0 border-none">
-              <TabsTrigger value="home" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium">Home</TabsTrigger>
+              <TabsTrigger value="app" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium">App</TabsTrigger>
               <TabsTrigger value="library" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium">My Project Library</TabsTrigger>
             </TabsList>
           </Tabs>
@@ -441,7 +442,7 @@ export default function PromptForgeApp() {
       </header>
 
       <main className="container mx-auto p-6 md:p-10 max-w-4xl space-y-12 mt-4">
-        {currentView === 'home' && (
+        {currentView === 'app' && (
           <>
             {/* Initial Welcome / Prompt Section */}
             <div className="text-center space-y-2 mb-10">

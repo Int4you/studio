@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'PromptForge',
-  description: 'Generate application ideas and detailed proposals with AI.',
+  title: 'PromptForge - AI Powered App Prototyping',
+  description: 'Turn ideas into reality. Generate application concepts, detailed proposals, visual mockups, and AI developer prompts with PromptForge.',
 };
 
 export default function RootLayout({

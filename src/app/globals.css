@@ -103,8 +103,11 @@
   * {
     @apply border-border;
   }
+  html, body {
+    @apply h-full; /* Ensure html and body take full height */
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground flex flex-col; /* Use flex-col for sticky footer */
     font-family: sans-serif; /* Default sans-serif font */
   }
   /* Ensure headings and other text elements inherit correctly */
