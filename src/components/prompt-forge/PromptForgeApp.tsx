@@ -25,13 +25,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
 import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 interface Idea {
@@ -52,6 +53,8 @@ interface UiUxGuideline {
 interface Proposal extends ProposalOutput {} 
 
 type CurrentView = 'app' | 'library';
+type AppStep = 'ideas' | 'proposal' | 'prioritization' | 'mockups' | 'devPrompt' | 'save';
+
 
 interface EditingStates {
   appName: boolean;
@@ -85,12 +88,18 @@ export default function PromptForgeApp() {
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<CurrentView>('app');
+  const [currentStep, setCurrentStep] = useState<AppStep>('ideas');
+
 
   const [editingStates, setEditingStates] = useState<EditingStates>({
     appName: false,
     coreFeatures: [],
     uiUxGuidelines: [],
   });
+
+  // For accordion sections
+  const [openAccordionSections, setOpenAccordionSections] = useState<string[]>(['step-1-ideas']);
+
 
   const initializeEditingStates = (currentProposal: Proposal | null) => {
     setEditingStates({
@@ -122,6 +131,27 @@ export default function PromptForgeApp() {
       setSavedProjects(getProjectsFromLibrary());
     }
   }, []);
+  
+  useEffect(() => {
+    // Automatically open the current step's accordion
+    // And keep previous completed steps open
+    const newOpenSections: string[] = [];
+    if (currentStep === 'ideas' || ideas.length > 0) newOpenSections.push('step-1-ideas');
+    if (currentStep === 'proposal' || proposal) newOpenSections.push('step-2-proposal');
+    if (currentStep === 'prioritization' || prioritizedFeatures) newOpenSections.push('step-3-prioritization');
+    if (currentStep === 'mockups' || mockupImages) newOpenSections.push('step-4-mockups');
+    if (currentStep === 'devPrompt' || textToAppPrompt) newOpenSections.push('step-5-devprompt');
+    if (currentStep === 'save') newOpenSections.push('step-6-save');
+    
+    setOpenAccordionSections(prevOpen => {
+        // Add newly active sections, keep already open ones
+        const combined = [...new Set([...prevOpen, ...newOpenSections])];
+        if(currentStep === 'ideas' && ideas.length === 0) return ['step-1-ideas']; // Start fresh
+        return combined;
+    });
+
+  }, [currentStep, ideas, proposal, prioritizedFeatures, mockupImages, textToAppPrompt]);
+
 
   const resetAppState = (clearPrompt = false) => {
     if (clearPrompt) setPrompt('');
@@ -135,6 +165,8 @@ export default function PromptForgeApp() {
     setCurrentProjectId(null);
     setError(null);
     initializeEditingStates(null);
+    setCurrentStep('ideas');
+    setOpenAccordionSections(['step-1-ideas']);
   };
 
   const handlePromptChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
@@ -162,14 +194,19 @@ export default function PromptForgeApp() {
     setReferenceImageInputKey(`ref-img-${Date.now()}`);
   };
 
-  const handleGenerateIdeas = async (event: FormEvent) => {
-    event.preventDefault();
+  const handleGenerateIdeas = async (event?: FormEvent) => {
+    event?.preventDefault();
     if (!prompt.trim()) {
       setError('Please enter a prompt to generate ideas.');
+      toast({ title: "Prompt Required", description: "Please enter a prompt to generate ideas.", variant: "destructive"});
       return;
     }
     setIsLoadingIdeas(true);
-    resetAppState(); 
+    // Keep current idea selected if any, but clear subsequent steps if prompt changes significantly (heuristic or explicit reset)
+    // For now, let's assume generating new ideas from a new prompt means a new path.
+    if (selectedIdea) { // If there was a selected idea, new ideas mean a new path.
+        resetAppState(false); // Don't clear prompt, but reset other state
+    }
 
 
     try {
@@ -182,6 +219,10 @@ export default function PromptForgeApp() {
           description: "The AI didn't return any ideas for your prompt. Try refining it.",
           variant: "default",
         });
+      } else {
+        // setCurrentStep will be handled by handleSelectIdea or if user does not select and tries to move on.
+        // No automatic step change here, user needs to select an idea.
+         setOpenAccordionSections(prev => [...new Set([...prev, 'step-1-ideas'])]);
       }
     } catch (err) {
       console.error('Error generating ideas:', err);
@@ -204,15 +245,16 @@ export default function PromptForgeApp() {
     setTextToAppPrompt(null);
     setPrioritizedFeatures(null);
     setError(null); 
-    setCurrentProjectId(null);
+    // setCurrentProjectId(null); // Don't reset project ID here, allow overwriting saved project
     initializeEditingStates(null); 
+    setCurrentStep('proposal');
   };
 
   const handleGenerateProposal = async () => {
     if (!selectedIdea) return;
     setIsLoadingProposal(true);
     setError(null);
-    setProposal(null);
+    setProposal(null); // Clear previous proposal before generating new one
     setMockupImages(null);
     setTextToAppPrompt(null);
     setPrioritizedFeatures(null);
@@ -223,6 +265,7 @@ export default function PromptForgeApp() {
       const result: ProposalOutput = await generateDetailedProposal(input);
       setProposal(result);
       initializeEditingStates(result);
+      setCurrentStep('prioritization');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(`Failed to generate proposal: ${errorMessage}`);
@@ -341,6 +384,7 @@ export default function PromptForgeApp() {
           variant: "default",
         });
       }
+      // No automatic step change, user can generate more or proceed via button
     } catch (err) {
       console.error('Error generating mockup:', err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
@@ -354,6 +398,15 @@ export default function PromptForgeApp() {
       setIsLoadingMockup(false);
     }
   };
+
+  const handleProceedToDevPrompt = () => {
+    if (!proposal) {
+        toast({ title: "Proposal Needed", description: "A proposal must be generated before proceeding.", variant: "destructive"});
+        return;
+    }
+    setCurrentStep('devPrompt');
+  };
+
 
   const handleGenerateTextToAppPrompt = async () => {
     if (!proposal || !selectedIdea) return;
@@ -374,6 +427,7 @@ export default function PromptForgeApp() {
         title: "AI Developer Prompt Generated!",
         description: "Your detailed prompt for Text-to-App tools is ready.",
       });
+      setCurrentStep('save');
     } catch (err) {
       console.error('Error generating Text-to-App prompt:', err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
@@ -495,6 +549,7 @@ export default function PromptForgeApp() {
           description: "AI has analyzed and prioritized your core features.",
         });
        }
+       setCurrentStep('mockups');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(`Failed to prioritize features: ${errorMessage}`);
@@ -558,6 +613,7 @@ export default function PromptForgeApp() {
       title: currentProjectId ? "Project Updated" : "Project Saved",
       description: `${projectToSave.appName} has been ${currentProjectId ? 'updated in' : 'saved to'} your library.`,
     });
+    setCurrentStep('save'); // Ensure user is on the final step after saving
   };
 
   const handleLoadFromLibrary = (projectId: string) => {
@@ -565,6 +621,7 @@ export default function PromptForgeApp() {
     if (project) {
       resetAppState(true); 
 
+      setPrompt(project.ideaDescription); // Populate prompt with idea description for context
       setSelectedIdea({ title: project.ideaTitle, description: project.ideaDescription });
       const loadedProposal = { 
         appName: project.appName, 
@@ -583,6 +640,14 @@ export default function PromptForgeApp() {
         resetReferenceImage();
       }
       setCurrentProjectId(project.id);
+      
+      // Determine the correct step to resume from
+      if (project.textToAppPrompt) setCurrentStep('save');
+      else if (project.mockupImageUrls && project.mockupImageUrls.length > 0) setCurrentStep('devPrompt');
+      else if (project.prioritizedFeatures && project.prioritizedFeatures.length > 0) setCurrentStep('mockups');
+      else if (loadedProposal.coreFeatures && loadedProposal.coreFeatures.length > 0) setCurrentStep('prioritization');
+      else setCurrentStep('proposal');
+
       setCurrentView('app'); 
       
       toast({
@@ -591,11 +656,25 @@ export default function PromptForgeApp() {
       });
       
       setTimeout(() => { 
-        const proposalSection = document.getElementById('proposal-generation');
-        if (proposalSection) {
-          proposalSection.scrollIntoView({ behavior: 'smooth' });
+        const firstStepAccordion = document.getElementById('step-1-ideas');
+        if (firstStepAccordion) {
+            // firstStepAccordion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+             // Ensure the relevant accordion for the loaded step is open.
+            let targetAccordionId = 'step-1-ideas';
+            if (project.textToAppPrompt) targetAccordionId = 'step-6-save';
+            else if (project.mockupImageUrls && project.mockupImageUrls.length > 0) targetAccordionId = 'step-5-devprompt';
+            else if (project.prioritizedFeatures && project.prioritizedFeatures.length > 0) targetAccordionId = 'step-4-mockups';
+            else if (loadedProposal.coreFeatures && loadedProposal.coreFeatures.length > 0) targetAccordionId = 'step-3-prioritization';
+            else targetAccordionId = 'step-2-proposal';
+
+            const targetAccordionElement = document.getElementById(targetAccordionId);
+            if (targetAccordionElement) {
+                targetAccordionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                firstStepAccordion.scrollIntoView({ behavior: 'smooth', block: 'start'});
+            }
         }
-      }, 0);
+      }, 100);
 
     } else {
       toast({
@@ -630,12 +709,40 @@ export default function PromptForgeApp() {
     if (level === "Medium") return "secondary";
     return "outline";
   };
+  
+  const renderStepIndicator = (stepName: AppStep, stepNumber: number, title: string, Icon: React.ElementType) => {
+    const isActive = currentStep === stepName;
+    const isCompleted = 
+        (stepName === 'ideas' && ideas.length > 0) ||
+        (stepName === 'proposal' && proposal !== null) ||
+        (stepName === 'prioritization' && prioritizedFeatures !== null) ||
+        (stepName === 'mockups' && mockupImages !== null) ||
+        (stepName === 'devPrompt' && textToAppPrompt !== null) ||
+        (stepName === 'save' && currentProjectId !== null); // 'save' is completed if saved
+
+    let indicatorClass = "bg-muted border-muted-foreground/30";
+    if (isActive) indicatorClass = "bg-primary text-primary-foreground border-primary animate-pulse";
+    else if (isCompleted) indicatorClass = "bg-green-500 text-primary-foreground border-green-600";
+
+
+    return (
+        <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold border-2 ${indicatorClass} transition-colors`}>
+                {isCompleted && !isActive ? <Check className="w-5 h-5" /> : stepNumber}
+            </div>
+            <h3 className="text-xl font-semibold flex items-center gap-2">
+                <Icon className={`h-6 w-6 ${isActive ? 'text-primary' : isCompleted ? 'text-green-500' : 'text-muted-foreground'}`} />
+                {title}
+            </h3>
+        </div>
+    );
+  };
 
 
   return (
     <TooltipProvider>
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-16 max-w-4xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-3">
             <Cpu className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold tracking-tight">
@@ -645,46 +752,47 @@ export default function PromptForgeApp() {
           <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as CurrentView)} className="w-auto">
             <TabsList className="bg-transparent p-0 border-none">
               <TabsTrigger value="app" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium">App</TabsTrigger>
-              <TabsTrigger value="library" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium">My Project Library</TabsTrigger>
+              <TabsTrigger value="library" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium">My Project Library ({savedProjects.length})</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
       </header>
 
-      <main className="container mx-auto p-6 md:p-10 max-w-4xl space-y-12 mt-4">
+      <main className="container mx-auto p-4 md:p-8 max-w-5xl mt-4">
         {currentView === 'app' && (
           <>
-            <div className="text-center space-y-3 mb-12 p-6 bg-card border border-border/40 rounded-xl shadow-lg">
+            <div className="text-center space-y-3 mb-10 p-6 bg-card border border-border/40 rounded-xl shadow-lg">
               <Wand2 className="h-10 w-10 text-primary mx-auto" />
               <h2 className="text-3xl font-bold tracking-tight text-foreground">
                 Let&apos;s Forge Your Next App
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Start by describing your vision, and let AI help you craft{' '}
-                <span className="font-semibold text-primary">brilliant</span> application ideas, detailed proposals, visual mockups, and developer-ready prompts.
+                Follow the steps below to transform your vision into a tangible app concept.
               </p>
+               <Button onClick={() => resetAppState(true)} variant="outline" size="sm" className="mt-2">
+                <RefreshCw className="mr-2 h-4 w-4" /> Start New Project
+              </Button>
             </div>
-
-            <section id="idea-generation" className="space-y-6">
-              <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
-                <CardHeader className="bg-muted/30 dark:bg-muted/10">
-                  <CardTitle className="flex items-center gap-2 text-2xl">
-                    <Lightbulb className="text-primary h-6 w-6" />
-                    <span>Generate Application Ideas</span>
-                  </CardTitle>
-                  <CardDescription>Enter a prompt to brainstorm innovative app concepts.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-6">
+            
+            <Accordion type="multiple" value={openAccordionSections} onValueChange={setOpenAccordionSections} className="w-full space-y-6">
+              {/* Step 1: Idea Generation */}
+              <AccordionItem value="step-1-ideas" id="step-1-ideas">
+                <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+                    {renderStepIndicator('ideas', 1, "Spark Your Idea", Lightbulb)}
+                </AccordionTrigger>
+                <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md">
                   <form onSubmit={handleGenerateIdeas} className="space-y-4">
+                    <Label htmlFor="idea-prompt" className="text-sm font-medium">Describe your application idea:</Label>
                     <Textarea
-                      placeholder="Describe the type of application you want to build, e.g., 'A mobile app for local community gardening'"
+                      id="idea-prompt"
+                      placeholder="e.g., 'A mobile app for local community gardening that helps track planting schedules and share harvests.'"
                       value={prompt}
                       onChange={handlePromptChange}
                       rows={4}
                       className="resize-none text-base rounded-md shadow-sm"
                       aria-label="Application idea prompt"
                     />
-                    <Button type="submit" disabled={isLoadingIdeas} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
+                    <Button type="submit" disabled={isLoadingIdeas || !prompt.trim()} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
                       {isLoadingIdeas ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
@@ -693,61 +801,57 @@ export default function PromptForgeApp() {
                       Generate Ideas
                     </Button>
                   </form>
-                </CardContent>
-              </Card>
 
-              {isLoadingIdeas && (
-                <div className="flex justify-center items-center py-8">
-                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                  <p className="ml-4 text-muted-foreground">Generating ideas...</p>
-                </div>
-              )}
+                  {isLoadingIdeas && (
+                    <div className="flex justify-center items-center py-8">
+                      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                      <p className="ml-4 text-muted-foreground">Generating ideas...</p>
+                    </div>
+                  )}
 
-              {ideas.length > 0 && !isLoadingIdeas && (
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-foreground/90">Choose an Idea:</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {ideas.map((idea, index) => (
-                      <Card 
-                        key={index} 
-                        onClick={() => handleSelectIdea(idea)} 
-                        className={`cursor-pointer transition-all duration-200 ease-in-out hover:shadow-xl hover:ring-2 hover:ring-primary/50 rounded-lg overflow-hidden ${selectedIdea?.title === idea.title ? 'ring-2 ring-primary shadow-xl border-primary' : 'border-border/50 shadow-md'}`}
-                      >
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">{idea.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm text-muted-foreground">{idea.description}</p>
-                        </CardContent>
-                         {selectedIdea?.title === idea.title && (
-                            <div className="absolute top-2 right-2 bg-primary text-primary-foreground p-1 rounded-full">
-                                <Check className="h-3 w-3" />
-                            </div>
-                        )}
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </section>
+                  {ideas.length > 0 && !isLoadingIdeas && (
+                    <div className="space-y-4 mt-6">
+                      <h3 className="text-lg font-semibold text-foreground/90">Choose an Idea:</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {ideas.map((idea, index) => (
+                          <Card 
+                            key={index} 
+                            onClick={() => handleSelectIdea(idea)} 
+                            className={`cursor-pointer transition-all duration-200 ease-in-out hover:shadow-xl hover:ring-2 hover:ring-primary/50 rounded-lg overflow-hidden ${selectedIdea?.title === idea.title ? 'ring-2 ring-primary shadow-xl border-primary' : 'border-border/50 shadow-md'}`}
+                          >
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-md">{idea.title}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-xs text-muted-foreground">{idea.description}</p>
+                            </CardContent>
+                            {selectedIdea?.title === idea.title && (
+                                <div className="absolute top-2 right-2 bg-primary text-primary-foreground p-1 rounded-full">
+                                    <Check className="h-3 w-3" />
+                                </div>
+                            )}
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
 
-            {selectedIdea && (
-              <section id="proposal-generation" className="space-y-6">
-                <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
-                  <CardHeader className="bg-muted/30 dark:bg-muted/10">
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                      <FileText className="text-primary h-6 w-6" />
-                      <span>Detailed Application Proposal</span>
-                    </CardTitle>
-                    <CardDescription className="flex items-center gap-2 pt-2">
-                      <CheckCircle2 className="text-green-500 h-5 w-5" /> 
-                      Selected Idea: <span className="font-semibold text-foreground">{selectedIdea.title}</span>
-                      {currentProjectId && <span className="text-xs text-muted-foreground ml-2">(Loaded from Library)</span>}
+              {/* Step 2: Detailed Proposal */}
+              {selectedIdea && (
+                <AccordionItem value="step-2-proposal" id="step-2-proposal">
+                  <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+                     {renderStepIndicator('proposal', 2, "Craft Proposal", FileText)}
+                  </AccordionTrigger>
+                  <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
+                     <CardDescription className="flex items-center gap-2 pt-0">
+                        <CheckCircle2 className="text-green-500 h-5 w-5" /> 
+                        Selected Idea: <span className="font-semibold text-foreground">{selectedIdea.title}</span>
+                        {currentProjectId && <span className="text-xs text-muted-foreground ml-2">(Loaded from Library)</span>}
                     </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6 space-y-6">
-                    {!proposal && !isLoadingProposal && (
-                      <Button onClick={handleGenerateProposal} disabled={!selectedIdea} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
+                    {!proposal && !isLoadingProposal && currentStep === 'proposal' && (
+                      <Button onClick={handleGenerateProposal} disabled={!selectedIdea || isLoadingProposal} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
                         <Wand2 className="mr-2 h-4 w-4" />
                         Generate Detailed Proposal
                       </Button>
@@ -758,8 +862,7 @@ export default function PromptForgeApp() {
                             <p className="ml-4 text-muted-foreground">Generating proposal...</p>
                         </div>
                     )}
-
-                    {proposal && !isLoadingProposal && (
+                    {proposal && (
                       <>
                         {/* App Name Editing */}
                         <Card className="shadow-sm rounded-lg border border-border/30">
@@ -860,8 +963,8 @@ export default function PromptForgeApp() {
                               <p className="text-xs text-muted-foreground text-center py-2">No core features added yet.</p>
                             )}
                           </CardContent>
-                          <CardFooter className="border-t border-border/30 pt-4 p-4 bg-muted/20 dark:bg-muted/10 flex flex-wrap gap-2 justify-start rounded-b-lg">
-                            <Button 
+                           <CardFooter className="border-t border-border/30 pt-4 p-4 bg-muted/20 dark:bg-muted/10 rounded-b-lg">
+                             <Button 
                                 onClick={handleGenerateMoreFeatures} 
                                 variant="outline" 
                                 size="sm" 
@@ -875,21 +978,7 @@ export default function PromptForgeApp() {
                                 )}
                                 Generate More Feature Ideas
                             </Button>
-                            <Button 
-                                onClick={handleGenerateFeaturePrioritization}
-                                variant="outline" 
-                                size="sm" 
-                                className="rounded-md text-xs shadow-sm hover:shadow"
-                                disabled={isLoadingPrioritization || !proposal || !selectedIdea || proposal.coreFeatures.length === 0}
-                            >
-                                {isLoadingPrioritization ? (
-                                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                    <TrendingUp className="mr-1.5 h-3.5 w-3.5" />
-                                )}
-                                Prioritize Features (AI)
-                            </Button>
-                          </CardFooter>
+                           </CardFooter>
                         </Card>
 
                         {/* UI/UX Guidelines Editing */}
@@ -950,7 +1039,7 @@ export default function PromptForgeApp() {
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      onClick={() => removeUiUxGuideline(index)}
+                                      onClick={()={() => removeUiUxGuideline(index)}
                                       aria-label="Remove Guideline"
                                       disabled={editingStates.uiUxGuidelines[index]}
                                       className="text-muted-foreground hover:text-destructive h-7 w-7"
@@ -966,231 +1055,250 @@ export default function PromptForgeApp() {
                             )}
                           </CardContent>
                         </Card>
-                        
-                        {/* Reference Image Upload */}
-                        <Card className="shadow-sm rounded-lg border border-border/30">
-                          <CardHeader className="px-4 pt-3 pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
-                            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                                <UploadCloud className="text-primary h-5 w-5" /> Style Reference (Optional)
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="px-4 py-4">
-                              <Label htmlFor="reference-image" className="text-xs font-medium text-muted-foreground">
-                                  Upload an image to guide the mockup&apos;s visual style.
-                              </Label>
-                              <Input
-                                  id="reference-image"
-                                  key={referenceImageInputKey}
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={handleReferenceImageChange}
-                                  className="mt-1 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 rounded-md shadow-sm h-10"
-                              />
-                              {referenceImageDataUri && (
-                                  <div className="mt-3 p-2 border rounded-md bg-muted/20 dark:bg-muted/10 shadow-sm">
-                                      <p className="text-xs text-muted-foreground mb-1">
-                                        {referenceImageFile ? `Selected: ${referenceImageFile.name}` : 'Current reference image:'}
-                                      </p>
-                                      <img 
-                                          src={referenceImageDataUri} 
-                                          alt="Reference preview" 
-                                          className="h-20 w-auto rounded border shadow-sm"
-                                          data-ai-hint="style reference"
-                                      />
-                                  </div>
-                              )}
-                          </CardContent>
-                        </Card>
-
-                        {/* Mockup Generation Trigger */}
-                        <div className="pt-2 flex flex-wrap gap-3">
-                          <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="rounded-md shadow-md hover:shadow-lg transition-shadow text-sm">
-                            {isLoadingMockup && !mockupImages ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <ImageIcon className="mr-2 h-4 w-4" />
-                            )}
-                            Generate Mockup
-                          </Button>
-                        </div>
                       </>
                     )}
-                  </CardContent>
-                </Card>
-              </section>
-            )}
-            
-            {isLoadingPrioritization && (
-                <div className="flex justify-center items-center py-8">
-                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                  <p className="ml-4 text-muted-foreground">Prioritizing features...</p>
-                </div>
-            )}
+                  </AccordionContent>
+                </AccordionItem>
+              )}
 
-            {prioritizedFeatures && prioritizedFeatures.length > 0 && !isLoadingPrioritization && (
-              <section id="prioritized-features-display" className="space-y-6">
-                <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
-                  <CardHeader className="bg-muted/30 dark:bg-muted/10">
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                      <TrendingUp className="text-primary h-6 w-6" />
-                      <span>AI Prioritized Features</span>
-                    </CardTitle>
-                    <CardDescription>
-                      Features ranked by AI based on potential impact and effort.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6 space-y-4">
-                    {prioritizedFeatures.map((pFeature, index) => (
-                      <Card key={index} className="bg-card p-4 rounded-lg shadow-sm border border-border/40">
-                        <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-2">
-                          <h4 className="text-lg font-semibold text-foreground">{pFeature.feature}</h4>
-                          <Badge variant={getPriorityBadgeVariant(pFeature.priorityScore)} className="text-sm">
-                            Priority: {pFeature.priorityScore}/10
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-3">{pFeature.description}</p>
-                        <div className="text-xs space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">Impact:</span>
-                            <Badge variant={getImpactEffortBadgeVariant(pFeature.estimatedImpact)} size="sm">{pFeature.estimatedImpact}</Badge>
-                            <span className="font-medium ml-2">Effort:</span>
-                            <Badge variant={getImpactEffortBadgeVariant(pFeature.estimatedEffort)} size="sm">{pFeature.estimatedEffort}</Badge>
-                          </div>
-                           <div className="flex items-start gap-2 text-muted-foreground">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Info className="h-3.5 w-3.5 mt-0.5 shrink-0 cursor-help text-primary/70" />
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="max-w-xs">
-                                <p>{pFeature.reasoning}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                            <span className="italic flex-1">{pFeature.reasoning}</span>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </CardContent>
-                </Card>
-              </section>
-            )}
+              {/* Step 3: Feature Prioritization */}
+               {proposal && (
+                <AccordionItem value="step-3-prioritization" id="step-3-prioritization">
+                    <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+                        {renderStepIndicator('prioritization', 3, "Prioritize Features", TrendingUp)}
+                    </AccordionTrigger>
+                    <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
+                        {!prioritizedFeatures && !isLoadingPrioritization && currentStep === 'prioritization' && proposal.coreFeatures.length > 0 && (
+                            <Button 
+                                onClick={handleGenerateFeaturePrioritization}
+                                disabled={isLoadingPrioritization || proposal.coreFeatures.length === 0}
+                                className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow"
+                            >
+                                {isLoadingPrioritization ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Wand2 className="mr-2 h-4 w-4" />
+                                )}
+                                Prioritize Features (AI)
+                            </Button>
+                        )}
+                        {!prioritizedFeatures && !isLoadingPrioritization && currentStep === 'prioritization' && proposal.coreFeatures.length === 0 && (
+                             <p className="text-sm text-muted-foreground">Add core features to the proposal before prioritizing.</p>
+                        )}
+                        {isLoadingPrioritization && (
+                            <div className="flex justify-center items-center py-8">
+                                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                                <p className="ml-4 text-muted-foreground">Prioritizing features...</p>
+                            </div>
+                        )}
+                        {prioritizedFeatures && prioritizedFeatures.length > 0 && (
+                            <div className="space-y-4">
+                                {prioritizedFeatures.map((pFeature, index) => (
+                                <Card key={index} className="bg-muted/20 dark:bg-muted/10 p-4 rounded-lg shadow-sm border border-border/40">
+                                    <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-2">
+                                    <h4 className="text-lg font-semibold text-foreground">{pFeature.feature}</h4>
+                                    <Badge variant={getPriorityBadgeVariant(pFeature.priorityScore)} className="text-sm">
+                                        Priority: {pFeature.priorityScore}/10
+                                    </Badge>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground mb-3">{pFeature.description}</p>
+                                    <div className="text-xs space-y-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-medium">Impact:</span>
+                                        <Badge variant={getImpactEffortBadgeVariant(pFeature.estimatedImpact)} size="sm">{pFeature.estimatedImpact}</Badge>
+                                        <span className="font-medium sm:ml-2">Effort:</span>
+                                        <Badge variant={getImpactEffortBadgeVariant(pFeature.estimatedEffort)} size="sm">{pFeature.estimatedEffort}</Badge>
+                                    </div>
+                                    <div className="flex items-start gap-2 text-muted-foreground">
+                                        <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-3.5 w-3.5 mt-0.5 shrink-0 cursor-help text-primary/70" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="max-w-xs">
+                                            <p>{pFeature.reasoning}</p>
+                                        </TooltipContent>
+                                        </Tooltip>
+                                        <span className="italic flex-1">{pFeature.reasoning}</span>
+                                    </div>
+                                    </div>
+                                </Card>
+                                ))}
+                            </div>
+                        )}
+                    </AccordionContent>
+                </AccordionItem>
+               )}
 
+              {/* Step 4: Mockup Generation */}
+              {proposal && (
+                <AccordionItem value="step-4-mockups" id="step-4-mockups">
+                    <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+                         {renderStepIndicator('mockups', 4, "Visualize Mockups", ImageIcon)}
+                    </AccordionTrigger>
+                    <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
+                        {currentStep === 'mockups' && (
+                            <>
+                            <Card className="shadow-sm rounded-lg border border-border/30">
+                                <CardHeader className="px-4 pt-3 pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
+                                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                                        <UploadCloud className="text-primary h-5 w-5" /> Style Reference (Optional)
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="px-4 py-4">
+                                    <Label htmlFor="reference-image" className="text-xs font-medium text-muted-foreground">
+                                        Upload an image to guide the mockup&apos;s visual style.
+                                    </Label>
+                                    <Input
+                                        id="reference-image"
+                                        key={referenceImageInputKey}
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleReferenceImageChange}
+                                        className="mt-1 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 rounded-md shadow-sm h-10"
+                                    />
+                                    {referenceImageDataUri && (
+                                        <div className="mt-3 p-2 border rounded-md bg-muted/20 dark:bg-muted/10 shadow-sm">
+                                            <p className="text-xs text-muted-foreground mb-1">
+                                                {referenceImageFile ? `Selected: ${referenceImageFile.name}` : 'Current reference image:'}
+                                            </p>
+                                            <img 
+                                                src={referenceImageDataUri} 
+                                                alt="Reference preview" 
+                                                className="h-20 w-auto rounded border shadow-sm"
+                                                data-ai-hint="style reference"
+                                            />
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                            <div className="pt-2 flex flex-wrap gap-3">
+                                <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="rounded-md shadow-md hover:shadow-lg transition-shadow text-sm">
+                                    {isLoadingMockup && !mockupImages ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                    <ImageIcon className="mr-2 h-4 w-4" />
+                                    )}
+                                    Generate Mockup
+                                </Button>
+                            </div>
+                            </>
+                        )}
+                        {isLoadingMockup && (!mockupImages || mockupImages.length === 0) && (
+                            <div className="flex justify-center items-center py-8">
+                                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                                <p className="ml-4 text-muted-foreground">Generating mockup...</p>
+                            </div>
+                        )}
+                        {mockupImages && mockupImages.length > 0 && (
+                             <div className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {mockupImages.map((imageUrl, index) => (
+                                    <div key={index} className="bg-card p-3 rounded-lg border border-border/30 shadow-lg hover:shadow-xl transition-shadow">
+                                        <img 
+                                        src={imageUrl} 
+                                        alt={`Generated mobile app mockup screen ${index + 1}`} 
+                                        className="rounded-md border border-border/50 w-full h-auto object-contain aspect-[9/19]" 
+                                        data-ai-hint="mobile mockup"
+                                        />
+                                    </div>
+                                    ))}
+                                    {isLoadingMockup && mockupImages.length > 0 && (
+                                    <div className="col-span-full flex justify-center items-center py-8">
+                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                        <p className="ml-3 text-muted-foreground">Generating more mockups...</p>
+                                    </div>
+                                    )}
+                                </div>
+                                 {!isLoadingMockup && currentStep === 'mockups' && (
+                                    <div className="border-t border-border/30 pt-6 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-start">
+                                    <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-sm">
+                                        <RefreshCw className="mr-2 h-4 w-4" />
+                                        Generate New Set
+                                    </Button>
+                                    <Button onClick={() => handleGenerateMockup(true)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-sm" variant="outline">
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Add More Mockups
+                                    </Button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {currentStep === 'mockups' && proposal && (
+                            <Button onClick={handleProceedToDevPrompt} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4">
+                                Next: AI Developer Prompt <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        )}
+                    </AccordionContent>
+                </AccordionItem>
+              )}
 
-            {isLoadingMockup && (!mockupImages || mockupImages.length === 0) && (
-              <div className="flex justify-center items-center py-8">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="ml-4 text-muted-foreground">Generating mockup...</p>
-              </div>
-            )}
+              {/* Step 5: AI Developer Prompt */}
+               {proposal && (
+                 <AccordionItem value="step-5-devprompt" id="step-5-devprompt">
+                    <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+                        {renderStepIndicator('devPrompt', 5, "Create Developer Prompt", Terminal)}
+                    </AccordionTrigger>
+                    <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
+                        {!textToAppPrompt && !isLoadingTextToAppPrompt && currentStep === 'devPrompt' && (
+                            <Button onClick={handleGenerateTextToAppPrompt} disabled={isLoadingTextToAppPrompt || !proposal || !selectedIdea} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow text-sm">
+                            {isLoadingTextToAppPrompt ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <Wand2 className="mr-2 h-4 w-4" />
+                            )}
+                            Generate AI Developer Prompt
+                            </Button>
+                        )}
+                        {isLoadingTextToAppPrompt && (
+                            <div className="flex justify-center items-center py-8 px-6">
+                            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                            <p className="ml-4 text-muted-foreground">Generating AI Developer Prompt...</p>
+                            </div>
+                        )}
+                        {textToAppPrompt && (
+                            <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-foreground/90">Your Generated Text-to-App Prompt:</h3>
+                            <div className="relative">
+                                <Textarea
+                                readOnly
+                                value={textToAppPrompt}
+                                rows={15}
+                                className="bg-muted/30 dark:bg-muted/10 resize-y text-sm p-4 pr-12 rounded-md leading-relaxed shadow-inner"
+                                aria-label="Generated Text-to-App Prompt"
+                                />
+                                <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:text-primary"
+                                onClick={() => handleCopyToClipboard(textToAppPrompt)}
+                                title="Copy to Clipboard"
+                                >
+                                <Copy className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            </div>
+                        )}
+                    </AccordionContent>
+                </AccordionItem>
+               )}
 
-            {mockupImages && mockupImages.length > 0 && (
-              <section id="mockup-display" className="space-y-6">
-                <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
-                  <CardHeader className="bg-muted/30 dark:bg-muted/10">
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                      <ImageIcon className="text-primary h-6 w-6" />
-                      <span>Application Mockups</span>
-                    </CardTitle>
-                    <CardDescription>
-                      Visual concepts for your application. {mockupImages.length} screen(s) generated.
-                      {isLoadingMockup && " Generating more..."} 
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-                    {mockupImages.map((imageUrl, index) => (
-                      <div key={index} className="bg-card p-3 rounded-lg border border-border/30 shadow-lg hover:shadow-xl transition-shadow">
-                          <img 
-                          src={imageUrl} 
-                          alt={`Generated mobile app mockup screen ${index + 1}`} 
-                          className="rounded-md border border-border/50 w-full h-auto object-contain aspect-[9/19]" 
-                          data-ai-hint="mobile mockup"
-                          />
-                      </div>
-                    ))}
-                    {isLoadingMockup && mockupImages.length > 0 && (
-                      <div className="col-span-full flex justify-center items-center py-8">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <p className="ml-3 text-muted-foreground">Generating more mockups...</p>
-                      </div>
-                    )}
-                  </CardContent>
-                  {!isLoadingMockup && (
-                    <CardFooter className="border-t border-border/30 pt-6 p-6 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-start bg-muted/30 dark:bg-muted/10 rounded-b-xl">
-                      <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-sm">
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        Generate New Set
-                      </Button>
-                      <Button onClick={() => handleGenerateMockup(true)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-sm" variant="outline">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add More Mockups
-                      </Button>
-                    </CardFooter>
-                  )}
-                </Card>
-              </section>
-            )}
-
-            {proposal && !isLoadingProposal && (
-              <section id="text-to-app-prompt-generation" className="space-y-6">
-                <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
-                  <CardHeader className="bg-muted/30 dark:bg-muted/10">
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                      <Terminal className="text-primary h-6 w-6" />
-                      <span>AI Developer Prompt</span>
-                    </CardTitle>
-                    <CardDescription>
-                      Generate a super-detailed prompt for Text-to-App AI tools to code your application.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <Button onClick={handleGenerateTextToAppPrompt} disabled={isLoadingTextToAppPrompt || !proposal || !selectedIdea} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow text-sm">
-                      {isLoadingTextToAppPrompt ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Wand2 className="mr-2 h-4 w-4" />
-                      )}
-                      Generate AI Developer Prompt
-                    </Button>
-                  </CardContent>
-                
-                  {isLoadingTextToAppPrompt && (
-                    <div className="flex justify-center items-center py-8 px-6">
-                      <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                      <p className="ml-4 text-muted-foreground">Generating AI Developer Prompt...</p>
-                    </div>
-                  )}
-
-                  {textToAppPrompt && !isLoadingTextToAppPrompt && (
-                    <CardContent className="p-6 pt-0 space-y-4">
-                      <h3 className="text-lg font-semibold text-foreground/90">Your Generated Text-to-App Prompt:</h3>
-                      <div className="relative">
-                        <Textarea
-                          readOnly
-                          value={textToAppPrompt}
-                          rows={15}
-                          className="bg-muted/30 dark:bg-muted/10 resize-y text-sm p-4 pr-12 rounded-md leading-relaxed shadow-inner"
-                          aria-label="Generated Text-to-App Prompt"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:text-primary"
-                          onClick={() => handleCopyToClipboard(textToAppPrompt)}
-                          title="Copy to Clipboard"
-                        >
-                          <Copy className="h-4 w-4" />
+              {/* Step 6: Save to Library */}
+               {proposal && (
+                 <AccordionItem value="step-6-save" id="step-6-save">
+                    <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+                       {renderStepIndicator('save', 6, "Save Your Project", Save)}
+                    </AccordionTrigger>
+                    <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md">
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Your project is ready! Save all generated content to your personal library for future access and iteration.
+                        </p>
+                        <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow text-sm">
+                            <Save className="mr-2 h-4 w-4" /> {currentProjectId ? "Update Project in Library" : "Save Project to Library"}
                         </Button>
-                      </div>
-                    </CardContent>
-                  )}
-                  <CardFooter className="border-t border-border/30 pt-6 p-6 bg-muted/30 dark:bg-muted/10 rounded-b-xl flex justify-start">
-                      <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow text-sm">
-                          <Save className="mr-2 h-4 w-4" /> {currentProjectId ? "Update Project in Library" : "Save Project to Library"}
-                      </Button>
-                  </CardFooter>
-                </Card>
-              </section>
-            )}
+                    </AccordionContent>
+                </AccordionItem>
+               )}
+            </Accordion>
           </>
         )}
 
@@ -1202,7 +1310,7 @@ export default function PromptForgeApp() {
                   <LibraryIcon className="text-primary h-6 w-6" />
                   <span>My Project Library</span>
                 </CardTitle>
-                <CardDescription>View and manage your saved application projects.</CardDescription>
+                <CardDescription>View and manage your saved application projects. ({savedProjects.length} project(s))</CardDescription>
               </CardHeader>
               <CardContent className="p-6">
                 {savedProjects.length === 0 ? (
@@ -1274,3 +1382,4 @@ export default function PromptForgeApp() {
     </TooltipProvider>
   );
 }
+
