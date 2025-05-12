@@ -16,7 +16,7 @@ const CoreFeatureSchema = z.object({
   description: z.string().describe('A short description of the core feature.'),
 });
 
-export const PrioritizedFeatureSchema = z.object({
+const PrioritizedFeatureSchema = z.object({
   feature: z.string().describe('The title of the core feature.'),
   description: z.string().describe('A short description of the core feature.'),
   priorityScore: z.number().min(1).max(10).describe('A numerical priority score from 1 (lowest) to 10 (highest).'),
@@ -27,7 +27,7 @@ export const PrioritizedFeatureSchema = z.object({
 export type PrioritizedFeature = z.infer<typeof PrioritizedFeatureSchema>;
 
 
-export const GenerateFeaturePrioritizationInputSchema = z.object({
+const GenerateFeaturePrioritizationInputSchema = z.object({
   appName: z.string().describe('The name of the application.'),
   appDescription: z.string().describe('A detailed description of the application and its purpose.'),
   coreFeatures: z.array(CoreFeatureSchema).describe('The list of core features to be prioritized.'),
@@ -36,7 +36,7 @@ export const GenerateFeaturePrioritizationInputSchema = z.object({
 });
 export type GenerateFeaturePrioritizationInput = z.infer<typeof GenerateFeaturePrioritizationInputSchema>;
 
-export const GenerateFeaturePrioritizationOutputSchema = z.object({
+const GenerateFeaturePrioritizationOutputSchema = z.object({
   prioritizedFeatures: z.array(PrioritizedFeatureSchema).describe('An array of core features, prioritized and annotated with scores and reasoning.'),
 });
 export type GenerateFeaturePrioritizationOutput = z.infer<typeof GenerateFeaturePrioritizationOutputSchema>;

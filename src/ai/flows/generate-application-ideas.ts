@@ -62,4 +62,3 @@ const generateApplicationIdeasFlow = ai.defineFlow(
     return output!;
   }
 );
-
