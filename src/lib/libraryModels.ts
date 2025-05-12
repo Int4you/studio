@@ -1,3 +1,4 @@
+import type { AnalyzeMarketOutput } from "@/ai/flows/analyze-market-flow";
 
 export interface CoreFeatureData {
   feature: string;
@@ -25,6 +26,7 @@ export interface SavedProject {
   ideaDescription: string;
   coreFeatures: CoreFeatureData[];
   uiUxGuidelines: UiUxGuidelineData[];
+  marketAnalysis?: AnalyzeMarketOutput; // Added market analysis data
   prioritizedFeatures?: PrioritizedFeatureData[];
   mockupImageUrls?: string[];
   textToAppPrompt?: string;

@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Lightbulb, Sparkles, FileText, Image as ImageIcon, TerminalSquare, Library, ArrowRight, TrendingUp, Filter } from 'lucide-react'; // Added TrendingUp, Filter
+import { Lightbulb, Sparkles, FileText, Image as ImageIcon, TerminalSquare, Library, ArrowRight, TrendingUp, BarChart3, Search } from 'lucide-react'; 
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -30,16 +30,24 @@ const steps = [
     aiHint: "proposal document",
   },
   {
-    icon: <TrendingUp className="h-10 w-10 mb-4 text-primary" />, // New Step Icon
-    title: '4. Prioritize Features with AI', // New Step
+    icon: <BarChart3 className="h-10 w-10 mb-4 text-primary" />,
+    title: '4. Analyze Market & Competition',
+    description: "Gain insights into the market landscape. The AI analyzes current trends, identifies potential competitors, assesses market size, and provides a SWOT analysis to inform your strategy.",
+    imageSrc: "https://picsum.photos/seed/market-analysis-charts/600/400",
+    imageAlt: "Charts and graphs representing market analysis data and competitor landscape",
+    aiHint: "market charts",
+  },
+  {
+    icon: <TrendingUp className="h-10 w-10 mb-4 text-primary" />, 
+    title: '5. Prioritize Features with AI', 
     description: "Leverage AI to analyze your core features. Get an intelligent prioritization based on potential market impact and estimated development effort, helping you focus on what matters most for your MVP.",
-    imageSrc: "https://picsum.photos/seed/priority-chart/600/400", // New Image
+    imageSrc: "https://picsum.photos/seed/priority-chart/600/400", 
     imageAlt: "A chart or list showing features ranked by priority with impact and effort indicators",
     aiHint: "priority chart",
   },
   {
     icon: <ImageIcon className="h-10 w-10 mb-4 text-primary" />,
-    title: '5. Visualize with Mockups',
+    title: '6. Visualize with Mockups',
     description: "Bring your concept to life by generating high-fidelity mobile app mockups. You can even provide a reference image to guide the visual style, ensuring the mockups align with your aesthetic preferences.",
     imageSrc: "https://picsum.photos/seed/app-mockups/600/400",
     imageAlt: "Several mobile app screen mockups displayed side-by-side",
@@ -47,7 +55,7 @@ const steps = [
   },
   {
     icon: <TerminalSquare className="h-10 w-10 mb-4 text-primary" />,
-    title: '6. Craft an AI Developer Prompt',
+    title: '7. Craft an AI Developer Prompt',
     description: "Transform your detailed proposal into a powerful prompt specifically designed for \"Text-to-App\" AI code generation tools. This jumpstarts the actual development process.",
     imageSrc: "https://picsum.photos/seed/code-editor/600/400",
     imageAlt: "A code editor interface displaying a detailed AI developer prompt",
@@ -55,8 +63,8 @@ const steps = [
   },
   {
     icon: <Library className="h-10 w-10 mb-4 text-primary" />,
-    title: '7. Save & Manage in Your Library',
-    description: "Keep all your projects organized. Save your ideas, proposals, mockups, prioritized features, and developer prompts to your personal library for easy access, review, and future iteration.",
+    title: '8. Save & Manage in Your Library',
+    description: "Keep all your projects organized. Save your ideas, proposals, market analyses, mockups, prioritized features, and developer prompts to your personal library for easy access, review, and future iteration.",
     imageSrc: "https://picsum.photos/seed/project-folder/600/400",
     imageAlt: "A digital library interface with folders or cards representing saved projects",
     aiHint: "project folder",

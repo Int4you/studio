@@ -13,6 +13,9 @@ import type { GenerateMoreFeaturesInput, GenerateMoreFeaturesOutput } from '@/ai
 import { generateMoreFeatures } from '@/ai/flows/generate-more-features';
 import type { GenerateFeaturePrioritizationInput, GenerateFeaturePrioritizationOutput, PrioritizedFeature } from '@/ai/flows/generate-feature-prioritization';
 import { generateFeaturePrioritization } from '@/ai/flows/generate-feature-prioritization';
+import type { AnalyzeMarketInput, AnalyzeMarketOutput } from '@/ai/flows/analyze-market-flow';
+import { analyzeMarket } from '@/ai/flows/analyze-market-flow';
+
 
 import type { SavedProject } from '@/lib/libraryModels';
 import { getProjectsFromLibrary, saveProjectToLibrary, deleteProjectFromLibrary, getProjectById } from '@/lib/libraryService';
@@ -26,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, ChevronDown, ChevronUp, BarChart3, Search } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
 import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 import { format } from 'date-fns';
@@ -54,7 +57,7 @@ interface UiUxGuideline {
 interface Proposal extends ProposalOutput {} 
 
 type CurrentView = 'app' | 'library';
-type AppStep = 'ideas' | 'proposal' | 'prioritization' | 'mockups' | 'devPrompt' | 'save';
+type AppStep = 'ideas' | 'proposal' | 'marketAnalysis' | 'prioritization' | 'mockups' | 'devPrompt' | 'save';
 
 
 interface EditingStates {
@@ -68,12 +71,14 @@ export default function PromptForgeApp() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
   const [proposal, setProposal] = useState<Proposal | null>(null);
+  const [marketAnalysis, setMarketAnalysis] = useState<AnalyzeMarketOutput | null>(null);
   const [mockupImages, setMockupImages] = useState<string[] | null>(null);
   const [textToAppPrompt, setTextToAppPrompt] = useState<string | null>(null);
   const [prioritizedFeatures, setPrioritizedFeatures] = useState<PrioritizedFeature[] | null>(null);
 
   const [isLoadingIdeas, setIsLoadingIdeas] = useState<boolean>(false);
   const [isLoadingProposal, setIsLoadingProposal] = useState<boolean>(false);
+  const [isLoadingMarketAnalysis, setIsLoadingMarketAnalysis] = useState<boolean>(false);
   const [isLoadingMockup, setIsLoadingMockup] = useState<boolean>(false);
   const [isLoadingTextToAppPrompt, setIsLoadingTextToAppPrompt] = useState<boolean>(false);
   const [isLoadingMoreFeatures, setIsLoadingMoreFeatures] = useState<boolean>(false);
@@ -134,24 +139,22 @@ export default function PromptForgeApp() {
   }, []);
   
   useEffect(() => {
-    // Automatically open the current step's accordion
-    // And keep previous completed steps open
     const newOpenSections: string[] = [];
     if (currentStep === 'ideas' || ideas.length > 0) newOpenSections.push('step-1-ideas');
     if (currentStep === 'proposal' || proposal) newOpenSections.push('step-2-proposal');
-    if (currentStep === 'prioritization' || prioritizedFeatures) newOpenSections.push('step-3-prioritization');
-    if (currentStep === 'mockups' || mockupImages) newOpenSections.push('step-4-mockups');
-    if (currentStep === 'devPrompt' || textToAppPrompt) newOpenSections.push('step-5-devprompt');
-    if (currentStep === 'save') newOpenSections.push('step-6-save');
+    if (currentStep === 'marketAnalysis' || marketAnalysis) newOpenSections.push('step-3-market-analysis');
+    if (currentStep === 'prioritization' || prioritizedFeatures) newOpenSections.push('step-4-prioritization');
+    if (currentStep === 'mockups' || mockupImages) newOpenSections.push('step-5-mockups');
+    if (currentStep === 'devPrompt' || textToAppPrompt) newOpenSections.push('step-6-devprompt');
+    if (currentStep === 'save') newOpenSections.push('step-7-save');
     
     setOpenAccordionSections(prevOpen => {
-        // Add newly active sections, keep already open ones
         const combined = [...new Set([...prevOpen, ...newOpenSections])];
-        if(currentStep === 'ideas' && ideas.length === 0) return ['step-1-ideas']; // Start fresh
+        if(currentStep === 'ideas' && ideas.length === 0) return ['step-1-ideas']; 
         return combined;
     });
 
-  }, [currentStep, ideas, proposal, prioritizedFeatures, mockupImages, textToAppPrompt]);
+  }, [currentStep, ideas, proposal, marketAnalysis, prioritizedFeatures, mockupImages, textToAppPrompt]);
 
 
   const resetAppState = (clearPrompt = false) => {
@@ -159,9 +162,10 @@ export default function PromptForgeApp() {
     setIdeas([]);
     setSelectedIdea(null);
     setProposal(null);
+    setMarketAnalysis(null);
+    setPrioritizedFeatures(null);
     setMockupImages(null);
     setTextToAppPrompt(null);
-    setPrioritizedFeatures(null);
     resetReferenceImage();
     setCurrentProjectId(null);
     setError(null);
@@ -203,10 +207,8 @@ export default function PromptForgeApp() {
       return;
     }
     setIsLoadingIdeas(true);
-    // Keep current idea selected if any, but clear subsequent steps if prompt changes significantly (heuristic or explicit reset)
-    // For now, let's assume generating new ideas from a new prompt means a new path.
-    if (selectedIdea) { // If there was a selected idea, new ideas mean a new path.
-        resetAppState(false); // Don't clear prompt, but reset other state
+    if (selectedIdea) { 
+        resetAppState(false); 
     }
 
 
@@ -221,8 +223,6 @@ export default function PromptForgeApp() {
           variant: "default",
         });
       } else {
-        // setCurrentStep will be handled by handleSelectIdea or if user does not select and tries to move on.
-        // No automatic step change here, user needs to select an idea.
          setOpenAccordionSections(prev => [...new Set([...prev, 'step-1-ideas'])]);
       }
     } catch (err) {
@@ -242,11 +242,11 @@ export default function PromptForgeApp() {
   const handleSelectIdea = (idea: Idea) => {
     setSelectedIdea(idea);
     setProposal(null); 
+    setMarketAnalysis(null);
+    setPrioritizedFeatures(null);
     setMockupImages(null);
     setTextToAppPrompt(null);
-    setPrioritizedFeatures(null);
     setError(null); 
-    // setCurrentProjectId(null); // Don't reset project ID here, allow overwriting saved project
     initializeEditingStates(null); 
     setCurrentStep('proposal');
   };
@@ -255,10 +255,11 @@ export default function PromptForgeApp() {
     if (!selectedIdea) return;
     setIsLoadingProposal(true);
     setError(null);
-    setProposal(null); // Clear previous proposal before generating new one
+    setProposal(null); 
+    setMarketAnalysis(null);
+    setPrioritizedFeatures(null);
     setMockupImages(null);
     setTextToAppPrompt(null);
-    setPrioritizedFeatures(null);
     initializeEditingStates(null);
 
     try {
@@ -266,7 +267,7 @@ export default function PromptForgeApp() {
       const result: ProposalOutput = await generateDetailedProposal(input);
       setProposal(result);
       initializeEditingStates(result);
-      setCurrentStep('prioritization');
+      setCurrentStep('marketAnalysis');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(`Failed to generate proposal: ${errorMessage}`);
@@ -279,6 +280,55 @@ export default function PromptForgeApp() {
       setIsLoadingProposal(false);
     }
   };
+  
+  const handleGenerateMarketAnalysis = async () => {
+    if (!proposal || !selectedIdea) {
+      toast({
+        title: "Cannot Analyze Market",
+        description: "A proposal and selected idea are required for market analysis.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsLoadingMarketAnalysis(true);
+    setError(null);
+    setMarketAnalysis(null);
+
+    try {
+      const input: AnalyzeMarketInput = {
+        appName: proposal.appName,
+        appDescription: selectedIdea.title + ": " + selectedIdea.description, // You might want a more detailed description from proposal if available
+        coreFeatures: proposal.coreFeatures,
+        // targetAudience: can be added if you collect this info
+      };
+      const result: AnalyzeMarketOutput = await analyzeMarket(input);
+      setMarketAnalysis(result);
+      if (!result) {
+         toast({
+          title: "Market Analysis Complete",
+          description: "AI analysis finished, but no specific market data was returned. Review your proposal details.",
+          variant: "default",
+        });
+       } else {
+        toast({
+          title: "Market Analysis Generated!",
+          description: "AI has analyzed the market for your application concept.",
+        });
+       }
+       setCurrentStep('prioritization');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(`Failed to generate market analysis: ${errorMessage}`);
+      toast({
+        title: "Error Generating Market Analysis",
+        description: `An error occurred: ${errorMessage}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingMarketAnalysis(false);
+    }
+  };
+
 
   const handleAppNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     setProposal(prev => prev ? { ...prev, appName: event.target.value } : null);
@@ -291,7 +341,8 @@ export default function PromptForgeApp() {
       updatedFeatures[index] = { ...updatedFeatures[index], [field]: value };
       return { ...prev, coreFeatures: updatedFeatures };
     });
-    setPrioritizedFeatures(null); // Prioritization becomes stale
+    setPrioritizedFeatures(null); 
+    setMarketAnalysis(null); // Market analysis might become stale
   };
 
   const addCoreFeature = () => {
@@ -300,11 +351,12 @@ export default function PromptForgeApp() {
       const newProposal = { ...prevProposal, coreFeatures: [...prevProposal.coreFeatures, { feature: '', description: '' }] };
       setEditingStates(prevEditing => ({
         ...prevEditing,
-        coreFeatures: [...prevEditing.coreFeatures, true] // Set new feature to edit mode
+        coreFeatures: [...prevEditing.coreFeatures, true] 
       }));
       return newProposal;
     });
-    setPrioritizedFeatures(null); // Prioritization becomes stale
+    setPrioritizedFeatures(null); 
+    setMarketAnalysis(null);
   };
 
   const removeCoreFeature = (index: number) => {
@@ -317,7 +369,8 @@ export default function PromptForgeApp() {
       }));
       return newProposal;
     });
-    setPrioritizedFeatures(null); // Prioritization becomes stale
+    setPrioritizedFeatures(null); 
+    setMarketAnalysis(null);
   };
 
   const handleUiUxGuidelineChange = (index: number, field: keyof UiUxGuideline, value: string) => {
@@ -335,7 +388,7 @@ export default function PromptForgeApp() {
       const newProposal = { ...prevProposal, uiUxGuidelines: [...prevProposal.uiUxGuidelines, { category: '', guideline: '' }] };
       setEditingStates(prevEditing => ({
         ...prevEditing,
-        uiUxGuidelines: [...prevEditing.uiUxGuidelines, true] // Set new guideline to edit mode
+        uiUxGuidelines: [...prevEditing.uiUxGuidelines, true] 
       }));
       return newProposal;
     });
@@ -385,7 +438,6 @@ export default function PromptForgeApp() {
           variant: "default",
         });
       }
-      // No automatic step change, user can generate more or proceed via button
     } catch (err) {
       console.error('Error generating mockup:', err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
@@ -478,7 +530,7 @@ export default function PromptForgeApp() {
 
           setEditingStates(prevEditing => ({
             ...prevEditing,
-            coreFeatures: [...prevEditing.coreFeatures, ...new Array(newFeatureCount).fill(true)] // Set new features to edit mode
+            coreFeatures: [...prevEditing.coreFeatures, ...new Array(newFeatureCount).fill(true)] 
           }));
 
           if (newFeatureCount > 0) {
@@ -493,7 +545,8 @@ export default function PromptForgeApp() {
               variant: "default",
             });
           }
-          setPrioritizedFeatures(null); // Prioritization becomes stale
+          setPrioritizedFeatures(null); 
+          setMarketAnalysis(null);
           return { ...prevProposal, coreFeatures: combinedFeatures };
         });
       } else {
@@ -503,7 +556,8 @@ export default function PromptForgeApp() {
           variant: "default",
         });
       }
-    } catch (err) {
+    } catch (err)
+ {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(`Failed to generate more features: ${errorMessage}`);
       toast({
@@ -534,7 +588,6 @@ export default function PromptForgeApp() {
         appName: proposal.appName,
         appDescription: selectedIdea.description,
         coreFeatures: proposal.coreFeatures,
-        // Optionally add targetAudience and developmentComplexityFactors if you collect them
       };
       const result: GenerateFeaturePrioritizationOutput = await generateFeaturePrioritization(input);
       setPrioritizedFeatures(result.prioritizedFeatures || []);
@@ -600,6 +653,7 @@ export default function PromptForgeApp() {
       ideaDescription: selectedIdea.description,
       coreFeatures: proposal.coreFeatures,
       uiUxGuidelines: proposal.uiUxGuidelines,
+      marketAnalysis: marketAnalysis || undefined,
       prioritizedFeatures: prioritizedFeatures || undefined,
       mockupImageUrls: mockupImages || undefined,
       textToAppPrompt: textToAppPrompt || undefined,
@@ -614,7 +668,7 @@ export default function PromptForgeApp() {
       title: currentProjectId ? "Project Updated" : "Project Saved",
       description: `${projectToSave.appName} has been ${currentProjectId ? 'updated in' : 'saved to'} your library.`,
     });
-    setCurrentStep('save'); // Ensure user is on the final step after saving
+    setCurrentStep('save'); 
   };
 
   const handleLoadFromLibrary = (projectId: string) => {
@@ -622,7 +676,7 @@ export default function PromptForgeApp() {
     if (project) {
       resetAppState(true); 
 
-      setPrompt(project.ideaDescription); // Populate prompt with idea description for context
+      setPrompt(project.ideaDescription); 
       setSelectedIdea({ title: project.ideaTitle, description: project.ideaDescription });
       const loadedProposal = { 
         appName: project.appName, 
@@ -631,6 +685,7 @@ export default function PromptForgeApp() {
       };
       setProposal(loadedProposal);
       initializeEditingStates(loadedProposal);
+      setMarketAnalysis(project.marketAnalysis || null);
       setPrioritizedFeatures(project.prioritizedFeatures || null);
       setMockupImages(project.mockupImageUrls || null);
       setTextToAppPrompt(project.textToAppPrompt || null);
@@ -642,11 +697,11 @@ export default function PromptForgeApp() {
       }
       setCurrentProjectId(project.id);
       
-      // Determine the correct step to resume from
       if (project.textToAppPrompt) setCurrentStep('save');
       else if (project.mockupImageUrls && project.mockupImageUrls.length > 0) setCurrentStep('devPrompt');
       else if (project.prioritizedFeatures && project.prioritizedFeatures.length > 0) setCurrentStep('mockups');
-      else if (loadedProposal.coreFeatures && loadedProposal.coreFeatures.length > 0) setCurrentStep('prioritization');
+      else if (project.marketAnalysis) setCurrentStep('prioritization');
+      else if (loadedProposal.coreFeatures && loadedProposal.coreFeatures.length > 0) setCurrentStep('marketAnalysis');
       else setCurrentStep('proposal');
 
       setCurrentView('app'); 
@@ -659,13 +714,12 @@ export default function PromptForgeApp() {
       setTimeout(() => { 
         const firstStepAccordion = document.getElementById('step-1-ideas');
         if (firstStepAccordion) {
-            // firstStepAccordion.scrollIntoView({ behavior: 'smooth', block: 'start' });
-             // Ensure the relevant accordion for the loaded step is open.
             let targetAccordionId = 'step-1-ideas';
-            if (project.textToAppPrompt) targetAccordionId = 'step-6-save';
-            else if (project.mockupImageUrls && project.mockupImageUrls.length > 0) targetAccordionId = 'step-5-devprompt';
-            else if (project.prioritizedFeatures && project.prioritizedFeatures.length > 0) targetAccordionId = 'step-4-mockups';
-            else if (loadedProposal.coreFeatures && loadedProposal.coreFeatures.length > 0) targetAccordionId = 'step-3-prioritization';
+            if (project.textToAppPrompt) targetAccordionId = 'step-7-save';
+            else if (project.mockupImageUrls && project.mockupImageUrls.length > 0) targetAccordionId = 'step-6-devprompt';
+            else if (project.prioritizedFeatures && project.prioritizedFeatures.length > 0) targetAccordionId = 'step-5-mockups';
+            else if (project.marketAnalysis) targetAccordionId = 'step-4-prioritization';
+            else if (loadedProposal.coreFeatures && loadedProposal.coreFeatures.length > 0) targetAccordionId = 'step-3-market-analysis';
             else targetAccordionId = 'step-2-proposal';
 
             const targetAccordionElement = document.getElementById(targetAccordionId);
@@ -700,9 +754,9 @@ export default function PromptForgeApp() {
   };
 
   const getPriorityBadgeVariant = (score: number): "default" | "secondary" | "destructive" => {
-    if (score >= 8) return "default"; // Highest priority - primary color
-    if (score >= 5) return "secondary"; // Medium priority - secondary color
-    return "destructive"; // Low priority - destructive color (or a less alarming one)
+    if (score >= 8) return "default"; 
+    if (score >= 5) return "secondary"; 
+    return "destructive"; 
   };
 
   const getImpactEffortBadgeVariant = (level: "High" | "Medium" | "Low"): "default" | "secondary" | "outline" => {
@@ -714,12 +768,13 @@ export default function PromptForgeApp() {
   const renderStepIndicator = (stepName: AppStep, stepNumber: number, title: string, Icon: React.ElementType) => {
     const isActive = currentStep === stepName;
     const isCompleted = 
-        (stepName === 'ideas' && ideas.length > 0 && selectedIdea != null) || // ideas step completed when an idea is selected
+        (stepName === 'ideas' && ideas.length > 0 && selectedIdea != null) ||
         (stepName === 'proposal' && proposal !== null) ||
+        (stepName === 'marketAnalysis' && marketAnalysis !== null) ||
         (stepName === 'prioritization' && prioritizedFeatures !== null) ||
-        (stepName === 'mockups' && mockupImages !== null && mockupImages.length > 0) || // mockups completed if images exist
+        (stepName === 'mockups' && mockupImages !== null && mockupImages.length > 0) || 
         (stepName === 'devPrompt' && textToAppPrompt !== null) ||
-        (stepName === 'save' && currentProjectId !== null); // 'save' is completed if saved
+        (stepName === 'save' && currentProjectId !== null); 
 
     let indicatorClass = "bg-muted border-muted-foreground/30";
     if (isActive) indicatorClass = "bg-primary text-primary-foreground border-primary animate-pulse";
@@ -866,7 +921,6 @@ export default function PromptForgeApp() {
                     )}
                     {proposal && (
                       <>
-                        {/* App Name Editing */}
                         <Card className="shadow-sm rounded-lg border border-border/30">
                           <CardHeader className="flex flex-row items-center justify-between pb-3 px-4 pt-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
                             <CardTitle className="text-lg font-semibold">Application Name</CardTitle>
@@ -895,7 +949,6 @@ export default function PromptForgeApp() {
                           </CardContent>
                         </Card>
                         
-                        {/* Core Features Editing */}
                         <Card className="shadow-sm rounded-lg border border-border/30">
                           <CardHeader className="px-4 pt-3 pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
                             <div className="flex items-center justify-between">
@@ -983,7 +1036,6 @@ export default function PromptForgeApp() {
                            </CardFooter>
                         </Card>
 
-                        {/* UI/UX Guidelines Editing */}
                         <Card className="shadow-sm rounded-lg border border-border/30">
                            <CardHeader className="px-4 pt-3 pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
                             <div className="flex items-center justify-between">
@@ -1059,10 +1111,10 @@ export default function PromptForgeApp() {
                         </Card>
                         {currentStep === 'proposal' && proposal.coreFeatures.length > 0 && (
                             <Button 
-                                onClick={() => setCurrentStep('prioritization')}
+                                onClick={() => setCurrentStep('marketAnalysis')}
                                 className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
                             >
-                                Next: Prioritize Features <ArrowRight className="ml-2 h-4 w-4" />
+                                Next: Market Analysis <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         )}
                       </>
@@ -1071,11 +1123,117 @@ export default function PromptForgeApp() {
                 </AccordionItem>
               )}
 
-              {/* Step 3: Feature Prioritization */}
-               {proposal && (
-                <AccordionItem value="step-3-prioritization" id="step-3-prioritization">
+              {/* Step 3: Market Analysis */}
+              {proposal && (
+                <AccordionItem value="step-3-market-analysis" id="step-3-market-analysis">
+                  <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+                      {renderStepIndicator('marketAnalysis', 3, "Analyze Market", BarChart3)}
+                  </AccordionTrigger>
+                  <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
+                      {!marketAnalysis && !isLoadingMarketAnalysis && currentStep === 'marketAnalysis' && (
+                          <Button 
+                              onClick={handleGenerateMarketAnalysis}
+                              disabled={isLoadingMarketAnalysis || !proposal || !selectedIdea}
+                              className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow"
+                          >
+                              {isLoadingMarketAnalysis ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                  <Search className="mr-2 h-4 w-4" />
+                              )}
+                              Analyze Market & Competition (AI)
+                          </Button>
+                      )}
+                      {isLoadingMarketAnalysis && (
+                          <div className="flex justify-center items-center py-8">
+                              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                              <p className="ml-4 text-muted-foreground">Analyzing market...</p>
+                          </div>
+                      )}
+                      {marketAnalysis && (
+                          <div className="space-y-6">
+                              <Card>
+                                  <CardHeader><CardTitle>Market Overview</CardTitle></CardHeader>
+                                  <CardContent><p className="text-sm text-muted-foreground">{marketAnalysis.marketOverview}</p></CardContent>
+                              </Card>
+                              <Card>
+                                  <CardHeader><CardTitle>Market Trends</CardTitle></CardHeader>
+                                  <CardContent className="space-y-3">
+                                      {marketAnalysis.marketTrends.map((trend, idx) => (
+                                          <div key={idx} className="p-3 bg-muted/30 rounded-md">
+                                              <h5 className="font-semibold text-sm">{trend.trend}</h5>
+                                              <p className="text-xs text-muted-foreground">{trend.description}</p>
+                                          </div>
+                                      ))}
+                                  </CardContent>
+                              </Card>
+                               <Card>
+                                  <CardHeader><CardTitle>Potential Competitors</CardTitle></CardHeader>
+                                  <CardContent className="space-y-3">
+                                      {marketAnalysis.potentialCompetitors.map((competitor, idx) => (
+                                          <Accordion key={idx} type="single" collapsible className="w-full">
+                                            <AccordionItem value={`competitor-${idx}`} className="border-b-0">
+                                                <AccordionTrigger className="p-3 bg-muted/30 rounded-md text-sm hover:no-underline">
+                                                    {competitor.name} - <span className="ml-1 text-xs text-muted-foreground truncate"> {competitor.primaryOffering}</span>
+                                                </AccordionTrigger>
+                                                <AccordionContent className="p-3 text-xs space-y-1">
+                                                    <p><strong>Offering:</strong> {competitor.primaryOffering}</p>
+                                                    <p><strong>Strengths:</strong> {competitor.strengths.join(', ')}</p>
+                                                    <p><strong>Weaknesses:</strong> {competitor.weaknesses.join(', ')}</p>
+                                                </AccordionContent>
+                                            </AccordionItem>
+                                          </Accordion>
+                                      ))}
+                                  </CardContent>
+                              </Card>
+                              <Card>
+                                  <CardHeader><CardTitle>Market Size & Growth</CardTitle></CardHeader>
+                                  <CardContent className="text-sm text-muted-foreground space-y-1">
+                                      <p><strong>Estimation:</strong> {marketAnalysis.marketSizeAndGrowth.estimation}</p>
+                                      <p><strong>Potential:</strong> {marketAnalysis.marketSizeAndGrowth.potential}</p>
+                                  </CardContent>
+                              </Card>
+                              <Card>
+                                <CardHeader><CardTitle>SWOT Analysis</CardTitle></CardHeader>
+                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div><h5 className="font-semibold mb-1">Strengths</h5><ul className="list-disc list-inside text-muted-foreground text-xs space-y-0.5">{marketAnalysis.swotAnalysis.strengths.map((s,i) => <li key={i}>{s}</li>)}</ul></div>
+                                    <div><h5 className="font-semibold mb-1">Weaknesses</h5><ul className="list-disc list-inside text-muted-foreground text-xs space-y-0.5">{marketAnalysis.swotAnalysis.weaknesses.map((w,i) => <li key={i}>{w}</li>)}</ul></div>
+                                    <div><h5 className="font-semibold mb-1">Opportunities</h5><ul className="list-disc list-inside text-muted-foreground text-xs space-y-0.5">{marketAnalysis.swotAnalysis.opportunities.map((o,i) => <li key={i}>{o}</li>)}</ul></div>
+                                    <div><h5 className="font-semibold mb-1">Threats</h5><ul className="list-disc list-inside text-muted-foreground text-xs space-y-0.5">{marketAnalysis.swotAnalysis.threats.map((t,i) => <li key={i}>{t}</li>)}</ul></div>
+                                </CardContent>
+                              </Card>
+                              <Card>
+                                  <CardHeader><CardTitle>Competitive Landscape Summary</CardTitle></CardHeader>
+                                  <CardContent><p className="text-sm text-muted-foreground">{marketAnalysis.competitiveLandscapeSummary}</p></CardContent>
+                              </Card>
+                              <Card>
+                                  <CardHeader><CardTitle>Strategic Recommendations</CardTitle></CardHeader>
+                                  <CardContent>
+                                      <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                                          {marketAnalysis.strategicRecommendations.map((rec, idx) => <li key={idx}>{rec}</li>)}
+                                      </ul>
+                                  </CardContent>
+                              </Card>
+                              {currentStep === 'marketAnalysis' && (
+                                  <Button 
+                                      onClick={() => setCurrentStep('prioritization')}
+                                      className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
+                                  >
+                                      Next: Prioritize Features <ArrowRight className="ml-2 h-4 w-4" />
+                                  </Button>
+                              )}
+                          </div>
+                      )}
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+
+              {/* Step 4: Feature Prioritization */}
+               {proposal && marketAnalysis && (
+                <AccordionItem value="step-4-prioritization" id="step-4-prioritization">
                     <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
-                        {renderStepIndicator('prioritization', 3, "Prioritize Features", TrendingUp)}
+                        {renderStepIndicator('prioritization', 4, "Prioritize Features", TrendingUp)}
                     </AccordionTrigger>
                     <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
                         {!prioritizedFeatures && !isLoadingPrioritization && currentStep === 'prioritization' && proposal.coreFeatures.length > 0 && (
@@ -1147,11 +1305,11 @@ export default function PromptForgeApp() {
                 </AccordionItem>
                )}
 
-              {/* Step 4: Mockup Generation */}
-              {proposal && (
-                <AccordionItem value="step-4-mockups" id="step-4-mockups">
+              {/* Step 5: Mockup Generation */}
+              {proposal && prioritizedFeatures && (
+                <AccordionItem value="step-5-mockups" id="step-5-mockups">
                     <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
-                         {renderStepIndicator('mockups', 4, "Visualize Mockups", ImageIcon)}
+                         {renderStepIndicator('mockups', 5, "Visualize Mockups", ImageIcon)}
                     </AccordionTrigger>
                     <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
                         {currentStep === 'mockups' && (
@@ -1249,11 +1407,11 @@ export default function PromptForgeApp() {
                 </AccordionItem>
               )}
 
-              {/* Step 5: AI Developer Prompt */}
-               {proposal && (
-                 <AccordionItem value="step-5-devprompt" id="step-5-devprompt">
+              {/* Step 6: AI Developer Prompt */}
+               {proposal && mockupImages && (
+                 <AccordionItem value="step-6-devprompt" id="step-6-devprompt">
                     <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
-                        {renderStepIndicator('devPrompt', 5, "Create Developer Prompt", Terminal)}
+                        {renderStepIndicator('devPrompt', 6, "Create Developer Prompt", Terminal)}
                     </AccordionTrigger>
                     <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
                         {!textToAppPrompt && !isLoadingTextToAppPrompt && currentStep === 'devPrompt' && (
@@ -1307,11 +1465,11 @@ export default function PromptForgeApp() {
                 </AccordionItem>
                )}
 
-              {/* Step 6: Save to Library */}
-               {proposal && (
-                 <AccordionItem value="step-6-save" id="step-6-save">
+              {/* Step 7: Save to Library */}
+               {textToAppPrompt && (
+                 <AccordionItem value="step-7-save" id="step-7-save">
                     <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
-                       {renderStepIndicator('save', 6, "Save Your Project", Save)}
+                       {renderStepIndicator('save', 7, "Save Your Project", Save)}
                     </AccordionTrigger>
                     <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md">
                         <p className="text-sm text-muted-foreground mb-4">
@@ -1350,31 +1508,38 @@ export default function PromptForgeApp() {
                             Idea: {project.ideaTitle} | Saved: {format(new Date(project.savedAt), "PPp")}
                           </CardDescription>
                         </CardHeader>
-                        {(project.mockupImageUrls && project.mockupImageUrls.length > 0) || (project.prioritizedFeatures && project.prioritizedFeatures.length > 0) ? (
-                            <CardContent className="py-0 px-6 flex flex-wrap gap-2 mb-3 items-center">
-                                {project.mockupImageUrls && project.mockupImageUrls.slice(0,2).map((url, idx)=>( 
-                                    <img key={`mockup-${idx}`} src={url} alt={`Mockup preview ${idx+1}`} className="h-16 w-auto rounded border object-contain" data-ai-hint="mockup preview" />
-                                ))}
-                                {project.mockupImageUrls && project.mockupImageUrls.length > 2 && (
-                                    <div className="h-16 w-10 flex items-center justify-center bg-muted/50 rounded border text-xs text-muted-foreground">
-                                        +{project.mockupImageUrls.length - 2}
-                                    </div>
+                        <CardContent className="py-0 px-6 flex flex-wrap gap-3 mb-3 items-center">
+                            {project.mockupImageUrls && project.mockupImageUrls.slice(0,2).map((url, idx)=>( 
+                                <img key={`mockup-${idx}`} src={url} alt={`Mockup preview ${idx+1}`} className="h-16 w-auto rounded border object-contain" data-ai-hint="mockup preview" />
+                            ))}
+                            {project.mockupImageUrls && project.mockupImageUrls.length > 2 && (
+                                <div className="h-16 w-10 flex items-center justify-center bg-muted/50 rounded border text-xs text-muted-foreground">
+                                    +{project.mockupImageUrls.length - 2}
+                                </div>
+                            )}
+                            <div className="ml-auto self-start mt-1 flex flex-col items-end gap-1">
+                                {project.marketAnalysis && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="outline" size="sm">
+                                        <BarChart3 className="h-3 w-3 mr-1" /> Market Data
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Market analysis available.</p></TooltipContent>
+                                  </Tooltip>
                                 )}
                                 {project.prioritizedFeatures && project.prioritizedFeatures.length > 0 && (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <Badge variant="secondary" className="ml-auto self-start mt-1">
-                                        <TrendingUp className="h-3.5 w-3.5 mr-1" />
-                                        Prioritized
+                                      <Badge variant="secondary" size="sm">
+                                        <TrendingUp className="h-3 w-3 mr-1" /> Prioritized
                                       </Badge>
                                     </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>This project has AI-prioritized features.</p>
-                                    </TooltipContent>
+                                    <TooltipContent><p>Features are prioritized.</p></TooltipContent>
                                   </Tooltip>
                                 )}
-                            </CardContent>
-                        ) : null}
+                            </div>
+                        </CardContent>
                         <CardFooter className="gap-2 pt-0 p-4 border-t bg-muted/20 dark:bg-muted/10 rounded-b-lg">
                           <Button variant="outline" size="sm" onClick={() => handleLoadFromLibrary(project.id)} className="rounded-md text-xs shadow-sm hover:shadow">
                             <FolderOpen className="mr-1.5 h-3.5 w-3.5" /> Load
@@ -1408,4 +1573,3 @@ export default function PromptForgeApp() {
     </React.Fragment>
   );
 }
-
