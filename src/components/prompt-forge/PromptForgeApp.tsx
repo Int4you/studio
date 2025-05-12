@@ -138,23 +138,41 @@ export default function PromptForgeApp() {
     }
   }, []);
   
-  useEffect(() => {
+ useEffect(() => {
     const newOpenSections: string[] = [];
-    if (currentStep === 'ideas' || ideas.length > 0) newOpenSections.push('step-1-ideas');
-    if (currentStep === 'proposal' || proposal) newOpenSections.push('step-2-proposal');
-    if (currentStep === 'marketAnalysis' || marketAnalysis) newOpenSections.push('step-3-market-analysis');
-    if (currentStep === 'prioritization' || prioritizedFeatures) newOpenSections.push('step-4-prioritization');
-    if (currentStep === 'mockups' || mockupImages) newOpenSections.push('step-5-mockups');
-    if (currentStep === 'devPrompt' || textToAppPrompt) newOpenSections.push('step-6-devprompt');
-    if (currentStep === 'save') newOpenSections.push('step-7-save');
+    const currentStepAccordionMap: Record<AppStep, string> = {
+        ideas: 'step-1-ideas',
+        proposal: 'step-2-proposal',
+        marketAnalysis: 'step-3-market-analysis',
+        prioritization: 'step-4-prioritization',
+        mockups: 'step-5-mockups',
+        devPrompt: 'step-6-devprompt',
+        save: 'step-7-save',
+    };
+    
+    // Always ensure the current step's accordion is slated to be open
+    newOpenSections.push(currentStepAccordionMap[currentStep]);
+
+    // Also add sections that have data, so they remain accessible
+    if (selectedIdea || ideas.length > 0) newOpenSections.push('step-1-ideas');
+    if (proposal) newOpenSections.push('step-2-proposal');
+    if (marketAnalysis) newOpenSections.push('step-3-market-analysis');
+    if (prioritizedFeatures) newOpenSections.push('step-4-prioritization');
+    if (mockupImages && mockupImages.length > 0) newOpenSections.push('step-5-mockups');
+    if (textToAppPrompt) newOpenSections.push('step-6-devprompt');
+    if (currentProjectId) newOpenSections.push('step-7-save'); // If saved, it's a completed state for this step
     
     setOpenAccordionSections(prevOpen => {
-        const combined = [...new Set([...prevOpen, ...newOpenSections])];
-        if(currentStep === 'ideas' && ideas.length === 0) return ['step-1-ideas']; 
-        return combined;
+        // If it's a completely fresh start (no data anywhere)
+        if (currentStep === 'ideas' && ideas.length === 0 && !selectedIdea && !proposal && !marketAnalysis && !prioritizedFeatures && !mockupImages && !textToAppPrompt && !currentProjectId) {
+            return ['step-1-ideas'];
+        }
+        // Otherwise, combine previous open sections with newly determined ones.
+        // This allows users to manually open/close accordions while ensuring current/completed ones are suggested.
+        return [...new Set([...prevOpen, ...newOpenSections])];
     });
 
-  }, [currentStep, ideas, proposal, marketAnalysis, prioritizedFeatures, mockupImages, textToAppPrompt]);
+  }, [currentStep, ideas, selectedIdea, proposal, marketAnalysis, prioritizedFeatures, mockupImages, textToAppPrompt, currentProjectId]);
 
 
   const resetAppState = (clearPrompt = false) => {
@@ -207,8 +225,12 @@ export default function PromptForgeApp() {
       return;
     }
     setIsLoadingIdeas(true);
+    // If an idea was already selected, generating new ideas implies a reset of subsequent steps
     if (selectedIdea) { 
-        resetAppState(false); 
+        resetAppState(false); // Keep the prompt, reset everything else
+    } else {
+      // If no idea was selected, just clear any existing ideas list to show loader correctly
+      setIdeas([]); 
     }
 
 
@@ -223,6 +245,7 @@ export default function PromptForgeApp() {
           variant: "default",
         });
       } else {
+         // setCurrentStep('ideas'); // Already on ideas step or will be handled by resetAppState
          setOpenAccordionSections(prev => [...new Set([...prev, 'step-1-ideas'])]);
       }
     } catch (err) {
@@ -252,7 +275,10 @@ export default function PromptForgeApp() {
   };
 
   const handleGenerateProposal = async () => {
-    if (!selectedIdea) return;
+    if (!selectedIdea) {
+       toast({ title: "Idea Not Selected", description: "Please select an idea from Step 1 first.", variant: "destructive" });
+       return;
+    }
     setIsLoadingProposal(true);
     setError(null);
     setProposal(null); 
@@ -285,7 +311,7 @@ export default function PromptForgeApp() {
     if (!proposal || !selectedIdea) {
       toast({
         title: "Cannot Analyze Market",
-        description: "A proposal and selected idea are required for market analysis.",
+        description: "A selected idea (Step 1) and a generated proposal (Step 2) are required for market analysis.",
         variant: "destructive",
       });
       return;
@@ -297,9 +323,8 @@ export default function PromptForgeApp() {
     try {
       const input: AnalyzeMarketInput = {
         appName: proposal.appName,
-        appDescription: selectedIdea.title + ": " + selectedIdea.description, // You might want a more detailed description from proposal if available
+        appDescription: selectedIdea.title + ": " + selectedIdea.description,
         coreFeatures: proposal.coreFeatures,
-        // targetAudience: can be added if you collect this info
       };
       const result: AnalyzeMarketOutput = await analyzeMarket(input);
       setMarketAnalysis(result);
@@ -342,7 +367,8 @@ export default function PromptForgeApp() {
       return { ...prev, coreFeatures: updatedFeatures };
     });
     setPrioritizedFeatures(null); 
-    setMarketAnalysis(null); // Market analysis might become stale
+    setMarketAnalysis(null); 
+    setTextToAppPrompt(null);
   };
 
   const addCoreFeature = () => {
@@ -357,6 +383,7 @@ export default function PromptForgeApp() {
     });
     setPrioritizedFeatures(null); 
     setMarketAnalysis(null);
+    setTextToAppPrompt(null);
   };
 
   const removeCoreFeature = (index: number) => {
@@ -371,6 +398,7 @@ export default function PromptForgeApp() {
     });
     setPrioritizedFeatures(null); 
     setMarketAnalysis(null);
+    setTextToAppPrompt(null);
   };
 
   const handleUiUxGuidelineChange = (index: number, field: keyof UiUxGuideline, value: string) => {
@@ -380,6 +408,8 @@ export default function PromptForgeApp() {
       updatedGuidelines[index] = { ...updatedGuidelines[index], [field]: value };
       return { ...prev, uiUxGuidelines: updatedGuidelines };
     });
+    setMockupImages(null);
+    setTextToAppPrompt(null);
   };
 
   const addUiUxGuideline = () => {
@@ -392,6 +422,8 @@ export default function PromptForgeApp() {
       }));
       return newProposal;
     });
+    setMockupImages(null);
+    setTextToAppPrompt(null);
   };
 
   const removeUiUxGuideline = (index: number) => {
@@ -404,10 +436,15 @@ export default function PromptForgeApp() {
       }));
       return newProposal;
     });
+    setMockupImages(null);
+    setTextToAppPrompt(null);
   };
 
   const handleGenerateMockup = async (append: boolean = false) => {
-    if (!proposal) return;
+    if (!proposal) {
+      toast({ title: "Proposal Needed", description: "A proposal (Step 2) must be generated first.", variant: "destructive" });
+      return;
+    }
     setIsLoadingMockup(true);
     setError(null);
     if (!append) {
@@ -437,6 +474,8 @@ export default function PromptForgeApp() {
           description: "The AI didn't return any mockups. You might want to try again, adjust the proposal, or add/change the reference image.",
           variant: "default",
         });
+      } else {
+        setCurrentStep('devPrompt');
       }
     } catch (err) {
       console.error('Error generating mockup:', err);
@@ -452,7 +491,7 @@ export default function PromptForgeApp() {
     }
   };
 
-  const handleProceedToDevPrompt = () => {
+  const handleProceedToDevPrompt = () => { // This function might be less critical now if "Next" buttons primarily handle step changes
     if (!proposal) {
         toast({ title: "Proposal Needed", description: "A proposal must be generated before proceeding.", variant: "destructive"});
         return;
@@ -462,7 +501,10 @@ export default function PromptForgeApp() {
 
 
   const handleGenerateTextToAppPrompt = async () => {
-    if (!proposal || !selectedIdea) return;
+    if (!proposal || !selectedIdea) {
+      toast({ title: "Prerequisites Missing", description: "An idea (Step 1) and proposal (Step 2) are required.", variant: "destructive" });
+      return;
+    }
     setIsLoadingTextToAppPrompt(true);
     setError(null);
     setTextToAppPrompt(null);
@@ -499,7 +541,7 @@ export default function PromptForgeApp() {
     if (!proposal || !selectedIdea) {
       toast({
         title: "Cannot Generate Features",
-        description: "A proposal and selected idea are required to generate more features.",
+        description: "A proposal (Step 2) and selected idea (Step 1) are required to generate more features.",
         variant: "destructive",
       });
       return;
@@ -547,6 +589,7 @@ export default function PromptForgeApp() {
           }
           setPrioritizedFeatures(null); 
           setMarketAnalysis(null);
+          setTextToAppPrompt(null);
           return { ...prevProposal, coreFeatures: combinedFeatures };
         });
       } else {
@@ -571,10 +614,10 @@ export default function PromptForgeApp() {
   };
 
   const handleGenerateFeaturePrioritization = async () => {
-    if (!proposal || !selectedIdea) {
+    if (!proposal || !selectedIdea || proposal.coreFeatures.length === 0) {
       toast({
         title: "Cannot Prioritize Features",
-        description: "A proposal and selected idea are required to prioritize features.",
+        description: "A proposal (Step 2) with core features and a selected idea (Step 1) are required.",
         variant: "destructive",
       });
       return;
@@ -640,7 +683,7 @@ export default function PromptForgeApp() {
     if (!selectedIdea || !proposal) {
       toast({
         title: "Cannot Save Project",
-        description: "An idea and a proposal must be generated before saving to the library.",
+        description: "An idea (Step 1) and a proposal (Step 2) must be generated before saving to the library.",
         variant: "destructive",
       });
       return;
@@ -676,7 +719,7 @@ export default function PromptForgeApp() {
     if (project) {
       resetAppState(true); 
 
-      setPrompt(project.ideaDescription); 
+      setPrompt(project.ideaDescription || project.ideaTitle); 
       setSelectedIdea({ title: project.ideaTitle, description: project.ideaDescription });
       const loadedProposal = { 
         appName: project.appName, 
@@ -697,12 +740,15 @@ export default function PromptForgeApp() {
       }
       setCurrentProjectId(project.id);
       
-      if (project.textToAppPrompt) setCurrentStep('save');
+      // Determine the correct step to resume from
+      if (project.textToAppPrompt) setCurrentStep('save'); // Or devPrompt if save is just an action
       else if (project.mockupImageUrls && project.mockupImageUrls.length > 0) setCurrentStep('devPrompt');
       else if (project.prioritizedFeatures && project.prioritizedFeatures.length > 0) setCurrentStep('mockups');
       else if (project.marketAnalysis) setCurrentStep('prioritization');
-      else if (loadedProposal.coreFeatures && loadedProposal.coreFeatures.length > 0) setCurrentStep('marketAnalysis');
-      else setCurrentStep('proposal');
+      else if (loadedProposal.coreFeatures && loadedProposal.coreFeatures.length > 0) setCurrentStep('marketAnalysis'); // Or proposal if market analysis is next
+      else if (selectedIdea) setCurrentStep('proposal');
+      else setCurrentStep('ideas');
+
 
       setCurrentView('app'); 
       
@@ -711,23 +757,23 @@ export default function PromptForgeApp() {
         description: `${project.appName} has been loaded from your library.`,
       });
       
+      // Scroll to the relevant section after loading
       setTimeout(() => { 
-        const firstStepAccordion = document.getElementById('step-1-ideas');
-        if (firstStepAccordion) {
-            let targetAccordionId = 'step-1-ideas';
-            if (project.textToAppPrompt) targetAccordionId = 'step-7-save';
-            else if (project.mockupImageUrls && project.mockupImageUrls.length > 0) targetAccordionId = 'step-6-devprompt';
-            else if (project.prioritizedFeatures && project.prioritizedFeatures.length > 0) targetAccordionId = 'step-5-mockups';
-            else if (project.marketAnalysis) targetAccordionId = 'step-4-prioritization';
-            else if (loadedProposal.coreFeatures && loadedProposal.coreFeatures.length > 0) targetAccordionId = 'step-3-market-analysis';
-            else targetAccordionId = 'step-2-proposal';
+        let targetAccordionId = 'step-1-ideas'; // Default
+        if (project.textToAppPrompt) targetAccordionId = 'step-7-save';
+        else if (project.mockupImageUrls && project.mockupImageUrls.length > 0) targetAccordionId = 'step-6-devprompt';
+        else if (project.prioritizedFeatures && project.prioritizedFeatures.length > 0) targetAccordionId = 'step-5-mockups';
+        else if (project.marketAnalysis) targetAccordionId = 'step-4-prioritization';
+        else if (loadedProposal.coreFeatures && loadedProposal.coreFeatures.length > 0) targetAccordionId = 'step-3-market-analysis';
+        else if (selectedIdea) targetAccordionId = 'step-2-proposal';
 
-            const targetAccordionElement = document.getElementById(targetAccordionId);
-            if (targetAccordionElement) {
-                targetAccordionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else {
-                firstStepAccordion.scrollIntoView({ behavior: 'smooth', block: 'start'});
-            }
+
+        const targetAccordionElement = document.getElementById(targetAccordionId);
+        if (targetAccordionElement) {
+            targetAccordionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            const firstAccordion = document.getElementById('step-1-ideas');
+            firstAccordion?.scrollIntoView({ behavior: 'smooth', block: 'start'});
         }
       }, 100);
 
@@ -767,14 +813,18 @@ export default function PromptForgeApp() {
   
   const renderStepIndicator = (stepName: AppStep, stepNumber: number, title: string, Icon: React.ElementType) => {
     const isActive = currentStep === stepName;
-    const isCompleted = 
-        (stepName === 'ideas' && ideas.length > 0 && selectedIdea != null) ||
-        (stepName === 'proposal' && proposal !== null) ||
-        (stepName === 'marketAnalysis' && marketAnalysis !== null) ||
-        (stepName === 'prioritization' && prioritizedFeatures !== null) ||
-        (stepName === 'mockups' && mockupImages !== null && mockupImages.length > 0) || 
-        (stepName === 'devPrompt' && textToAppPrompt !== null) ||
-        (stepName === 'save' && currentProjectId !== null); 
+    let isCompleted = false;
+
+    switch (stepName) {
+        case 'ideas': isCompleted = selectedIdea != null; break;
+        case 'proposal': isCompleted = proposal != null; break;
+        case 'marketAnalysis': isCompleted = marketAnalysis != null; break;
+        case 'prioritization': isCompleted = prioritizedFeatures != null && prioritizedFeatures.length > 0; break;
+        case 'mockups': isCompleted = mockupImages != null && mockupImages.length > 0; break;
+        case 'devPrompt': isCompleted = textToAppPrompt != null; break;
+        case 'save': isCompleted = currentProjectId != null; break; // A project being saved means this step is "done" in a sense
+    }
+
 
     let indicatorClass = "bg-muted border-muted-foreground/30";
     if (isActive) indicatorClass = "bg-primary text-primary-foreground border-primary animate-pulse";
@@ -793,6 +843,19 @@ export default function PromptForgeApp() {
         </div>
     );
   };
+
+  const renderPrerequisiteMessage = (message: string) => (
+    <Card className="border-dashed border-amber-500 bg-amber-50/50 dark:bg-amber-900/20 p-4 my-4">
+      <CardHeader className="p-0 pb-2">
+        <CardTitle className="text-amber-700 dark:text-amber-400 text-base flex items-center gap-2">
+          <BadgeHelp className="h-5 w-5" /> Action Required
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <p className="text-sm text-amber-600 dark:text-amber-500">{message}</p>
+      </CardContent>
+    </Card>
+  );
 
 
   return (
@@ -890,30 +953,31 @@ export default function PromptForgeApp() {
                           </Card>
                         ))}
                       </div>
+                      {selectedIdea && currentStep === 'ideas' && (
+                        <Button onClick={() => setCurrentStep('proposal')} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4">
+                            Next: Craft Proposal <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   )}
                 </AccordionContent>
               </AccordionItem>
 
               {/* Step 2: Detailed Proposal */}
-              {selectedIdea && (
-                <AccordionItem value="step-2-proposal" id="step-2-proposal">
-                  <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
-                     {renderStepIndicator('proposal', 2, "Craft Proposal", FileText)}
-                  </AccordionTrigger>
-                  <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
-                     <CardDescription className="flex items-center gap-2 pt-0">
-                        <CheckCircle2 className="text-green-500 h-5 w-5" /> 
-                        Selected Idea: <span className="font-semibold text-foreground">{selectedIdea.title}</span>
-                        {currentProjectId && <span className="text-xs text-muted-foreground ml-2">(Loaded from Library)</span>}
-                    </CardDescription>
-                    {!proposal && !isLoadingProposal && currentStep === 'proposal' && (
-                      <Button onClick={handleGenerateProposal} disabled={!selectedIdea || isLoadingProposal} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
+              <AccordionItem value="step-2-proposal" id="step-2-proposal">
+                <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+                    {renderStepIndicator('proposal', 2, "Craft Proposal", FileText)}
+                </AccordionTrigger>
+                <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
+                    {!selectedIdea && renderPrerequisiteMessage("Please select an idea from Step 1 to generate a proposal.")}
+                    
+                    {selectedIdea && !proposal && !isLoadingProposal && (
+                      <Button onClick={handleGenerateProposal} disabled={isLoadingProposal} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
                         <Wand2 className="mr-2 h-4 w-4" />
                         Generate Detailed Proposal
                       </Button>
                     )}
-                     {isLoadingProposal && (
+                    {isLoadingProposal && (
                         <div className="flex justify-center items-center py-8">
                             <Loader2 className="h-12 w-12 animate-spin text-primary" />
                             <p className="ml-4 text-muted-foreground">Generating proposal...</p>
@@ -921,6 +985,11 @@ export default function PromptForgeApp() {
                     )}
                     {proposal && (
                       <>
+                        <CardDescription className="flex items-center gap-2 pt-0">
+                            <CheckCircle2 className="text-green-500 h-5 w-5" /> 
+                            Selected Idea: <span className="font-semibold text-foreground">{selectedIdea?.title || "N/A"}</span>
+                            {currentProjectId && <span className="text-xs text-muted-foreground ml-2">(Loaded from Library)</span>}
+                        </CardDescription>
                         <Card className="shadow-sm rounded-lg border border-border/30">
                           <CardHeader className="flex flex-row items-center justify-between pb-3 px-4 pt-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
                             <CardTitle className="text-lg font-semibold">Application Name</CardTitle>
@@ -1119,21 +1188,21 @@ export default function PromptForgeApp() {
                         )}
                       </>
                     )}
-                  </AccordionContent>
-                </AccordionItem>
-              )}
+                </AccordionContent>
+              </AccordionItem>
 
               {/* Step 3: Market Analysis */}
-              {proposal && (
-                <AccordionItem value="step-3-market-analysis" id="step-3-market-analysis">
+              <AccordionItem value="step-3-market-analysis" id="step-3-market-analysis">
                   <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
                       {renderStepIndicator('marketAnalysis', 3, "Analyze Market", BarChart3)}
                   </AccordionTrigger>
                   <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
-                      {!marketAnalysis && !isLoadingMarketAnalysis && currentStep === 'marketAnalysis' && (
+                      {(!proposal || !selectedIdea) && renderPrerequisiteMessage("Please complete Steps 1 (Idea) and 2 (Proposal) first.")}
+                      
+                      {proposal && selectedIdea && !marketAnalysis && !isLoadingMarketAnalysis && (
                           <Button 
                               onClick={handleGenerateMarketAnalysis}
-                              disabled={isLoadingMarketAnalysis || !proposal || !selectedIdea}
+                              disabled={isLoadingMarketAnalysis}
                               className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow"
                           >
                               {isLoadingMarketAnalysis ? (
@@ -1160,7 +1229,7 @@ export default function PromptForgeApp() {
                                   <CardHeader><CardTitle>Market Trends</CardTitle></CardHeader>
                                   <CardContent className="space-y-3">
                                       {marketAnalysis.marketTrends.map((trend, idx) => (
-                                          <div key={idx} className="p-3 bg-muted/30 rounded-md">
+                                          <div key={idx} className="p-3 bg-muted/30 dark:bg-muted/10 rounded-md">
                                               <h5 className="font-semibold text-sm">{trend.trend}</h5>
                                               <p className="text-xs text-muted-foreground">{trend.description}</p>
                                           </div>
@@ -1173,7 +1242,7 @@ export default function PromptForgeApp() {
                                       {marketAnalysis.potentialCompetitors.map((competitor, idx) => (
                                           <Accordion key={idx} type="single" collapsible className="w-full">
                                             <AccordionItem value={`competitor-${idx}`} className="border-b-0">
-                                                <AccordionTrigger className="p-3 bg-muted/30 rounded-md text-sm hover:no-underline">
+                                                <AccordionTrigger className="p-3 bg-muted/30 dark:bg-muted/10 rounded-md text-sm hover:no-underline">
                                                     {competitor.name} - <span className="ml-1 text-xs text-muted-foreground truncate"> {competitor.primaryOffering}</span>
                                                 </AccordionTrigger>
                                                 <AccordionContent className="p-3 text-xs space-y-1">
@@ -1226,20 +1295,20 @@ export default function PromptForgeApp() {
                       )}
                   </AccordionContent>
                 </AccordionItem>
-              )}
-
 
               {/* Step 4: Feature Prioritization */}
-               {proposal && marketAnalysis && (
-                <AccordionItem value="step-4-prioritization" id="step-4-prioritization">
+               <AccordionItem value="step-4-prioritization" id="step-4-prioritization">
                     <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
                         {renderStepIndicator('prioritization', 4, "Prioritize Features", TrendingUp)}
                     </AccordionTrigger>
                     <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
-                        {!prioritizedFeatures && !isLoadingPrioritization && currentStep === 'prioritization' && proposal.coreFeatures.length > 0 && (
+                        {(!proposal || !selectedIdea || (proposal && proposal.coreFeatures.length === 0)) && 
+                         renderPrerequisiteMessage("Please ensure Step 1 (Idea) is complete and Step 2 (Proposal) has core features before prioritizing.")}
+                        
+                        {proposal && selectedIdea && proposal.coreFeatures.length > 0 && !prioritizedFeatures && !isLoadingPrioritization && (
                             <Button 
                                 onClick={handleGenerateFeaturePrioritization}
-                                disabled={isLoadingPrioritization || proposal.coreFeatures.length === 0}
+                                disabled={isLoadingPrioritization}
                                 className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow"
                             >
                                 {isLoadingPrioritization ? (
@@ -1249,9 +1318,6 @@ export default function PromptForgeApp() {
                                 )}
                                 Prioritize Features (AI)
                             </Button>
-                        )}
-                        {!prioritizedFeatures && !isLoadingPrioritization && currentStep === 'prioritization' && proposal.coreFeatures.length === 0 && (
-                             <p className="text-sm text-muted-foreground">Add core features to the proposal before prioritizing.</p>
                         )}
                         {isLoadingPrioritization && (
                             <div className="flex justify-center items-center py-8">
@@ -1301,18 +1367,21 @@ export default function PromptForgeApp() {
                                 )}
                             </div>
                         )}
+                         {prioritizedFeatures && prioritizedFeatures.length === 0 && !isLoadingPrioritization && (
+                            <p className="text-sm text-muted-foreground">No features were prioritized. Ensure core features are defined in Step 2.</p>
+                         )}
                     </AccordionContent>
                 </AccordionItem>
-               )}
 
               {/* Step 5: Mockup Generation */}
-              {proposal && prioritizedFeatures && (
-                <AccordionItem value="step-5-mockups" id="step-5-mockups">
+              <AccordionItem value="step-5-mockups" id="step-5-mockups">
                     <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
                          {renderStepIndicator('mockups', 5, "Visualize Mockups", ImageIcon)}
                     </AccordionTrigger>
                     <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
-                        {currentStep === 'mockups' && (
+                        {!proposal && renderPrerequisiteMessage("Please generate a proposal in Step 2 first.")}
+                        
+                        {proposal && (
                             <>
                             <Card className="shadow-sm rounded-lg border border-border/30">
                                 <CardHeader className="px-4 pt-3 pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
@@ -1348,7 +1417,7 @@ export default function PromptForgeApp() {
                                 </CardContent>
                             </Card>
                             <div className="pt-2 flex flex-wrap gap-3">
-                                <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="rounded-md shadow-md hover:shadow-lg transition-shadow text-sm">
+                                <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup} className="rounded-md shadow-md hover:shadow-lg transition-shadow text-sm">
                                     {isLoadingMockup && (!mockupImages || mockupImages.length === 0) ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     ) : (
@@ -1378,44 +1447,44 @@ export default function PromptForgeApp() {
                                         />
                                     </div>
                                     ))}
-                                    {isLoadingMockup && mockupImages.length > 0 && (
+                                    {isLoadingMockup && mockupImages.length > 0 && ( // Loader for additional mockups
                                     <div className="bg-card p-3 rounded-lg border border-border/30 shadow-lg flex justify-center items-center aspect-[9/19]">
                                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                     </div>
                                     )}
                                 </div>
-                                 {!isLoadingMockup && currentStep === 'mockups' && (
+                                 {!isLoadingMockup && ( // Show these buttons only when not loading
                                     <div className="border-t border-border/30 pt-6 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-start">
-                                    <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-sm">
-                                        <RefreshCw className="mr-2 h-4 w-4" />
-                                        Generate New Set
-                                    </Button>
-                                    <Button onClick={() => handleGenerateMockup(true)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-sm" variant="outline">
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Add More Mockups
-                                    </Button>
+                                        <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-sm">
+                                            <RefreshCw className="mr-2 h-4 w-4" />
+                                            Generate New Set
+                                        </Button>
+                                        <Button onClick={() => handleGenerateMockup(true)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-sm" variant="outline">
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Add More Mockups
+                                        </Button>
                                     </div>
                                 )}
                             </div>
                         )}
                         {currentStep === 'mockups' && proposal && mockupImages && mockupImages.length > 0 && (
-                            <Button onClick={handleProceedToDevPrompt} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4">
+                            <Button onClick={() => setCurrentStep('devPrompt')} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4">
                                 Next: AI Developer Prompt <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         )}
                     </AccordionContent>
                 </AccordionItem>
-              )}
 
               {/* Step 6: AI Developer Prompt */}
-               {proposal && mockupImages && (
-                 <AccordionItem value="step-6-devprompt" id="step-6-devprompt">
+               <AccordionItem value="step-6-devprompt" id="step-6-devprompt">
                     <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
                         {renderStepIndicator('devPrompt', 6, "Create Developer Prompt", Terminal)}
                     </AccordionTrigger>
                     <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
-                        {!textToAppPrompt && !isLoadingTextToAppPrompt && currentStep === 'devPrompt' && (
-                            <Button onClick={handleGenerateTextToAppPrompt} disabled={isLoadingTextToAppPrompt || !proposal || !selectedIdea} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow text-sm">
+                        {(!proposal || !selectedIdea) && renderPrerequisiteMessage("Please complete Steps 1 (Idea) and 2 (Proposal) first.")}
+                        
+                        {proposal && selectedIdea && !textToAppPrompt && !isLoadingTextToAppPrompt && (
+                            <Button onClick={handleGenerateTextToAppPrompt} disabled={isLoadingTextToAppPrompt} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow text-sm">
                             {isLoadingTextToAppPrompt ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             ) : (
@@ -1463,24 +1532,27 @@ export default function PromptForgeApp() {
                         )}
                     </AccordionContent>
                 </AccordionItem>
-               )}
 
               {/* Step 7: Save to Library */}
-               {textToAppPrompt && (
-                 <AccordionItem value="step-7-save" id="step-7-save">
+               <AccordionItem value="step-7-save" id="step-7-save">
                     <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
                        {renderStepIndicator('save', 7, "Save Your Project", Save)}
                     </AccordionTrigger>
                     <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md">
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Your project is ready! Save all generated content to your personal library for future access and iteration.
-                        </p>
-                        <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow text-sm">
-                            <Save className="mr-2 h-4 w-4" /> {currentProjectId ? "Update Project in Library" : "Save Project to Library"}
-                        </Button>
+                        {(!selectedIdea || !proposal) && renderPrerequisiteMessage("An idea (Step 1) and a proposal (Step 2) are needed to save.")}
+                        
+                        {selectedIdea && proposal && (
+                            <>
+                            <p className="text-sm text-muted-foreground mb-4">
+                                Your project is ready! Save all generated content to your personal library for future access and iteration.
+                            </p>
+                            <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow text-sm">
+                                <Save className="mr-2 h-4 w-4" /> {currentProjectId ? "Update Project in Library" : "Save Project to Library"}
+                            </Button>
+                            </>
+                        )}
                     </AccordionContent>
                 </AccordionItem>
-               )}
             </Accordion>
           </>
         )}
@@ -1513,7 +1585,7 @@ export default function PromptForgeApp() {
                                 <img key={`mockup-${idx}`} src={url} alt={`Mockup preview ${idx+1}`} className="h-16 w-auto rounded border object-contain" data-ai-hint="mockup preview" />
                             ))}
                             {project.mockupImageUrls && project.mockupImageUrls.length > 2 && (
-                                <div className="h-16 w-10 flex items-center justify-center bg-muted/50 rounded border text-xs text-muted-foreground">
+                                <div className="h-16 w-10 flex items-center justify-center bg-muted/50 dark:bg-muted/20 rounded border text-xs text-muted-foreground">
                                     +{project.mockupImageUrls.length - 2}
                                 </div>
                             )}
@@ -1558,12 +1630,12 @@ export default function PromptForgeApp() {
         )}
         
         {error && (
-          <Card role="alert" className="mt-8 p-4 bg-destructive/10 border-destructive text-destructive rounded-xl shadow-md">
+          <Card role="alert" className="mt-8 p-4 bg-destructive/10 dark:bg-destructive/20 border-destructive text-destructive rounded-xl shadow-md">
           <CardContent className="flex items-start gap-3 p-0">
               <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
               <div>
-                  <CardTitle className="text-base font-semibold text-destructive">An error occurred</CardTitle>
-                  <CardDescription className="text-sm text-destructive/90">{error}</CardDescription>
+                  <CardTitle className="text-base font-semibold text-destructive dark:text-destructive-foreground">{error ? 'An error occurred' : 'Something went wrong'}</CardTitle>
+                  <CardDescription className="text-sm text-destructive/90 dark:text-destructive-foreground/80">{error}</CardDescription>
               </div>
           </CardContent>
           </Card>
