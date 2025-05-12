@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, XCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
 import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
@@ -42,6 +43,8 @@ interface UiUxGuideline {
 
 interface Proposal extends ProposalOutput {} 
 
+type CurrentView = 'home' | 'library';
+
 export default function PromptForgeApp() {
   const [prompt, setPrompt] = useState<string>('');
   const [ideas, setIdeas] = useState<Idea[]>([]);
@@ -64,9 +67,9 @@ export default function PromptForgeApp() {
 
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+  const [currentView, setCurrentView] = useState<CurrentView>('home');
 
   useEffect(() => {
-    // Ensure localStorage is accessed only on the client side
     if (typeof window !== 'undefined') {
       setSavedProjects(getProjectsFromLibrary());
     }
@@ -116,7 +119,7 @@ export default function PromptForgeApp() {
       return;
     }
     setIsLoadingIdeas(true);
-    resetAppState(); // Reset other parts of the state, but keep the prompt
+    resetAppState(); 
 
 
     try {
@@ -150,7 +153,7 @@ export default function PromptForgeApp() {
     setMockupImages(null);
     setTextToAppPrompt(null);
     setError(null); 
-    setCurrentProjectId(null); // New idea, not from library
+    setCurrentProjectId(null); 
   };
 
   const handleGenerateProposal = async () => {
@@ -336,7 +339,7 @@ export default function PromptForgeApp() {
     }
 
     const projectToSave: SavedProject = {
-      id: currentProjectId || `proj-${Date.now()}`, // Use existing ID if updating, else new
+      id: currentProjectId || `proj-${Date.now()}`, 
       appName: proposal.appName,
       ideaTitle: selectedIdea.title,
       ideaDescription: selectedIdea.description,
@@ -349,8 +352,8 @@ export default function PromptForgeApp() {
     };
 
     saveProjectToLibrary(projectToSave);
-    setSavedProjects(getProjectsFromLibrary()); // Refresh library list
-    setCurrentProjectId(projectToSave.id); // Set current project ID after saving
+    setSavedProjects(getProjectsFromLibrary()); 
+    setCurrentProjectId(projectToSave.id); 
     toast({
       title: currentProjectId ? "Project Updated" : "Project Saved",
       description: `${projectToSave.appName} has been ${currentProjectId ? 'updated in' : 'saved to'} your library.`,
@@ -360,7 +363,7 @@ export default function PromptForgeApp() {
   const handleLoadFromLibrary = (projectId: string) => {
     const project = getProjectById(projectId);
     if (project) {
-      resetAppState(true); // Clear entire state including prompt
+      resetAppState(true); 
 
       setSelectedIdea({ title: project.ideaTitle, description: project.ideaDescription });
       setProposal({ 
@@ -372,22 +375,24 @@ export default function PromptForgeApp() {
       setTextToAppPrompt(project.textToAppPrompt || null);
       setReferenceImageDataUri(project.referenceImageDataUri || null);
       if (project.referenceImageDataUri) {
-        // No file to set, just the data URI
         setReferenceImageFile(null); 
       } else {
         resetReferenceImage();
       }
       setCurrentProjectId(project.id);
+      setCurrentView('home'); // Switch to home view
       
       toast({
         title: "Project Loaded",
         description: `${project.appName} has been loaded from your library.`,
       });
-       // Scroll to proposal section smoothly
-      const proposalSection = document.getElementById('proposal-generation');
-      if (proposalSection) {
-        proposalSection.scrollIntoView({ behavior: 'smooth' });
-      }
+      
+      setTimeout(() => { 
+        const proposalSection = document.getElementById('proposal-generation');
+        if (proposalSection) {
+          proposalSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 0);
 
     } else {
       toast({
@@ -400,456 +405,473 @@ export default function PromptForgeApp() {
 
   const handleDeleteFromLibrary = (projectId: string) => {
     deleteProjectFromLibrary(projectId);
-    setSavedProjects(getProjectsFromLibrary()); // Refresh library list
+    setSavedProjects(getProjectsFromLibrary()); 
     if (currentProjectId === projectId) {
-        resetAppState(true); // If current project is deleted, reset the app state
+        resetAppState(true); 
     }
     toast({
       title: "Project Deleted",
       description: "The project has been removed from your library.",
-      variant: "destructive" // Or "default" if preferred
+      variant: "destructive" 
     });
   };
 
 
   return (
-    <div className="container mx-auto p-6 md:p-10 max-w-4xl space-y-12">
-      <header className="text-center space-y-4">
-        <div className="flex items-center justify-center gap-3">
-          <Cpu className="h-10 w-10 md:h-12 md:w-12 text-primary" />
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text">
-            PromptForge
-          </h1>
+    <>
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto flex h-16 max-w-4xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3">
+            <Cpu className="h-8 w-8 text-primary" />
+            <h1 className="text-2xl font-bold tracking-tight">
+              <span className="bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text">PromptForge</span>
+            </h1>
+          </div>
+          <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as CurrentView)} className="w-auto">
+            <TabsList className="bg-transparent p-0 border-none">
+              <TabsTrigger value="home" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium">Home</TabsTrigger>
+              <TabsTrigger value="library" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium">My Project Library</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
-        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Craft brilliant application ideas, detailed proposals, visual mockups, and AI developer prompts.
-        </p>
       </header>
 
-      {/* Library Section */}
-      <section id="library" className="space-y-6">
-        <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
-          <CardHeader className="bg-muted/30 dark:bg-muted/10">
-            <CardTitle className="flex items-center gap-2 text-2xl">
-              <LibraryIcon className="text-primary h-6 w-6" />
-              <span>My Project Library</span>
-            </CardTitle>
-            <CardDescription>View and manage your saved application projects.</CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
-            {savedProjects.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">Your library is empty. Generate and save a project to see it here.</p>
-            ) : (
-              <div className="space-y-4">
-                {savedProjects.map((project) => (
-                  <Card key={project.id} className={`border rounded-lg shadow-sm hover:shadow-md transition-shadow ${currentProjectId === project.id ? 'ring-2 ring-primary border-primary' : 'border-border/50'}`}>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-xl">{project.appName}</CardTitle>
-                      <CardDescription className="text-xs text-muted-foreground">
-                        Idea: {project.ideaTitle} | Saved: {format(new Date(project.savedAt), "PPp")}
-                      </CardDescription>
-                    </CardHeader>
-                    {project.mockupImageUrls && project.mockupImageUrls.length > 0 && (
-                         <CardContent className="py-0 px-6 flex gap-2 mb-3">
-                            {project.mockupImageUrls.slice(0,3).map((url, idx)=>( // Show max 3 previews
-                                 <img key={idx} src={url} alt={`Mockup preview ${idx+1}`} className="h-16 w-auto rounded border" data-ai-hint="mockup preview" />
-                            ))}
-                         </CardContent>
-                    )}
-                    <CardFooter className="gap-2 pt-0 p-4 border-t bg-muted/20 dark:bg-muted/10">
-                      <Button variant="outline" size="sm" onClick={() => handleLoadFromLibrary(project.id)} className="rounded-md text-xs">
-                        <FolderOpen className="mr-1.5 h-3.5 w-3.5" /> Load
-                      </Button>
-                      <Button variant="destructive" size="sm" onClick={() => handleDeleteFromLibrary(project.id)} className="rounded-md text-xs">
-                        <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </section>
+      <main className="container mx-auto p-6 md:p-10 max-w-4xl space-y-12 mt-4">
+        {currentView === 'home' && (
+          <>
+            <div className="text-center space-y-2 mb-10">
+              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+                Craft brilliant application ideas, detailed proposals, visual mockups, and AI developer prompts.
+              </p>
+            </div>
 
+            <section id="idea-generation" className="space-y-6">
+              <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
+                <CardHeader className="bg-muted/30 dark:bg-muted/10">
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <Lightbulb className="text-primary h-6 w-6" />
+                    <span>Generate Application Ideas</span>
+                  </CardTitle>
+                  <CardDescription>Enter a prompt to brainstorm innovative app concepts.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <form onSubmit={handleGenerateIdeas} className="space-y-4">
+                    <Textarea
+                      placeholder="Describe the type of application you want to build, e.g., 'A mobile app for local community gardening'"
+                      value={prompt}
+                      onChange={handlePromptChange}
+                      rows={4}
+                      className="resize-none text-base rounded-md shadow-sm"
+                      aria-label="Application idea prompt"
+                    />
+                    <Button type="submit" disabled={isLoadingIdeas} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
+                      {isLoadingIdeas ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Wand2 className="mr-2 h-4 w-4" />
+                      )}
+                      Generate Ideas
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
 
-      <section id="idea-generation" className="space-y-6">
-        <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
-          <CardHeader className="bg-muted/30 dark:bg-muted/10">
-            <CardTitle className="flex items-center gap-2 text-2xl">
-              <Lightbulb className="text-primary h-6 w-6" />
-              <span>Generate Application Ideas</span>
-            </CardTitle>
-            <CardDescription>Enter a prompt to brainstorm innovative app concepts.</CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
-            <form onSubmit={handleGenerateIdeas} className="space-y-4">
-              <Textarea
-                placeholder="Describe the type of application you want to build, e.g., 'A mobile app for local community gardening'"
-                value={prompt}
-                onChange={handlePromptChange}
-                rows={4}
-                className="resize-none text-base rounded-md shadow-sm"
-                aria-label="Application idea prompt"
-              />
-              <Button type="submit" disabled={isLoadingIdeas} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
-                {isLoadingIdeas ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Wand2 className="mr-2 h-4 w-4" />
-                )}
-                Generate Ideas
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+              {isLoadingIdeas && (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                  <p className="ml-4 text-muted-foreground">Generating ideas...</p>
+                </div>
+              )}
 
-        {isLoadingIdeas && (
-          <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="ml-4 text-muted-foreground">Generating ideas...</p>
-          </div>
-        )}
+              {ideas.length > 0 && !isLoadingIdeas && (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold text-foreground/90">Choose an Idea:</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {ideas.map((idea, index) => (
+                      <Card 
+                        key={index} 
+                        onClick={() => handleSelectIdea(idea)} 
+                        className={`cursor-pointer transition-all duration-200 ease-in-out hover:shadow-xl hover:ring-2 hover:ring-primary/50 rounded-lg overflow-hidden ${selectedIdea?.title === idea.title ? 'ring-2 ring-primary shadow-xl border-primary' : 'border-border/50 shadow-md'}`}
+                      >
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">{idea.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-muted-foreground">{idea.description}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
 
-        {ideas.length > 0 && !isLoadingIdeas && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground/90">Choose an Idea:</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {ideas.map((idea, index) => (
-                <Card 
-                  key={index} 
-                  onClick={() => handleSelectIdea(idea)} 
-                  className={`cursor-pointer transition-all duration-200 ease-in-out hover:shadow-xl hover:ring-2 hover:ring-primary/50 rounded-lg overflow-hidden ${selectedIdea?.title === idea.title ? 'ring-2 ring-primary shadow-xl border-primary' : 'border-border/50 shadow-md'}`}
-                >
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">{idea.title}</CardTitle>
+            {selectedIdea && (
+              <section id="proposal-generation" className="space-y-6">
+                <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
+                  <CardHeader className="bg-muted/30 dark:bg-muted/10">
+                    <CardTitle className="flex items-center gap-2 text-2xl">
+                      <FileText className="text-primary h-6 w-6" />
+                      <span>Detailed Application Proposal</span>
+                    </CardTitle>
+                    <CardDescription className="flex items-center gap-2 pt-2">
+                      <CheckCircle2 className="text-primary h-5 w-5" /> 
+                      Selected Idea: <span className="font-semibold">{selectedIdea.title}</span>
+                      {currentProjectId && <span className="text-xs text-muted-foreground ml-2">(Loaded from Library)</span>}
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{idea.description}</p>
+                  <CardContent className="p-6">
+                    {!proposal && (
+                      <Button onClick={handleGenerateProposal} disabled={isLoadingProposal || !selectedIdea} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
+                        {isLoadingProposal ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Wand2 className="mr-2 h-4 w-4" />
+                        )}
+                        Generate Detailed Proposal
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          </div>
-        )}
-      </section>
-
-      {selectedIdea && (
-        <section id="proposal-generation" className="space-y-6">
-          <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
-            <CardHeader className="bg-muted/30 dark:bg-muted/10">
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <FileText className="text-primary h-6 w-6" />
-                <span>Detailed Application Proposal</span>
-              </CardTitle>
-              <CardDescription className="flex items-center gap-2 pt-2">
-                <CheckCircle2 className="text-primary h-5 w-5" /> 
-                Selected Idea: <span className="font-semibold">{selectedIdea.title}</span>
-                {currentProjectId && <span className="text-xs text-muted-foreground ml-2">(Loaded from Library)</span>}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              {!proposal && (
-                <Button onClick={handleGenerateProposal} disabled={isLoadingProposal || !selectedIdea} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
-                  {isLoadingProposal ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Wand2 className="mr-2 h-4 w-4" />
-                  )}
-                  Generate Detailed Proposal
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-          
-          {isLoadingProposal && (
-            <div className="flex justify-center items-center py-8">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="ml-4 text-muted-foreground">Generating proposal...</p>
-            </div>
-          )}
-
-          {proposal && !isLoadingProposal && (
-            <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
-              <CardHeader className="bg-muted/30 dark:bg-muted/10">
-                <div className="flex items-center gap-3">
-                    <Sparkles className="h-8 w-8 text-primary" />
-                    <Input 
-                        type="text"
-                        value={proposal.appName}
-                        onChange={handleAppNameChange}
-                        placeholder="Application Name"
-                        className="text-3xl font-bold text-primary bg-transparent border-0 focus:ring-0 p-0 h-auto"
-                        aria-label="Application Name"
-                    />
-                </div>
-                <CardDescription>Your application name and details. You can edit them below.</CardDescription>
-              </CardHeader>
-              <CardContent className="p-6 space-y-8">
-                {/* Core Features Editing */}
-                <div className="space-y-4">
-                  <h3 className="flex items-center gap-2 text-xl font-semibold mb-3 text-foreground/90">
-                    <ListChecks className="text-primary h-5 w-5" /> Core Features
-                  </h3>
-                  {proposal.coreFeatures.map((feature, index) => (
-                    <div key={index} className="p-4 border rounded-lg shadow-sm bg-card space-y-3 relative">
-                      <Label htmlFor={`feature-title-${index}`} className="font-medium text-foreground/80">Feature Title</Label>
-                      <Input
-                        id={`feature-title-${index}`}
-                        type="text"
-                        value={feature.feature}
-                        onChange={(e) => handleCoreFeatureChange(index, 'feature', e.target.value)}
-                        placeholder="Feature Title"
-                        className="text-base rounded-md"
-                      />
-                      <Label htmlFor={`feature-desc-${index}`} className="font-medium text-foreground/80">Description</Label>
-                      <Textarea
-                        id={`feature-desc-${index}`}
-                        value={feature.description}
-                        onChange={(e) => handleCoreFeatureChange(index, 'description', e.target.value)}
-                        placeholder="Feature Description"
-                        rows={3}
-                        className="text-sm rounded-md"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeCoreFeature(index)}
-                        className="absolute top-2 right-2 text-muted-foreground hover:text-destructive h-7 w-7"
-                        aria-label="Remove feature"
-                      >
-                        <XCircle className="h-5 w-5" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button onClick={addCoreFeature} variant="outline" className="rounded-md text-sm shadow-sm hover:shadow-md transition-shadow">
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add Feature
-                  </Button>
-                </div>
-
-                {/* UI/UX Guidelines Editing */}
-                <div className="space-y-4">
-                  <h3 className="flex items-center gap-2 text-xl font-semibold mb-3 text-foreground/90">
-                    <Palette className="text-primary h-5 w-5" /> UI/UX Guidelines
-                  </h3>
-                  {proposal.uiUxGuidelines.map((guideline, index) => (
-                    <div key={index} className="p-4 border rounded-lg shadow-sm bg-card space-y-3 relative">
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                                <Label htmlFor={`guideline-cat-${index}`} className="font-medium text-foreground/80">Category</Label>
-                                <Input
-                                    id={`guideline-cat-${index}`}
-                                    type="text"
-                                    value={guideline.category}
-                                    onChange={(e) => handleUiUxGuidelineChange(index, 'category', e.target.value)}
-                                    placeholder="Guideline Category (e.g., Color)"
-                                    className="text-sm rounded-md"
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor={`guideline-text-${index}`} className="font-medium text-foreground/80">Guideline</Label>
-                                <Input
-                                    id={`guideline-text-${index}`}
-                                    type="text"
-                                    value={guideline.guideline}
-                                    onChange={(e) => handleUiUxGuidelineChange(index, 'guideline', e.target.value)}
-                                    placeholder="Guideline Text"
-                                    className="text-sm rounded-md"
-                                />
-                            </div>
-                       </div>
-                       <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeUiUxGuideline(index)}
-                        className="absolute top-2 right-2 text-muted-foreground hover:text-destructive h-7 w-7"
-                        aria-label="Remove guideline"
-                       >
-                        <XCircle className="h-5 w-5" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button onClick={addUiUxGuideline} variant="outline" className="rounded-md text-sm shadow-sm hover:shadow-md transition-shadow">
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add Guideline
-                  </Button>
-                </div>
                 
-                <div className="space-y-4 pt-6 border-t border-border/30">
-                    <h3 className="flex items-center gap-2 text-xl font-semibold text-foreground/90">
-                        <UploadCloud className="text-primary h-5 w-5" /> Style Reference (Optional)
-                    </h3>
-                    <div className="space-y-2">
-                        <Label htmlFor="reference-image" className="text-sm font-medium text-muted-foreground">
-                            Upload an image to guide the mockup&apos;s visual style.
-                        </Label>
-                        <Input
-                            id="reference-image"
-                            key={referenceImageInputKey}
-                            type="file"
-                            accept="image/*"
-                            onChange={handleReferenceImageChange}
-                            className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 rounded-md shadow-sm"
-                        />
-                        {referenceImageDataUri && ( // Only show preview if URI exists
-                            <div className="mt-3 p-3 border rounded-lg bg-muted/20 dark:bg-muted/10 shadow-sm">
-                                <p className="text-xs text-muted-foreground mb-1.5">
-                                  {referenceImageFile ? `Selected: ${referenceImageFile.name}` : 'Current reference image:'}
-                                </p>
-                                <img 
-                                    src={referenceImageDataUri} 
-                                    alt="Reference preview" 
-                                    className="h-24 w-auto rounded-md border shadow-sm"
-                                    data-ai-hint="style reference"
-                                />
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="pt-6 flex flex-wrap gap-4">
-                   <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="rounded-md shadow-md hover:shadow-lg transition-shadow">
-                    {isLoadingMockup && !mockupImages ? ( 
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <ImageIcon className="mr-2 h-4 w-4" />
-                    )}
-                    Generate Mockup
-                  </Button>
-                  <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow">
-                    <Save className="mr-2 h-4 w-4" /> {currentProjectId ? "Update in Library" : "Save to Library"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </section>
-      )}
-
-      {isLoadingMockup && (!mockupImages || mockupImages.length === 0) && ( 
-        <div className="flex justify-center items-center py-8">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <p className="ml-4 text-muted-foreground">Generating mockup...</p>
-        </div>
-      )}
-
-      {mockupImages && mockupImages.length > 0 && (
-        <section id="mockup-display" className="space-y-6">
-          <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
-            <CardHeader className="bg-muted/30 dark:bg-muted/10">
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <ImageIcon className="text-primary h-6 w-6" />
-                <span>Application Mockups</span>
-              </CardTitle>
-              <CardDescription>
-                Visual concepts for your application. {mockupImages.length} screen(s) generated.
-                {isLoadingMockup && " Generating more..."} 
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-              {mockupImages.map((imageUrl, index) => (
-                <div key={index} className="bg-card p-3 rounded-lg border border-border/30 shadow-lg hover:shadow-xl transition-shadow">
-                    <img 
-                    src={imageUrl} 
-                    alt={`Generated mobile app mockup screen ${index + 1}`} 
-                    className="rounded-md border border-border/50 w-full h-auto object-contain aspect-[9/19]" 
-                    data-ai-hint="mobile mockup"
-                    />
-                </div>
-              ))}
-               {isLoadingMockup && mockupImages.length > 0 && ( 
-                <div className="col-span-full flex justify-center items-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="ml-3 text-muted-foreground">Generating more mockups...</p>
-                </div>
-              )}
-            </CardContent>
-            {!isLoadingMockup && ( 
-              <CardFooter className="border-t border-border/30 pt-6 p-6 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-start bg-muted/30 dark:bg-muted/10">
-                <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow">
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Generate New Set
-                </Button>
-                <Button onClick={() => handleGenerateMockup(true)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow" variant="outline">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add More Mockups
-                </Button>
-              </CardFooter>
-            )}
-          </Card>
-        </section>
-      )}
-
-      {proposal && !isLoadingProposal && (
-        <section id="text-to-app-prompt-generation" className="space-y-6">
-          <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
-            <CardHeader className="bg-muted/30 dark:bg-muted/10">
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <Terminal className="text-primary h-6 w-6" />
-                <span>AI Developer Prompt</span>
-              </CardTitle>
-              <CardDescription>
-                Generate a super-detailed prompt for Text-to-App AI tools to code your application.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              <Button onClick={handleGenerateTextToAppPrompt} disabled={isLoadingTextToAppPrompt || !proposal || !selectedIdea} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
-                {isLoadingTextToAppPrompt ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Wand2 className="mr-2 h-4 w-4" />
+                {isLoadingProposal && (
+                  <div className="flex justify-center items-center py-8">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                    <p className="ml-4 text-muted-foreground">Generating proposal...</p>
+                  </div>
                 )}
-                Generate AI Developer Prompt
-              </Button>
-            </CardContent>
-          
-            {isLoadingTextToAppPrompt && (
-              <div className="flex justify-center items-center py-8 px-6">
+
+                {proposal && !isLoadingProposal && (
+                  <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
+                    <CardHeader className="bg-muted/30 dark:bg-muted/10">
+                      <div className="flex items-center gap-3">
+                          <Sparkles className="h-8 w-8 text-primary" />
+                          <Input 
+                              type="text"
+                              value={proposal.appName}
+                              onChange={handleAppNameChange}
+                              placeholder="Application Name"
+                              className="text-3xl font-bold text-primary bg-transparent border-0 focus:ring-0 p-0 h-auto"
+                              aria-label="Application Name"
+                          />
+                      </div>
+                      <CardDescription>Your application name and details. You can edit them below.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-8">
+                      {/* Core Features Editing */}
+                      <div className="space-y-4">
+                        <h3 className="flex items-center gap-2 text-xl font-semibold mb-3 text-foreground/90">
+                          <ListChecks className="text-primary h-5 w-5" /> Core Features
+                        </h3>
+                        {proposal.coreFeatures.map((feature, index) => (
+                          <div key={index} className="p-4 border rounded-lg shadow-sm bg-card space-y-3 relative">
+                            <Label htmlFor={`feature-title-${index}`} className="font-medium text-foreground/80">Feature Title</Label>
+                            <Input
+                              id={`feature-title-${index}`}
+                              type="text"
+                              value={feature.feature}
+                              onChange={(e) => handleCoreFeatureChange(index, 'feature', e.target.value)}
+                              placeholder="Feature Title"
+                              className="text-base rounded-md"
+                            />
+                            <Label htmlFor={`feature-desc-${index}`} className="font-medium text-foreground/80">Description</Label>
+                            <Textarea
+                              id={`feature-desc-${index}`}
+                              value={feature.description}
+                              onChange={(e) => handleCoreFeatureChange(index, 'description', e.target.value)}
+                              placeholder="Feature Description"
+                              rows={3}
+                              className="text-sm rounded-md"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeCoreFeature(index)}
+                              className="absolute top-2 right-2 text-muted-foreground hover:text-destructive h-7 w-7"
+                              aria-label="Remove feature"
+                            >
+                              <XCircle className="h-5 w-5" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button onClick={addCoreFeature} variant="outline" className="rounded-md text-sm shadow-sm hover:shadow-md transition-shadow">
+                          <PlusCircle className="mr-2 h-4 w-4" /> Add Feature
+                        </Button>
+                      </div>
+
+                      {/* UI/UX Guidelines Editing */}
+                      <div className="space-y-4">
+                        <h3 className="flex items-center gap-2 text-xl font-semibold mb-3 text-foreground/90">
+                          <Palette className="text-primary h-5 w-5" /> UI/UX Guidelines
+                        </h3>
+                        {proposal.uiUxGuidelines.map((guideline, index) => (
+                          <div key={index} className="p-4 border rounded-lg shadow-sm bg-card space-y-3 relative">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <div>
+                                      <Label htmlFor={`guideline-cat-${index}`} className="font-medium text-foreground/80">Category</Label>
+                                      <Input
+                                          id={`guideline-cat-${index}`}
+                                          type="text"
+                                          value={guideline.category}
+                                          onChange={(e) => handleUiUxGuidelineChange(index, 'category', e.target.value)}
+                                          placeholder="Guideline Category (e.g., Color)"
+                                          className="text-sm rounded-md"
+                                      />
+                                  </div>
+                                  <div>
+                                      <Label htmlFor={`guideline-text-${index}`} className="font-medium text-foreground/80">Guideline</Label>
+                                      <Input
+                                          id={`guideline-text-${index}`}
+                                          type="text"
+                                          value={guideline.guideline}
+                                          onChange={(e) => handleUiUxGuidelineChange(index, 'guideline', e.target.value)}
+                                          placeholder="Guideline Text"
+                                          className="text-sm rounded-md"
+                                      />
+                                  </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeUiUxGuideline(index)}
+                              className="absolute top-2 right-2 text-muted-foreground hover:text-destructive h-7 w-7"
+                              aria-label="Remove guideline"
+                            >
+                              <XCircle className="h-5 w-5" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button onClick={addUiUxGuideline} variant="outline" className="rounded-md text-sm shadow-sm hover:shadow-md transition-shadow">
+                          <PlusCircle className="mr-2 h-4 w-4" /> Add Guideline
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-4 pt-6 border-t border-border/30">
+                          <h3 className="flex items-center gap-2 text-xl font-semibold text-foreground/90">
+                              <UploadCloud className="text-primary h-5 w-5" /> Style Reference (Optional)
+                          </h3>
+                          <div className="space-y-2">
+                              <Label htmlFor="reference-image" className="text-sm font-medium text-muted-foreground">
+                                  Upload an image to guide the mockup&apos;s visual style.
+                              </Label>
+                              <Input
+                                  id="reference-image"
+                                  key={referenceImageInputKey}
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleReferenceImageChange}
+                                  className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 rounded-md shadow-sm"
+                              />
+                              {referenceImageDataUri && ( 
+                                  <div className="mt-3 p-3 border rounded-lg bg-muted/20 dark:bg-muted/10 shadow-sm">
+                                      <p className="text-xs text-muted-foreground mb-1.5">
+                                        {referenceImageFile ? `Selected: ${referenceImageFile.name}` : 'Current reference image:'}
+                                      </p>
+                                      <img 
+                                          src={referenceImageDataUri} 
+                                          alt="Reference preview" 
+                                          className="h-24 w-auto rounded-md border shadow-sm"
+                                          data-ai-hint="style reference"
+                                      />
+                                  </div>
+                              )}
+                          </div>
+                      </div>
+
+                      <div className="pt-6 flex flex-wrap gap-4">
+                        <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="rounded-md shadow-md hover:shadow-lg transition-shadow">
+                          {isLoadingMockup && !mockupImages ? ( 
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <ImageIcon className="mr-2 h-4 w-4" />
+                          )}
+                          Generate Mockup
+                        </Button>
+                        <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow">
+                          <Save className="mr-2 h-4 w-4" /> {currentProjectId ? "Update in Library" : "Save to Library"}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </section>
+            )}
+
+            {isLoadingMockup && (!mockupImages || mockupImages.length === 0) && ( 
+              <div className="flex justify-center items-center py-8">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="ml-4 text-muted-foreground">Generating AI Developer Prompt...</p>
+                <p className="ml-4 text-muted-foreground">Generating mockup...</p>
               </div>
             )}
 
-            {textToAppPrompt && !isLoadingTextToAppPrompt && (
-              <CardContent className="p-6 pt-0 space-y-4">
-                <h3 className="text-lg font-semibold text-foreground/90">Your Generated Text-to-App Prompt:</h3>
-                <div className="relative">
-                  <Textarea
-                    readOnly
-                    value={textToAppPrompt}
-                    rows={15}
-                    className="bg-muted/30 dark:bg-muted/10 resize-y text-sm p-4 pr-12 rounded-md leading-relaxed shadow-inner"
-                    aria-label="Generated Text-to-App Prompt"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:text-primary"
-                    onClick={() => handleCopyToClipboard(textToAppPrompt)}
-                    title="Copy to Clipboard"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-                <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow mt-4">
-                    <Save className="mr-2 h-4 w-4" /> {currentProjectId ? "Update in Library" : "Save to Library"}
-                </Button>
-              </CardContent>
+            {mockupImages && mockupImages.length > 0 && (
+              <section id="mockup-display" className="space-y-6">
+                <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
+                  <CardHeader className="bg-muted/30 dark:bg-muted/10">
+                    <CardTitle className="flex items-center gap-2 text-2xl">
+                      <ImageIcon className="text-primary h-6 w-6" />
+                      <span>Application Mockups</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Visual concepts for your application. {mockupImages.length} screen(s) generated.
+                      {isLoadingMockup && " Generating more..."} 
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+                    {mockupImages.map((imageUrl, index) => (
+                      <div key={index} className="bg-card p-3 rounded-lg border border-border/30 shadow-lg hover:shadow-xl transition-shadow">
+                          <img 
+                          src={imageUrl} 
+                          alt={`Generated mobile app mockup screen ${index + 1}`} 
+                          className="rounded-md border border-border/50 w-full h-auto object-contain aspect-[9/19]" 
+                          data-ai-hint="mobile mockup"
+                          />
+                      </div>
+                    ))}
+                    {isLoadingMockup && mockupImages.length > 0 && ( 
+                      <div className="col-span-full flex justify-center items-center py-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <p className="ml-3 text-muted-foreground">Generating more mockups...</p>
+                      </div>
+                    )}
+                  </CardContent>
+                  {!isLoadingMockup && ( 
+                    <CardFooter className="border-t border-border/30 pt-6 p-6 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-start bg-muted/30 dark:bg-muted/10">
+                      <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow">
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Generate New Set
+                      </Button>
+                      <Button onClick={() => handleGenerateMockup(true)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow" variant="outline">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add More Mockups
+                      </Button>
+                    </CardFooter>
+                  )}
+                </Card>
+              </section>
             )}
+
+            {proposal && !isLoadingProposal && (
+              <section id="text-to-app-prompt-generation" className="space-y-6">
+                <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
+                  <CardHeader className="bg-muted/30 dark:bg-muted/10">
+                    <CardTitle className="flex items-center gap-2 text-2xl">
+                      <Terminal className="text-primary h-6 w-6" />
+                      <span>AI Developer Prompt</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Generate a super-detailed prompt for Text-to-App AI tools to code your application.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <Button onClick={handleGenerateTextToAppPrompt} disabled={isLoadingTextToAppPrompt || !proposal || !selectedIdea} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
+                      {isLoadingTextToAppPrompt ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Wand2 className="mr-2 h-4 w-4" />
+                      )}
+                      Generate AI Developer Prompt
+                    </Button>
+                  </CardContent>
+                
+                  {isLoadingTextToAppPrompt && (
+                    <div className="flex justify-center items-center py-8 px-6">
+                      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                      <p className="ml-4 text-muted-foreground">Generating AI Developer Prompt...</p>
+                    </div>
+                  )}
+
+                  {textToAppPrompt && !isLoadingTextToAppPrompt && (
+                    <CardContent className="p-6 pt-0 space-y-4">
+                      <h3 className="text-lg font-semibold text-foreground/90">Your Generated Text-to-App Prompt:</h3>
+                      <div className="relative">
+                        <Textarea
+                          readOnly
+                          value={textToAppPrompt}
+                          rows={15}
+                          className="bg-muted/30 dark:bg-muted/10 resize-y text-sm p-4 pr-12 rounded-md leading-relaxed shadow-inner"
+                          aria-label="Generated Text-to-App Prompt"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:text-primary"
+                          onClick={() => handleCopyToClipboard(textToAppPrompt)}
+                          title="Copy to Clipboard"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow mt-4">
+                          <Save className="mr-2 h-4 w-4" /> {currentProjectId ? "Update in Library" : "Save to Library"}
+                      </Button>
+                    </CardContent>
+                  )}
+                </Card>
+              </section>
+            )}
+          </>
+        )}
+
+        {currentView === 'library' && (
+          <section id="library-view-content" className="space-y-6">
+            <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
+              <CardHeader className="bg-muted/30 dark:bg-muted/10">
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                  <LibraryIcon className="text-primary h-6 w-6" />
+                  <span>My Project Library</span>
+                </CardTitle>
+                <CardDescription>View and manage your saved application projects.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                {savedProjects.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">Your library is empty. Generate and save a project to see it here.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {savedProjects.map((project) => (
+                      <Card key={project.id} className={`border rounded-lg shadow-sm hover:shadow-md transition-shadow ${currentProjectId === project.id ? 'ring-2 ring-primary border-primary' : 'border-border/50'}`}>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-xl">{project.appName}</CardTitle>
+                          <CardDescription className="text-xs text-muted-foreground">
+                            Idea: {project.ideaTitle} | Saved: {format(new Date(project.savedAt), "PPp")}
+                          </CardDescription>
+                        </CardHeader>
+                        {project.mockupImageUrls && project.mockupImageUrls.length > 0 && (
+                            <CardContent className="py-0 px-6 flex gap-2 mb-3">
+                                {project.mockupImageUrls.slice(0,3).map((url, idx)=>( 
+                                    <img key={idx} src={url} alt={`Mockup preview ${idx+1}`} className="h-16 w-auto rounded border" data-ai-hint="mockup preview" />
+                                ))}
+                            </CardContent>
+                        )}
+                        <CardFooter className="gap-2 pt-0 p-4 border-t bg-muted/20 dark:bg-muted/10">
+                          <Button variant="outline" size="sm" onClick={() => handleLoadFromLibrary(project.id)} className="rounded-md text-xs">
+                            <FolderOpen className="mr-1.5 h-3.5 w-3.5" /> Load
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDeleteFromLibrary(project.id)} className="rounded-md text-xs">
+                            <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </section>
+        )}
+        
+        {error && (
+          <Card role="alert" className="mt-8 p-4 bg-destructive/10 border-destructive text-destructive rounded-xl shadow-md">
+          <CardContent className="flex items-start gap-3 p-0">
+              <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
+              <div>
+                  <CardTitle className="text-base font-semibold text-destructive">An error occurred</CardTitle>
+                  <CardDescription className="text-sm text-destructive/90">{error}</CardDescription>
+              </div>
+          </CardContent>
           </Card>
-        </section>
-      )}
-      
-      {error && (
-        <Card role="alert" className="p-4 bg-destructive/10 border-destructive text-destructive rounded-xl shadow-md">
-         <CardContent className="flex items-start gap-3 p-0">
-            <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
-            <div>
-                <CardTitle className="text-base font-semibold text-destructive">An error occurred</CardTitle>
-                <CardDescription className="text-sm text-destructive/90">{error}</CardDescription>
-            </div>
-         </CardContent>
-        </Card>
-      )}
-    </div>
+        )}
+      </main>
+    </>
   );
 }
