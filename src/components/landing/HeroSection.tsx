@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Zap } from 'lucide-react';
+import { ArrowRight, Zap, Eye } from 'lucide-react';
 import Image from 'next/image';
 
 export default function HeroSection() {
@@ -23,8 +23,9 @@ export default function HeroSection() {
                 </Link>
               </Button>
               <Button variant="outline" size="lg" asChild className="shadow-md hover:shadow-lg transition-shadow">
-                <Link href="#features">
+                <Link href="/how-it-works">
                   Learn More
+                  <Eye className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
             </div>
