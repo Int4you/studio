@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Lightbulb, FileText, Image as ImageIcon, TerminalSquare, Sparkles } from 'lucide-react';
+import { Lightbulb, FileText, Image as ImageIcon, TerminalSquare, TrendingUp } from 'lucide-react'; // Added TrendingUp
 
 const features = [
   {
@@ -22,6 +22,11 @@ const features = [
     title: 'AI Developer Prompts',
     description: 'Create detailed prompts ready for "Text-to-App" AI tools to kickstart development.',
   },
+  {
+    icon: <TrendingUp className="h-8 w-8 mb-4 text-primary" />, // New Feature
+    title: 'Feature Prioritization',
+    description: 'AI-powered analysis to rank features by market demand and development effort, guiding your MVP strategy.',
+  },
 ];
 
 export default function FeaturesSection() {
@@ -36,9 +41,12 @@ export default function FeaturesSection() {
             PromptForge offers a suite of AI-powered tools to streamline your app creation process from start to finish.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"> {/* Adjusted grid for 5 items */}
           {features.map((feature, index) => (
-            <Card key={index} className="bg-card shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl border border-border/20">
+            <Card 
+              key={index} 
+              className={`bg-card shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl border border-border/20 ${features.length === 5 && index === features.length -1 ? 'lg:col-span-1 md:col-span-2 lg:col-start-2' : ''}`} // Center last item if 5
+            >
               <CardHeader>
                 {feature.icon}
                 <CardTitle className="text-xl font-semibold text-foreground">{feature.title}</CardTitle>

@@ -8,10 +8,13 @@ import type { GenerateMockupInput, GenerateMockupOutput } from '@/ai/flows/gener
 import { generateMockup } from '@/ai/flows/generate-mockup-flow';
 import type { GenerateTextToAppPromptInput, GenerateTextToAppPromptOutput } from '@/ai/flows/generate-text-to-app-prompt';
 import { generateTextToAppPrompt } from '@/ai/flows/generate-text-to-app-prompt';
+import type { GenerateMoreFeaturesInput, GenerateMoreFeaturesOutput } from '@/ai/flows/generate-more-features';
+import { generateMoreFeatures } from '@/ai/flows/generate-more-features';
+import type { GenerateFeaturePrioritizationInput, GenerateFeaturePrioritizationOutput, PrioritizedFeature } from '@/ai/flows/generate-feature-prioritization';
+import { generateFeaturePrioritization } from '@/ai/flows/generate-feature-prioritization';
+
 import type { SavedProject } from '@/lib/libraryModels';
 import { getProjectsFromLibrary, saveProjectToLibrary, deleteProjectFromLibrary, getProjectById } from '@/lib/libraryService';
-import { generateMoreFeatures } from '@/ai/flows/generate-more-features';
-import type { GenerateMoreFeaturesInput, GenerateMoreFeaturesOutput } from '@/ai/flows/generate-more-features';
 
 
 import { useState, type ChangeEvent, type FormEvent, useEffect } from 'react';
@@ -22,11 +25,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
 import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 interface Idea {
@@ -61,12 +66,14 @@ export default function PromptForgeApp() {
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [mockupImages, setMockupImages] = useState<string[] | null>(null);
   const [textToAppPrompt, setTextToAppPrompt] = useState<string | null>(null);
+  const [prioritizedFeatures, setPrioritizedFeatures] = useState<PrioritizedFeature[] | null>(null);
 
   const [isLoadingIdeas, setIsLoadingIdeas] = useState<boolean>(false);
   const [isLoadingProposal, setIsLoadingProposal] = useState<boolean>(false);
   const [isLoadingMockup, setIsLoadingMockup] = useState<boolean>(false);
   const [isLoadingTextToAppPrompt, setIsLoadingTextToAppPrompt] = useState<boolean>(false);
   const [isLoadingMoreFeatures, setIsLoadingMoreFeatures] = useState<boolean>(false);
+  const [isLoadingPrioritization, setIsLoadingPrioritization] = useState<boolean>(false);
   
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -123,6 +130,7 @@ export default function PromptForgeApp() {
     setProposal(null);
     setMockupImages(null);
     setTextToAppPrompt(null);
+    setPrioritizedFeatures(null);
     resetReferenceImage();
     setCurrentProjectId(null);
     setError(null);
@@ -194,6 +202,7 @@ export default function PromptForgeApp() {
     setProposal(null); 
     setMockupImages(null);
     setTextToAppPrompt(null);
+    setPrioritizedFeatures(null);
     setError(null); 
     setCurrentProjectId(null);
     initializeEditingStates(null); 
@@ -206,6 +215,7 @@ export default function PromptForgeApp() {
     setProposal(null);
     setMockupImages(null);
     setTextToAppPrompt(null);
+    setPrioritizedFeatures(null);
     initializeEditingStates(null);
 
     try {
@@ -237,6 +247,7 @@ export default function PromptForgeApp() {
       updatedFeatures[index] = { ...updatedFeatures[index], [field]: value };
       return { ...prev, coreFeatures: updatedFeatures };
     });
+    setPrioritizedFeatures(null); // Prioritization becomes stale
   };
 
   const addCoreFeature = () => {
@@ -249,6 +260,7 @@ export default function PromptForgeApp() {
       }));
       return newProposal;
     });
+    setPrioritizedFeatures(null); // Prioritization becomes stale
   };
 
   const removeCoreFeature = (index: number) => {
@@ -261,6 +273,7 @@ export default function PromptForgeApp() {
       }));
       return newProposal;
     });
+    setPrioritizedFeatures(null); // Prioritization becomes stale
   };
 
   const handleUiUxGuidelineChange = (index: number, field: keyof UiUxGuideline, value: string) => {
@@ -425,6 +438,7 @@ export default function PromptForgeApp() {
               variant: "default",
             });
           }
+          setPrioritizedFeatures(null); // Prioritization becomes stale
           return { ...prevProposal, coreFeatures: combinedFeatures };
         });
       } else {
@@ -446,6 +460,54 @@ export default function PromptForgeApp() {
       setIsLoadingMoreFeatures(false);
     }
   };
+
+  const handleGenerateFeaturePrioritization = async () => {
+    if (!proposal || !selectedIdea) {
+      toast({
+        title: "Cannot Prioritize Features",
+        description: "A proposal and selected idea are required to prioritize features.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsLoadingPrioritization(true);
+    setError(null);
+    setPrioritizedFeatures(null);
+
+    try {
+      const input: GenerateFeaturePrioritizationInput = {
+        appName: proposal.appName,
+        appDescription: selectedIdea.description,
+        coreFeatures: proposal.coreFeatures,
+        // Optionally add targetAudience and developmentComplexityFactors if you collect them
+      };
+      const result: GenerateFeaturePrioritizationOutput = await generateFeaturePrioritization(input);
+      setPrioritizedFeatures(result.prioritizedFeatures || []);
+       if (!result.prioritizedFeatures || result.prioritizedFeatures.length === 0) {
+         toast({
+          title: "Feature Prioritization Complete",
+          description: "AI analysis finished, but no specific prioritization order was determined or no features were returned. Review your feature list.",
+          variant: "default",
+        });
+       } else {
+        toast({
+          title: "Features Prioritized!",
+          description: "AI has analyzed and prioritized your core features.",
+        });
+       }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(`Failed to prioritize features: ${errorMessage}`);
+      toast({
+        title: "Error Prioritizing Features",
+        description: `An error occurred: ${errorMessage}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPrioritization(false);
+    }
+  };
+
 
   const handleCopyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -482,6 +544,7 @@ export default function PromptForgeApp() {
       ideaDescription: selectedIdea.description,
       coreFeatures: proposal.coreFeatures,
       uiUxGuidelines: proposal.uiUxGuidelines,
+      prioritizedFeatures: prioritizedFeatures || undefined,
       mockupImageUrls: mockupImages || undefined,
       textToAppPrompt: textToAppPrompt || undefined,
       referenceImageDataUri: referenceImageDataUri || undefined,
@@ -510,7 +573,7 @@ export default function PromptForgeApp() {
       };
       setProposal(loadedProposal);
       initializeEditingStates(loadedProposal);
-
+      setPrioritizedFeatures(project.prioritizedFeatures || null);
       setMockupImages(project.mockupImageUrls || null);
       setTextToAppPrompt(project.textToAppPrompt || null);
       setReferenceImageDataUri(project.referenceImageDataUri || null);
@@ -556,9 +619,21 @@ export default function PromptForgeApp() {
     });
   };
 
+  const getPriorityBadgeVariant = (score: number): "default" | "secondary" | "destructive" => {
+    if (score >= 8) return "default"; // Highest priority - primary color
+    if (score >= 5) return "secondary"; // Medium priority - secondary color
+    return "destructive"; // Low priority - destructive color (or a less alarming one)
+  };
+
+  const getImpactEffortBadgeVariant = (level: "High" | "Medium" | "Low"): "default" | "secondary" | "outline" => {
+    if (level === "High") return "default";
+    if (level === "Medium") return "secondary";
+    return "outline";
+  };
+
 
   return (
-    <>
+    <TooltipProvider>
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 max-w-4xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-3">
@@ -785,7 +860,7 @@ export default function PromptForgeApp() {
                               <p className="text-xs text-muted-foreground text-center py-2">No core features added yet.</p>
                             )}
                           </CardContent>
-                          <CardFooter className="border-t border-border/30 pt-4 p-4 bg-muted/20 dark:bg-muted/10 flex justify-start rounded-b-lg">
+                          <CardFooter className="border-t border-border/30 pt-4 p-4 bg-muted/20 dark:bg-muted/10 flex flex-wrap gap-2 justify-start rounded-b-lg">
                             <Button 
                                 onClick={handleGenerateMoreFeatures} 
                                 variant="outline" 
@@ -799,6 +874,20 @@ export default function PromptForgeApp() {
                                     <Bot className="mr-1.5 h-3.5 w-3.5" />
                                 )}
                                 Generate More Feature Ideas
+                            </Button>
+                            <Button 
+                                onClick={handleGenerateFeaturePrioritization}
+                                variant="outline" 
+                                size="sm" 
+                                className="rounded-md text-xs shadow-sm hover:shadow"
+                                disabled={isLoadingPrioritization || !proposal || !selectedIdea || proposal.coreFeatures.length === 0}
+                            >
+                                {isLoadingPrioritization ? (
+                                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                    <TrendingUp className="mr-1.5 h-3.5 w-3.5" />
+                                )}
+                                Prioritize Features (AI)
                             </Button>
                           </CardFooter>
                         </Card>
@@ -930,6 +1019,62 @@ export default function PromptForgeApp() {
                 </Card>
               </section>
             )}
+            
+            {isLoadingPrioritization && (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                  <p className="ml-4 text-muted-foreground">Prioritizing features...</p>
+                </div>
+            )}
+
+            {prioritizedFeatures && prioritizedFeatures.length > 0 && !isLoadingPrioritization && (
+              <section id="prioritized-features-display" className="space-y-6">
+                <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
+                  <CardHeader className="bg-muted/30 dark:bg-muted/10">
+                    <CardTitle className="flex items-center gap-2 text-2xl">
+                      <TrendingUp className="text-primary h-6 w-6" />
+                      <span>AI Prioritized Features</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Features ranked by AI based on potential impact and effort.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-4">
+                    {prioritizedFeatures.map((pFeature, index) => (
+                      <Card key={index} className="bg-card p-4 rounded-lg shadow-sm border border-border/40">
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-2">
+                          <h4 className="text-lg font-semibold text-foreground">{pFeature.feature}</h4>
+                          <Badge variant={getPriorityBadgeVariant(pFeature.priorityScore)} className="text-sm">
+                            Priority: {pFeature.priorityScore}/10
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-3">{pFeature.description}</p>
+                        <div className="text-xs space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">Impact:</span>
+                            <Badge variant={getImpactEffortBadgeVariant(pFeature.estimatedImpact)} size="sm">{pFeature.estimatedImpact}</Badge>
+                            <span className="font-medium ml-2">Effort:</span>
+                            <Badge variant={getImpactEffortBadgeVariant(pFeature.estimatedEffort)} size="sm">{pFeature.estimatedEffort}</Badge>
+                          </div>
+                           <div className="flex items-start gap-2 text-muted-foreground">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-3.5 w-3.5 mt-0.5 shrink-0 cursor-help text-primary/70" />
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs">
+                                <p>{pFeature.reasoning}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            <span className="italic flex-1">{pFeature.reasoning}</span>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </CardContent>
+                </Card>
+              </section>
+            )}
+
 
             {isLoadingMockup && (!mockupImages || mockupImages.length === 0) && (
               <div className="flex justify-center items-center py-8">
@@ -1072,18 +1217,31 @@ export default function PromptForgeApp() {
                             Idea: {project.ideaTitle} | Saved: {format(new Date(project.savedAt), "PPp")}
                           </CardDescription>
                         </CardHeader>
-                        {project.mockupImageUrls && project.mockupImageUrls.length > 0 && (
-                            <CardContent className="py-0 px-6 flex gap-2 mb-3">
-                                {project.mockupImageUrls.slice(0,3).map((url, idx)=>( 
-                                    <img key={idx} src={url} alt={`Mockup preview ${idx+1}`} className="h-16 w-auto rounded border" data-ai-hint="mockup preview" />
+                        {(project.mockupImageUrls && project.mockupImageUrls.length > 0) || (project.prioritizedFeatures && project.prioritizedFeatures.length > 0) ? (
+                            <CardContent className="py-0 px-6 flex flex-wrap gap-2 mb-3 items-center">
+                                {project.mockupImageUrls && project.mockupImageUrls.slice(0,2).map((url, idx)=>( 
+                                    <img key={`mockup-${idx}`} src={url} alt={`Mockup preview ${idx+1}`} className="h-16 w-auto rounded border object-contain" data-ai-hint="mockup preview" />
                                 ))}
-                                {project.mockupImageUrls.length > 3 && (
+                                {project.mockupImageUrls && project.mockupImageUrls.length > 2 && (
                                     <div className="h-16 w-10 flex items-center justify-center bg-muted/50 rounded border text-xs text-muted-foreground">
-                                        +{project.mockupImageUrls.length - 3}
+                                        +{project.mockupImageUrls.length - 2}
                                     </div>
                                 )}
+                                {project.prioritizedFeatures && project.prioritizedFeatures.length > 0 && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="secondary" className="ml-auto self-start mt-1">
+                                        <TrendingUp className="h-3.5 w-3.5 mr-1" />
+                                        Prioritized
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>This project has AI-prioritized features.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
                             </CardContent>
-                        )}
+                        ) : null}
                         <CardFooter className="gap-2 pt-0 p-4 border-t bg-muted/20 dark:bg-muted/10 rounded-b-lg">
                           <Button variant="outline" size="sm" onClick={() => handleLoadFromLibrary(project.id)} className="rounded-md text-xs shadow-sm hover:shadow">
                             <FolderOpen className="mr-1.5 h-3.5 w-3.5" /> Load
@@ -1113,7 +1271,6 @@ export default function PromptForgeApp() {
           </Card>
         )}
       </main>
-    </>
+    </TooltipProvider>
   );
 }
-
