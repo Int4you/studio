@@ -10,6 +10,8 @@ import type { GenerateTextToAppPromptInput, GenerateTextToAppPromptOutput } from
 import { generateTextToAppPrompt } from '@/ai/flows/generate-text-to-app-prompt';
 import type { SavedProject } from '@/lib/libraryModels';
 import { getProjectsFromLibrary, saveProjectToLibrary, deleteProjectFromLibrary, getProjectById } from '@/lib/libraryService';
+import { generateMoreFeatures } from '@/ai/flows/generate-more-features';
+import type { GenerateMoreFeaturesInput, GenerateMoreFeaturesOutput } from '@/ai/flows/generate-more-features';
 
 
 import { useState, type ChangeEvent, type FormEvent, useEffect } from 'react';
@@ -20,7 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
 import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 import { format } from 'date-fns';
@@ -64,6 +66,7 @@ export default function PromptForgeApp() {
   const [isLoadingProposal, setIsLoadingProposal] = useState<boolean>(false);
   const [isLoadingMockup, setIsLoadingMockup] = useState<boolean>(false);
   const [isLoadingTextToAppPrompt, setIsLoadingTextToAppPrompt] = useState<boolean>(false);
+  const [isLoadingMoreFeatures, setIsLoadingMoreFeatures] = useState<boolean>(false);
   
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -369,6 +372,78 @@ export default function PromptForgeApp() {
       });
     } finally {
       setIsLoadingTextToAppPrompt(false);
+    }
+  };
+
+  const handleGenerateMoreFeatures = async () => {
+    if (!proposal || !selectedIdea) {
+      toast({
+        title: "Cannot Generate Features",
+        description: "A proposal and selected idea are required to generate more features.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsLoadingMoreFeatures(true);
+    setError(null);
+
+    try {
+      const input: GenerateMoreFeaturesInput = {
+        appName: proposal.appName,
+        appDescription: selectedIdea.description,
+        existingFeatures: proposal.coreFeatures,
+      };
+      const result: GenerateMoreFeaturesOutput = await generateMoreFeatures(input);
+      
+      if (result.newFeatures && result.newFeatures.length > 0) {
+        setProposal(prevProposal => {
+          if (!prevProposal) return null;
+          
+          const existingFeatureTitlesLower = prevProposal.coreFeatures.map(f => f.feature.toLowerCase());
+          const trulyNewGeneratedFeatures = result.newFeatures.filter(nf => 
+            !existingFeatureTitlesLower.includes(nf.feature.toLowerCase())
+          );
+
+          const combinedFeatures = [...prevProposal.coreFeatures, ...trulyNewGeneratedFeatures];
+          
+          const newFeatureCount = trulyNewGeneratedFeatures.length;
+
+          setEditingStates(prevEditing => ({
+            ...prevEditing,
+            coreFeatures: [...prevEditing.coreFeatures, ...new Array(newFeatureCount).fill(false)]
+          }));
+
+          if (newFeatureCount > 0) {
+            toast({
+              title: "More Features Generated!",
+              description: `${newFeatureCount} new feature ideas added.`,
+            });
+          } else {
+             toast({
+              title: "No New Features Added",
+              description: "The AI generated features that are already present or very similar. Try refining your existing features or prompt if you need more distinct ideas.",
+              variant: "default",
+            });
+          }
+          return { ...prevProposal, coreFeatures: combinedFeatures };
+        });
+      } else {
+        toast({
+          title: "No New Features Generated",
+          description: "The AI couldn't come up with additional distinct features this time. You can try again.",
+          variant: "default",
+        });
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(`Failed to generate more features: ${errorMessage}`);
+      toast({
+        title: "Error Generating More Features",
+        description: `An error occurred: ${errorMessage}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingMoreFeatures(false);
     }
   };
 
@@ -700,6 +775,22 @@ export default function PromptForgeApp() {
                               <p className="text-xs text-muted-foreground text-center py-2">No core features added yet.</p>
                             )}
                           </CardContent>
+                          <CardFooter className="border-t border-border/30 pt-4 p-4 bg-muted/20 dark:bg-muted/10 flex justify-start">
+                            <Button 
+                                onClick={handleGenerateMoreFeatures} 
+                                variant="outline" 
+                                size="sm" 
+                                className="rounded-md text-xs"
+                                disabled={isLoadingMoreFeatures || !proposal || !selectedIdea}
+                            >
+                                {isLoadingMoreFeatures ? (
+                                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                    <Bot className="mr-1.5 h-3.5 w-3.5" />
+                                )}
+                                Generate More Feature Ideas
+                            </Button>
+                          </CardFooter>
                         </Card>
 
                         {/* UI/UX Guidelines Editing */}
