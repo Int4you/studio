@@ -45,10 +45,11 @@ const prompt = ai.definePrompt({
 Based on the following application idea, generate a detailed proposal including:
 1.  An application name.
 2.  A list of truly distinct core features with descriptions. Each feature's title and its core concept must be unique.
-3.  A list of truly distinct UI/UX guidelines, categorized by areas like color, typography, iconography, layout, and animation. For UI/UX guidelines:
-    *   Each individual guideline text MUST be unique and offer a substantially different piece of advice, even if multiple guidelines fall under the same category (e.g., "Color").
-    *   Avoid rephrasing the same concept. For instance, do not provide "Use a clean font" and "Employ legible typography" as separate guidelines if they mean essentially the same thing. Each guideline must be meaningfully different from all others.
-    *   Focus on providing a diverse set of actionable guidelines within each category. For example, for "Color", you might have one guideline about primary palette, another about secondary/accent colors, and another about ensuring contrast for accessibility. Each of these provides distinct advice.
+3.  A list of UI/UX guidelines, categorized by areas like color, typography, iconography, layout, and animation. For UI/UX guidelines:
+    *   Each individual guideline text MUST be unique and offer a substantially different piece of advice.
+    *   If multiple guidelines fall under the same category (e.g., multiple guidelines for "Color"), ensure each of those guideline texts is fundamentally different and addresses a distinct aspect of that category. For example, for "Color", you might provide one guideline for the primary palette, another for secondary/accent colors, and a third for ensuring accessibility contrast. These are distinct and valuable.
+    *   Avoid rephrasing the same concept or providing trivially different guidelines. For instance, do not provide "Use a clean font" and "Employ legible typography" as separate guidelines if they convey the same essential advice. Each guideline must be meaningfully different from all others.
+    *   The exact text of a guideline should not be repeated, neither within the same category nor across different categories.
 
 Your response must ensure no semantic or textual duplication in features or guidelines. "Distinct" means that both the title/category and the descriptive text/guideline text must offer unique value and not just be rewordings of each other or previous items.
 
