@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
+import React from 'react'; // Added explicit React import
 import type { GenerateApplicationIdeasOutput } from '@/ai/flows/generate-application-ideas';
 import { generateApplicationIdeas } from '@/ai/flows/generate-application-ideas';
 import { generateDetailedProposal } from '@/ai/flows/generate-detailed-proposal';
@@ -713,10 +714,10 @@ export default function PromptForgeApp() {
   const renderStepIndicator = (stepName: AppStep, stepNumber: number, title: string, Icon: React.ElementType) => {
     const isActive = currentStep === stepName;
     const isCompleted = 
-        (stepName === 'ideas' && ideas.length > 0) ||
+        (stepName === 'ideas' && ideas.length > 0 && selectedIdea != null) || // ideas step completed when an idea is selected
         (stepName === 'proposal' && proposal !== null) ||
         (stepName === 'prioritization' && prioritizedFeatures !== null) ||
-        (stepName === 'mockups' && mockupImages !== null) ||
+        (stepName === 'mockups' && mockupImages !== null && mockupImages.length > 0) || // mockups completed if images exist
         (stepName === 'devPrompt' && textToAppPrompt !== null) ||
         (stepName === 'save' && currentProjectId !== null); // 'save' is completed if saved
 
@@ -740,6 +741,7 @@ export default function PromptForgeApp() {
 
 
   return (
+    <React.Fragment>
     <TooltipProvider>
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -1039,7 +1041,7 @@ export default function PromptForgeApp() {
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      onClick={()={() => removeUiUxGuideline(index)}
+                                      onClick={() => removeUiUxGuideline(index)}
                                       aria-label="Remove Guideline"
                                       disabled={editingStates.uiUxGuidelines[index]}
                                       className="text-muted-foreground hover:text-destructive h-7 w-7"
@@ -1055,6 +1057,14 @@ export default function PromptForgeApp() {
                             )}
                           </CardContent>
                         </Card>
+                        {currentStep === 'proposal' && proposal.coreFeatures.length > 0 && (
+                            <Button 
+                                onClick={() => setCurrentStep('prioritization')}
+                                className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
+                            >
+                                Next: Prioritize Features <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        )}
                       </>
                     )}
                   </AccordionContent>
@@ -1123,6 +1133,14 @@ export default function PromptForgeApp() {
                                     </div>
                                 </Card>
                                 ))}
+                                {currentStep === 'prioritization' && (
+                                    <Button 
+                                        onClick={() => setCurrentStep('mockups')}
+                                        className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
+                                    >
+                                        Next: Visualize Mockups <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Button>
+                                )}
                             </div>
                         )}
                     </AccordionContent>
@@ -1173,12 +1191,12 @@ export default function PromptForgeApp() {
                             </Card>
                             <div className="pt-2 flex flex-wrap gap-3">
                                 <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="rounded-md shadow-md hover:shadow-lg transition-shadow text-sm">
-                                    {isLoadingMockup && !mockupImages ? (
+                                    {isLoadingMockup && (!mockupImages || mockupImages.length === 0) ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     ) : (
                                     <ImageIcon className="mr-2 h-4 w-4" />
                                     )}
-                                    Generate Mockup
+                                    Generate Mockup Screens
                                 </Button>
                             </div>
                             </>
@@ -1186,7 +1204,7 @@ export default function PromptForgeApp() {
                         {isLoadingMockup && (!mockupImages || mockupImages.length === 0) && (
                             <div className="flex justify-center items-center py-8">
                                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                                <p className="ml-4 text-muted-foreground">Generating mockup...</p>
+                                <p className="ml-4 text-muted-foreground">Generating mockup screens...</p>
                             </div>
                         )}
                         {mockupImages && mockupImages.length > 0 && (
@@ -1203,9 +1221,8 @@ export default function PromptForgeApp() {
                                     </div>
                                     ))}
                                     {isLoadingMockup && mockupImages.length > 0 && (
-                                    <div className="col-span-full flex justify-center items-center py-8">
+                                    <div className="bg-card p-3 rounded-lg border border-border/30 shadow-lg flex justify-center items-center aspect-[9/19]">
                                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                        <p className="ml-3 text-muted-foreground">Generating more mockups...</p>
                                     </div>
                                     )}
                                 </div>
@@ -1223,7 +1240,7 @@ export default function PromptForgeApp() {
                                 )}
                             </div>
                         )}
-                        {currentStep === 'mockups' && proposal && (
+                        {currentStep === 'mockups' && proposal && mockupImages && mockupImages.length > 0 && (
                             <Button onClick={handleProceedToDevPrompt} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4">
                                 Next: AI Developer Prompt <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
@@ -1276,6 +1293,14 @@ export default function PromptForgeApp() {
                                 <Copy className="h-4 w-4" />
                                 </Button>
                             </div>
+                             {currentStep === 'devPrompt' && (
+                                <Button 
+                                    onClick={() => setCurrentStep('save')}
+                                    className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
+                                >
+                                    Next: Save Project <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            )}
                             </div>
                         )}
                     </AccordionContent>
@@ -1380,6 +1405,7 @@ export default function PromptForgeApp() {
         )}
       </main>
     </TooltipProvider>
+    </React.Fragment>
   );
 }
 
