@@ -4,7 +4,7 @@
 import React from 'react'; // Added explicit React import
 import type { GenerateApplicationIdeasOutput } from '@/ai/flows/generate-application-ideas';
 import { generateApplicationIdeas } from '@/ai/flows/generate-application-ideas';
-import { generateDetailedProposal } from '@/ai/flows/generate-detailed-proposal-flow';
+import { generateDetailedProposal } from '@/ai/flows/generate-detailed-proposal';
 import type { GenerateMockupInput, GenerateMockupOutput } from '@/ai/flows/generate-mockup-flow';
 import { generateMockup } from '@/ai/flows/generate-mockup-flow';
 import type { GenerateTextToAppPromptInput, GenerateTextToAppPromptOutput } from '@/ai/flows/generate-text-to-app-prompt';
@@ -31,13 +31,19 @@ import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, ChevronDown, ChevronUp, BarChart3, Search, Briefcase, TrendingDown, ThumbsUp, ThumbsDown, DollarSign, Network, Zap, Users, ShieldCheck, BarChartHorizontalBig, Target } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
-import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal-flow';
+import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from "@/lib/utils";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts"
 
 
 interface Idea {
@@ -66,6 +72,9 @@ interface EditingStates {
   coreFeatures: boolean[];
   uiUxGuidelines: boolean[];
 }
+
+const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
+
 
 // Helper component for segmented display
 const SegmentedDisplay = ({ title, value, segments, segmentsLowToHigh = true, icon: Icon }: { title: string, value: string | undefined, segments: string[], segmentsLowToHigh?: boolean, icon?: React.ElementType }) => {
@@ -984,6 +993,47 @@ export default function PromptForgeApp() {
     </Card>
   );
 
+  const marketSizeChartData = marketAnalysis ? [
+    { name: "Market Size", value: marketAnalysis.marketSizeAndGrowth.estimation, fill: "hsl(var(--chart-1))"},
+    { name: "Growth Potential", value: marketAnalysis.marketSizeAndGrowth.potential, fill: "hsl(var(--chart-2))"},
+    { name: "Saturation", value: marketAnalysis.marketSizeAndGrowth.marketSaturation, fill: "hsl(var(--chart-3))"},
+    { name: "Growth Outlook", value: marketAnalysis.marketSizeAndGrowth.growthRateOutlook, fill: "hsl(var(--chart-4))"},
+  ] : [];
+
+  const marketSizeChartConfig = {
+    value: { label: "Value" },
+    estimation: { label: "Estimation", color: "hsl(var(--chart-1))" },
+    potential: { label: "Potential", color: "hsl(var(--chart-2))" },
+    saturation: { label: "Saturation", color: "hsl(var(--chart-3))" },
+    outlook: { label: "Outlook", color: "hsl(var(--chart-4))" },
+  } satisfies Record<string, any>;
+
+  const competitorRevenueChartData = marketAnalysis ? marketAnalysis.potentialCompetitors.map((c,i) => ({
+    name: c.name,
+    potential: c.estimatedRevenuePotential === "Very High" ? 4 : c.estimatedRevenuePotential === "High" ? 3 : c.estimatedRevenuePotential === "Medium" ? 2 : c.estimatedRevenuePotential === "Low" ? 1 : 0,
+    fill: COLORS[i % COLORS.length]
+  })) : [];
+  
+  const competitorRevenueChartConfig = {
+     potential: { label: "Revenue Potential Score (0-4)" },
+     name: {label: "Competitor"}
+  } satisfies Record<string, any>;
+
+  const swotChartData = marketAnalysis ? [
+    { name: "Strengths", value: marketAnalysis.swotAnalysis.strengths.length, items: marketAnalysis.swotAnalysis.strengths, fill: "hsl(var(--chart-1))" },
+    { name: "Weaknesses", value: marketAnalysis.swotAnalysis.weaknesses.length, items: marketAnalysis.swotAnalysis.weaknesses, fill: "hsl(var(--chart-2))" },
+    { name: "Opportunities", value: marketAnalysis.swotAnalysis.opportunities.length, items: marketAnalysis.swotAnalysis.opportunities, fill: "hsl(var(--chart-3))" },
+    { name: "Threats", value: marketAnalysis.swotAnalysis.threats.length, items: marketAnalysis.swotAnalysis.threats, fill: "hsl(var(--chart-4))" },
+  ] : [];
+
+  const swotChartConfig = {
+    value: { label: "Count" },
+    Strengths: { label: "Strengths", color: "hsl(var(--chart-1))" },
+    Weaknesses: { label: "Weaknesses", color: "hsl(var(--chart-2))" },
+    Opportunities: { label: "Opportunities", color: "hsl(var(--chart-3))" },
+    Threats: { label: "Threats", color: "hsl(var(--chart-4))" },
+  } satisfies Record<string, any>;
+
 
   return (
     <React.Fragment>
@@ -1081,7 +1131,14 @@ export default function PromptForgeApp() {
                         ))}
                       </div>
                       {selectedIdea && ( 
-                        <Button onClick={() => { setCurrentStep('proposal'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-2-proposal'])]); document.getElementById('step-2-proposal')?.scrollIntoView({behavior: 'smooth', block: 'center'});}} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4">
+                        <Button 
+                          onClick={() => { 
+                            setCurrentStep('proposal'); 
+                            setOpenAccordionSections(prev => [...new Set([...prev, 'step-2-proposal'])]); 
+                            setTimeout(() => document.getElementById('step-2-proposal')?.scrollIntoView({behavior: 'smooth', block: 'center'}),50);
+                          }} 
+                          className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
+                        >
                             Next: Craft Proposal <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                       )}
@@ -1307,7 +1364,11 @@ export default function PromptForgeApp() {
                         </Card>
                         {proposal.coreFeatures.length > 0 && (
                             <Button 
-                                onClick={() => { setCurrentStep('marketAnalysis'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-3-market-analysis'])]); document.getElementById('step-3-market-analysis')?.scrollIntoView({behavior: 'smooth', block: 'center'});}}
+                                onClick={() => { 
+                                  setCurrentStep('marketAnalysis'); 
+                                  setOpenAccordionSections(prev => [...new Set([...prev, 'step-3-market-analysis'])]); 
+                                  setTimeout(() => document.getElementById('step-3-market-analysis')?.scrollIntoView({behavior: 'smooth', block: 'center'}),50);
+                                }}
                                 className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
                             >
                                 Next: Market Analysis <ArrowRight className="ml-2 h-4 w-4" />
@@ -1367,6 +1428,33 @@ export default function PromptForgeApp() {
                                       <p><strong className="text-sm">Potential:</strong> <span className="text-muted-foreground">{marketAnalysis.marketSizeAndGrowth.potential}</span></p>
                                       <SegmentedDisplay title="Market Saturation" value={marketAnalysis.marketSizeAndGrowth.marketSaturation} segments={["Low", "Medium", "High"]} icon={Users}/>
                                       <SegmentedDisplay title="Growth Outlook" value={marketAnalysis.marketSizeAndGrowth.growthRateOutlook} segments={["Slow", "Moderate", "Rapid"]} icon={TrendingUp}/>
+                                      
+                                       <Card className="mt-4 shadow-xs">
+                                        <CardHeader className="pb-2 pt-3 px-4 bg-muted/10 dark:bg-muted/5 rounded-t-lg">
+                                          <CardTitle className="text-base font-medium">Market Attributes Visualization</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="pt-3 pb-4 px-2">
+                                          <ChartContainer config={marketSizeChartConfig} className="h-[150px] w-full text-xs">
+                                            <BarChart accessibilityLayer data={[
+                                                { metric: 'Saturation', value: marketAnalysis.marketSizeAndGrowth.marketSaturation === 'High' ? 3 : marketAnalysis.marketSizeAndGrowth.marketSaturation === 'Medium' ? 2 : 1, fill: "hsl(var(--chart-1))" },
+                                                { metric: 'Outlook', value: marketAnalysis.marketSizeAndGrowth.growthRateOutlook === 'Rapid' ? 3 : marketAnalysis.marketSizeAndGrowth.growthRateOutlook === 'Moderate' ? 2 : 1, fill: "hsl(var(--chart-2))" }
+                                            ]} layout="vertical" margin={{left:10, right: 10}}>
+                                              <CartesianGrid horizontal={false} strokeDasharray="3 3" />
+                                              <XAxis type="number" dataKey="value" domain={[0,3]} ticks={[0,1,2,3]} tickFormatter={(val) => ['','Low','Med','High'][val]} />
+                                              <YAxis type="category" dataKey="metric" width={70} tickLine={false} axisLine={false} />
+                                              <ChartTooltip
+                                                cursor={false}
+                                                content={<ChartTooltipContent hideLabel />}
+                                              />
+                                              <Bar dataKey="value" radius={4} barSize={20}>
+                                                 {[{value:1},{value:2}].map((entry, index) => (
+                                                      <Cell key={`cell-${index}`} fill={entry.value === 1 ? "hsl(var(--chart-1))" : "hsl(var(--chart-2))"} />
+                                                  ))}
+                                              </Bar>
+                                            </BarChart>
+                                          </ChartContainer>
+                                        </CardContent>
+                                      </Card>
                                   </CardContent>
                               </Card>
 
@@ -1395,6 +1483,21 @@ export default function PromptForgeApp() {
                                     <CardTitle className="text-xl flex items-center gap-2"><Network className="h-5 w-5 text-primary"/>Potential Competitors</CardTitle>
                                   </CardHeader>
                                   <CardContent className="pt-4 space-y-4">
+                                       <ChartContainer config={competitorRevenueChartConfig} className="h-[200px] w-full text-xs mb-6">
+                                         <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={competitorRevenueChartData} layout="vertical" margin={{top: 5, right: 20, left: 60, bottom: 5}}>
+                                                <CartesianGrid strokeDasharray="3 3" horizontal={false}/>
+                                                <XAxis type="number" domain={[0,4]} ticks={[0,1,2,3,4]} tickFormatter={(value) => ["","Low","Med","High","V.High"][value]} />
+                                                <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} width={80} />
+                                                <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
+                                                <Bar dataKey="potential" name="Revenue Potential" radius={4} barSize={25}>
+                                                  {competitorRevenueChartData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                                                  ))}
+                                                </Bar>
+                                            </BarChart>
+                                          </ResponsiveContainer>
+                                       </ChartContainer>
                                       {marketAnalysis.potentialCompetitors.map((competitor, idx) => (
                                           <Accordion key={idx} type="single" collapsible className="w-full border border-border/40 rounded-md overflow-hidden shadow-sm">
                                             <AccordionItem value={`competitor-${idx}`} className="border-b-0">
@@ -1423,7 +1526,29 @@ export default function PromptForgeApp() {
                                 <CardHeader className="pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
                                   <CardTitle className="text-xl flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary"/>SWOT Analysis</CardTitle>
                                 </CardHeader>
-                                <CardContent className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <CardContent className="pt-4 text-sm">
+                                   <ChartContainer config={swotChartConfig} className="h-[250px] w-full text-xs mb-4">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+                                          <Pie
+                                            data={swotChartData}
+                                            dataKey="value"
+                                            nameKey="name"
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={80}
+                                            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                                          >
+                                            {swotChartData.map((entry, index) => (
+                                              <Cell key={`cell-${index}`} fill={entry.fill} />
+                                            ))}
+                                          </Pie>
+                                          <Legend wrapperStyle={{fontSize: "0.7rem"}}/>
+                                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                                        </PieChart>
+                                      </ResponsiveContainer>
+                                   </ChartContainer>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                     {[
                                       { title: "Strengths", items: marketAnalysis.swotAnalysis.strengths, Icon: ThumbsUp, color: "text-green-500 dark:text-green-400", bg: "bg-green-50/50 dark:bg-green-900/20 border-green-500/30" },
                                       { title: "Weaknesses", items: marketAnalysis.swotAnalysis.weaknesses, Icon: ThumbsDown, color: "text-red-500 dark:text-red-400", bg: "bg-red-50/50 dark:bg-red-900/20 border-red-500/30" },
@@ -1443,6 +1568,7 @@ export default function PromptForgeApp() {
                                             </CardContent>
                                         </Card>
                                     ))}
+                                  </div>
                                 </CardContent>
                               </Card>
                               <Card className="shadow-sm">
@@ -1463,7 +1589,11 @@ export default function PromptForgeApp() {
                               </Card>
                               {currentStep === 'marketAnalysis' && (
                                   <Button 
-                                      onClick={() => { setCurrentStep('prioritization'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-4-prioritization'])]); document.getElementById('step-4-prioritization')?.scrollIntoView({behavior: 'smooth', block: 'center'});}}
+                                      onClick={() => { 
+                                        setCurrentStep('prioritization'); 
+                                        setOpenAccordionSections(prev => [...new Set([...prev, 'step-4-prioritization'])]); 
+                                        setTimeout(() => document.getElementById('step-4-prioritization')?.scrollIntoView({behavior: 'smooth', block: 'center'}),50);
+                                      }}
                                       className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
                                   >
                                       Next: Prioritize Features <ArrowRight className="ml-2 h-4 w-4" />
@@ -1537,7 +1667,11 @@ export default function PromptForgeApp() {
                                 ))}
                                 {currentStep === 'prioritization' && (
                                     <Button 
-                                        onClick={() => { setCurrentStep('mockups'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-5-mockups'])]); document.getElementById('step-5-mockups')?.scrollIntoView({behavior: 'smooth', block: 'center'});}}
+                                        onClick={() => { 
+                                          setCurrentStep('mockups'); 
+                                          setOpenAccordionSections(prev => [...new Set([...prev, 'step-5-mockups'])]); 
+                                          setTimeout(() => document.getElementById('step-5-mockups')?.scrollIntoView({behavior: 'smooth', block: 'center'}),50);
+                                        }}
                                         className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
                                     >
                                         Next: Visualize Mockups <ArrowRight className="ml-2 h-4 w-4" />
@@ -1646,7 +1780,12 @@ export default function PromptForgeApp() {
                             </div>
                         )}
                         {proposal && mockupImages && mockupImages.length > 0 && (
-                            <Button onClick={() => { setCurrentStep('devPrompt'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-6-devprompt'])]); document.getElementById('step-6-devprompt')?.scrollIntoView({behavior: 'smooth', block: 'center'});}} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4">
+                            <Button onClick={() => { 
+                              setCurrentStep('devPrompt'); 
+                              setOpenAccordionSections(prev => [...new Set([...prev, 'step-6-devprompt'])]); 
+                              setTimeout(() => document.getElementById('step-6-devprompt')?.scrollIntoView({behavior: 'smooth', block: 'center'}),50);
+                            }} 
+                            className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4">
                                 Next: AI Developer Prompt <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         )}
@@ -1700,7 +1839,11 @@ export default function PromptForgeApp() {
                             </div>
                              {currentStep === 'devPrompt' && (
                                 <Button 
-                                    onClick={() => { setCurrentStep('save'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-7-save'])]); document.getElementById('step-7-save')?.scrollIntoView({behavior: 'smooth', block: 'center'});}}
+                                    onClick={() => { 
+                                      setCurrentStep('save'); 
+                                      setOpenAccordionSections(prev => [...new Set([...prev, 'step-7-save'])]); 
+                                      setTimeout(() => document.getElementById('step-7-save')?.scrollIntoView({behavior: 'smooth', block: 'center'}),50);
+                                    }}
                                     className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
                                 >
                                     Next: Save Project <ArrowRight className="ml-2 h-4 w-4" />
