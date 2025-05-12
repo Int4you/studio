@@ -42,7 +42,8 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateDetailedProposalInputSchema},
   output: {schema: GenerateDetailedProposalOutputSchema},
   prompt: `You are an expert in generating detailed application proposals based on a selected idea.
-  Based on the following application idea, generate a detailed proposal including an application name, a list of distinct core features with descriptions, and distinct UI/UX guidelines categorized by color, typography, iconography, layout and animation. Ensure there are no duplicate features or guidelines.
+  Based on the following application idea, generate a detailed proposal including an application name, a list of distinct core features with descriptions, and distinct UI/UX guidelines categorized by color, typography, iconography, layout and animation. 
+  Ensure there are absolutely no duplicate features or guidelines. "Distinct" means the feature titles or guideline texts are different, even if they fall under the same category. For example, you can have multiple "Color" guidelines as long as each guideline text is unique.
 
   Application Idea: {{{idea}}}`,
 });
@@ -61,7 +62,8 @@ const generateDetailedProposalFlow = ai.defineFlow(
 
     // Deduplicate coreFeatures
     const uniqueCoreFeatures = output.coreFeatures.reduce((acc, current) => {
-      const x = acc.find(item => item.feature.toLowerCase() === current.feature.toLowerCase());
+      const currentFeatureTrimmedLower = current.feature.trim().toLowerCase();
+      const x = acc.find(item => item.feature.trim().toLowerCase() === currentFeatureTrimmedLower);
       if (!x) {
         return acc.concat([current]);
       } else {
@@ -71,9 +73,11 @@ const generateDetailedProposalFlow = ai.defineFlow(
 
     // Deduplicate uiUxGuidelines
     const uniqueUiUxGuidelines = output.uiUxGuidelines.reduce((acc, current) => {
+      const currentCategoryTrimmedLower = current.category.trim().toLowerCase();
+      const currentGuidelineTrimmedLower = current.guideline.trim().toLowerCase();
       const x = acc.find(item => 
-        item.category.toLowerCase() === current.category.toLowerCase() && 
-        item.guideline.toLowerCase() === current.guideline.toLowerCase()
+        item.category.trim().toLowerCase() === currentCategoryTrimmedLower && 
+        item.guideline.trim().toLowerCase() === currentGuidelineTrimmedLower
       );
       if (!x) {
         return acc.concat([current]);
@@ -89,4 +93,3 @@ const generateDetailedProposalFlow = ai.defineFlow(
     };
   }
 );
-

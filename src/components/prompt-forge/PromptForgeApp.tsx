@@ -399,9 +399,9 @@ export default function PromptForgeApp() {
         setProposal(prevProposal => {
           if (!prevProposal) return null;
           
-          const existingFeatureTitlesLower = prevProposal.coreFeatures.map(f => f.feature.toLowerCase());
+          const existingFeatureTitlesLower = prevProposal.coreFeatures.map(f => f.feature.trim().toLowerCase());
           const trulyNewGeneratedFeatures = result.newFeatures.filter(nf => 
-            !existingFeatureTitlesLower.includes(nf.feature.toLowerCase())
+            !existingFeatureTitlesLower.includes(nf.feature.trim().toLowerCase())
           );
 
           const combinedFeatures = [...prevProposal.coreFeatures, ...trulyNewGeneratedFeatures];

@@ -50,7 +50,7 @@ The application already has the following core features:
 {{/if}}
 
 Please generate 3 new and distinct core feature ideas that would complement the existing features and align with the application's overall concept.
-Each new feature must have a unique 'feature' title and a concise 'description'.
+Each new feature must have a unique 'feature' title (case-insensitive and ignoring leading/trailing whitespace when comparing for uniqueness) and a concise 'description'.
 Ensure the new features are genuinely different from the existing ones and provide added value. Do not repeat or rephrase existing features.
 Focus on creativity and feasibility.
 `,
@@ -68,15 +68,16 @@ const generateMoreFeaturesFlow = ai.defineFlow(
         throw new Error("Failed to generate more features. The AI returned no output.");
     }
 
-    // Ensure distinctness from existing features (case-insensitive for feature title)
-    const existingFeatureTitlesLower = input.existingFeatures.map(f => f.feature.toLowerCase());
+    // Ensure distinctness from existing features (case-insensitive and trim whitespace for feature title)
+    const existingFeatureTitlesLower = input.existingFeatures.map(f => f.feature.trim().toLowerCase());
     const trulyNewFeatures = output.newFeatures.filter(nf => 
-        !existingFeatureTitlesLower.includes(nf.feature.toLowerCase())
+        !existingFeatureTitlesLower.includes(nf.feature.trim().toLowerCase())
     );
     
-    // Further deduplicate new features among themselves
+    // Further deduplicate new features among themselves (case-insensitive and trim whitespace)
     const uniqueNewFeaturesAmongGenerated = trulyNewFeatures.reduce((acc, current) => {
-        const x = acc.find(item => item.feature.toLowerCase() === current.feature.toLowerCase());
+        const currentFeatureTrimmedLower = current.feature.trim().toLowerCase();
+        const x = acc.find(item => item.feature.trim().toLowerCase() === currentFeatureTrimmedLower);
         if (!x) {
             return acc.concat([current]);
         } else {
@@ -88,4 +89,3 @@ const generateMoreFeaturesFlow = ai.defineFlow(
     return { newFeatures: uniqueNewFeaturesAmongGenerated };
   }
 );
-
