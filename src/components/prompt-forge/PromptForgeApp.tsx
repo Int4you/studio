@@ -375,6 +375,8 @@ export default function PromptForgeApp() {
       setTextToAppPrompt(project.textToAppPrompt || null);
       setReferenceImageDataUri(project.referenceImageDataUri || null);
       if (project.referenceImageDataUri) {
+        // If there was a reference image, we don't have the File object, so we clear the file input.
+        // The URI is set, and the preview will show.
         setReferenceImageFile(null); 
       } else {
         resetReferenceImage();
@@ -387,6 +389,7 @@ export default function PromptForgeApp() {
         description: `${project.appName} has been loaded from your library.`,
       });
       
+      // Scroll to the proposal section after loading
       setTimeout(() => { 
         const proposalSection = document.getElementById('proposal-generation');
         if (proposalSection) {
@@ -407,12 +410,13 @@ export default function PromptForgeApp() {
     deleteProjectFromLibrary(projectId);
     setSavedProjects(getProjectsFromLibrary()); 
     if (currentProjectId === projectId) {
+        // If the currently loaded project is deleted, reset the main view
         resetAppState(true); 
     }
     toast({
       title: "Project Deleted",
       description: "The project has been removed from your library.",
-      variant: "destructive" 
+      variant: "destructive" // Changed to destructive for better UX
     });
   };
 
@@ -439,12 +443,14 @@ export default function PromptForgeApp() {
       <main className="container mx-auto p-6 md:p-10 max-w-4xl space-y-12 mt-4">
         {currentView === 'home' && (
           <>
+            {/* Initial Welcome / Prompt Section */}
             <div className="text-center space-y-2 mb-10">
               <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
                 Craft brilliant application ideas, detailed proposals, visual mockups, and AI developer prompts.
               </p>
             </div>
 
+            {/* Section 1: Idea Generation */}
             <section id="idea-generation" className="space-y-6">
               <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
                 <CardHeader className="bg-muted/30 dark:bg-muted/10">
@@ -506,6 +512,7 @@ export default function PromptForgeApp() {
               )}
             </section>
 
+            {/* Section 2: Proposal Generation & Editing */}
             {selectedIdea && (
               <section id="proposal-generation" className="space-y-6">
                 <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
@@ -646,6 +653,7 @@ export default function PromptForgeApp() {
                         </Button>
                       </div>
                       
+                      {/* Reference Image Upload */}
                       <div className="space-y-4 pt-6 border-t border-border/30">
                           <h3 className="flex items-center gap-2 text-xl font-semibold text-foreground/90">
                               <UploadCloud className="text-primary h-5 w-5" /> Style Reference (Optional)
@@ -656,13 +664,13 @@ export default function PromptForgeApp() {
                               </Label>
                               <Input
                                   id="reference-image"
-                                  key={referenceImageInputKey}
+                                  key={referenceImageInputKey} // To reset the input field
                                   type="file"
                                   accept="image/*"
                                   onChange={handleReferenceImageChange}
                                   className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 rounded-md shadow-sm"
                               />
-                              {referenceImageDataUri && ( 
+                              {referenceImageDataUri && ( // Show preview if an image is selected or loaded
                                   <div className="mt-3 p-3 border rounded-lg bg-muted/20 dark:bg-muted/10 shadow-sm">
                                       <p className="text-xs text-muted-foreground mb-1.5">
                                         {referenceImageFile ? `Selected: ${referenceImageFile.name}` : 'Current reference image:'}
@@ -678,9 +686,10 @@ export default function PromptForgeApp() {
                           </div>
                       </div>
 
+                      {/* Mockup Generation Trigger */}
                       <div className="pt-6 flex flex-wrap gap-4">
                         <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="rounded-md shadow-md hover:shadow-lg transition-shadow">
-                          {isLoadingMockup && !mockupImages ? ( 
+                          {isLoadingMockup && !mockupImages ? ( // Show loader only on initial generation
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           ) : (
                             <ImageIcon className="mr-2 h-4 w-4" />
@@ -694,7 +703,8 @@ export default function PromptForgeApp() {
               </section>
             )}
 
-            {isLoadingMockup && (!mockupImages || mockupImages.length === 0) && ( 
+            {/* Section 3: Mockup Display */}
+            {isLoadingMockup && (!mockupImages || mockupImages.length === 0) && ( // Show this loader when mockups are initially generating
               <div className="flex justify-center items-center py-8">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 <p className="ml-4 text-muted-foreground">Generating mockup...</p>
@@ -725,14 +735,14 @@ export default function PromptForgeApp() {
                           />
                       </div>
                     ))}
-                    {isLoadingMockup && mockupImages.length > 0 && ( 
+                    {isLoadingMockup && mockupImages.length > 0 && ( // Show smaller loader when appending
                       <div className="col-span-full flex justify-center items-center py-8">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         <p className="ml-3 text-muted-foreground">Generating more mockups...</p>
                       </div>
                     )}
                   </CardContent>
-                  {!isLoadingMockup && ( 
+                  {!isLoadingMockup && ( // Show buttons only when not loading
                     <CardFooter className="border-t border-border/30 pt-6 p-6 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-start bg-muted/30 dark:bg-muted/10">
                       <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow">
                         <RefreshCw className="mr-2 h-4 w-4" />
@@ -748,7 +758,8 @@ export default function PromptForgeApp() {
               </section>
             )}
 
-            {proposal && !isLoadingProposal && (
+            {/* Section 4: Text-to-App Prompt Generation */}
+            {proposal && !isLoadingProposal && ( // Only show if proposal is available and not loading
               <section id="text-to-app-prompt-generation" className="space-y-6">
                 <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
                   <CardHeader className="bg-muted/30 dark:bg-muted/10">
@@ -801,6 +812,7 @@ export default function PromptForgeApp() {
                       </div>
                     </CardContent>
                   )}
+                  {/* Save to Library Button */}
                   <CardFooter className="border-t border-border/30 pt-6 p-6 bg-muted/30 dark:bg-muted/10 flex justify-start">
                       <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow">
                           <Save className="mr-2 h-4 w-4" /> {currentProjectId ? "Update Project in Library" : "Save Project to Library"}
@@ -812,6 +824,7 @@ export default function PromptForgeApp() {
           </>
         )}
 
+        {/* Library View */}
         {currentView === 'library' && (
           <section id="library-view-content" className="space-y-6">
             <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
@@ -840,6 +853,11 @@ export default function PromptForgeApp() {
                                 {project.mockupImageUrls.slice(0,3).map((url, idx)=>( 
                                     <img key={idx} src={url} alt={`Mockup preview ${idx+1}`} className="h-16 w-auto rounded border" data-ai-hint="mockup preview" />
                                 ))}
+                                {project.mockupImageUrls.length > 3 && (
+                                    <div className="h-16 w-10 flex items-center justify-center bg-muted/50 rounded border text-xs text-muted-foreground">
+                                        +{project.mockupImageUrls.length - 3}
+                                    </div>
+                                )}
                             </CardContent>
                         )}
                         <CardFooter className="gap-2 pt-0 p-4 border-t bg-muted/20 dark:bg-muted/10">
@@ -859,6 +877,7 @@ export default function PromptForgeApp() {
           </section>
         )}
         
+        {/* Global Error Display */}
         {error && (
           <Card role="alert" className="mt-8 p-4 bg-destructive/10 border-destructive text-destructive rounded-xl shadow-md">
           <CardContent className="flex items-start gap-3 p-0">
