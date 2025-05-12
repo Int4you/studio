@@ -12,7 +12,7 @@ import type { SavedProject } from '@/lib/libraryModels';
 import { getProjectsFromLibrary, saveProjectToLibrary, deleteProjectFromLibrary, getProjectById } from '@/lib/libraryService';
 
 
-import { useState, type ChangeEvent, type FormEvent, Fragment, useEffect } from 'react';
+import { useState, type ChangeEvent, type FormEvent, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, XCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
 import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 import { format } from 'date-fns';
@@ -44,7 +44,13 @@ interface UiUxGuideline {
 
 interface Proposal extends ProposalOutput {} 
 
-type CurrentView = 'app' | 'library'; // Renamed 'home' to 'app' for clarity within the app context
+type CurrentView = 'app' | 'library';
+
+interface EditingStates {
+  appName: boolean;
+  coreFeatures: boolean[];
+  uiUxGuidelines: boolean[];
+}
 
 export default function PromptForgeApp() {
   const [prompt, setPrompt] = useState<string>('');
@@ -68,7 +74,38 @@ export default function PromptForgeApp() {
 
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<CurrentView>('app'); // Default to 'app' view
+  const [currentView, setCurrentView] = useState<CurrentView>('app');
+
+  const [editingStates, setEditingStates] = useState<EditingStates>({
+    appName: false,
+    coreFeatures: [],
+    uiUxGuidelines: [],
+  });
+
+  const initializeEditingStates = (currentProposal: Proposal | null) => {
+    setEditingStates({
+      appName: false,
+      coreFeatures: currentProposal ? new Array(currentProposal.coreFeatures.length).fill(false) : [],
+      uiUxGuidelines: currentProposal ? new Array(currentProposal.uiUxGuidelines.length).fill(false) : [],
+    });
+  };
+  
+  const toggleEditState = (section: keyof EditingStates, indexOrValue: number | boolean, value?: boolean) => {
+    setEditingStates(prev => {
+      const currentSectionState = prev[section];
+      if (Array.isArray(currentSectionState)) {
+        const newArrayState = [...currentSectionState];
+        if (typeof indexOrValue === 'number') {
+          newArrayState[indexOrValue] = typeof value === 'boolean' ? value : !newArrayState[indexOrValue];
+        }
+        return { ...prev, [section]: newArrayState };
+      } else {
+        // For non-array states like appName
+        return { ...prev, [section]: typeof indexOrValue === 'boolean' ? indexOrValue : !prev[section] };
+      }
+    });
+  };
+
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -86,6 +123,7 @@ export default function PromptForgeApp() {
     resetReferenceImage();
     setCurrentProjectId(null);
     setError(null);
+    initializeEditingStates(null);
   };
 
   const handlePromptChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
@@ -154,7 +192,8 @@ export default function PromptForgeApp() {
     setMockupImages(null);
     setTextToAppPrompt(null);
     setError(null); 
-    setCurrentProjectId(null); 
+    setCurrentProjectId(null);
+    initializeEditingStates(null); 
   };
 
   const handleGenerateProposal = async () => {
@@ -164,11 +203,13 @@ export default function PromptForgeApp() {
     setProposal(null);
     setMockupImages(null);
     setTextToAppPrompt(null);
+    initializeEditingStates(null);
 
     try {
       const input: GenerateDetailedProposalInput = { idea: selectedIdea.title + ": " + selectedIdea.description };
       const result: ProposalOutput = await generateDetailedProposal(input);
       setProposal(result);
+      initializeEditingStates(result);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(`Failed to generate proposal: ${errorMessage}`);
@@ -196,16 +237,26 @@ export default function PromptForgeApp() {
   };
 
   const addCoreFeature = () => {
-    setProposal(prev => {
-      if (!prev) return null;
-      return { ...prev, coreFeatures: [...prev.coreFeatures, { feature: '', description: '' }] };
+    setProposal(prevProposal => {
+      if (!prevProposal) return null;
+      const newProposal = { ...prevProposal, coreFeatures: [...prevProposal.coreFeatures, { feature: '', description: '' }] };
+      setEditingStates(prevEditing => ({
+        ...prevEditing,
+        coreFeatures: [...prevEditing.coreFeatures, false]
+      }));
+      return newProposal;
     });
   };
 
   const removeCoreFeature = (index: number) => {
-    setProposal(prev => {
-      if (!prev) return null;
-      return { ...prev, coreFeatures: prev.coreFeatures.filter((_, i) => i !== index) };
+    setProposal(prevProposal => {
+      if (!prevProposal) return null;
+      const newProposal = { ...prevProposal, coreFeatures: prevProposal.coreFeatures.filter((_, i) => i !== index) };
+      setEditingStates(prevEditing => ({
+        ...prevEditing,
+        coreFeatures: prevEditing.coreFeatures.filter((_, i) => i !== index)
+      }));
+      return newProposal;
     });
   };
 
@@ -219,16 +270,26 @@ export default function PromptForgeApp() {
   };
 
   const addUiUxGuideline = () => {
-    setProposal(prev => {
-      if (!prev) return null;
-      return { ...prev, uiUxGuidelines: [...prev.uiUxGuidelines, { category: '', guideline: '' }] };
+     setProposal(prevProposal => {
+      if (!prevProposal) return null;
+      const newProposal = { ...prevProposal, uiUxGuidelines: [...prevProposal.uiUxGuidelines, { category: '', guideline: '' }] };
+      setEditingStates(prevEditing => ({
+        ...prevEditing,
+        uiUxGuidelines: [...prevEditing.uiUxGuidelines, false]
+      }));
+      return newProposal;
     });
   };
 
   const removeUiUxGuideline = (index: number) => {
-    setProposal(prev => {
-      if (!prev) return null;
-      return { ...prev, uiUxGuidelines: prev.uiUxGuidelines.filter((_, i) => i !== index) };
+    setProposal(prevProposal => {
+      if (!prevProposal) return null;
+      const newProposal = { ...prevProposal, uiUxGuidelines: prevProposal.uiUxGuidelines.filter((_, i) => i !== index) };
+      setEditingStates(prevEditing => ({
+        ...prevEditing,
+        uiUxGuidelines: prevEditing.uiUxGuidelines.filter((_, i) => i !== index)
+      }));
+      return newProposal;
     });
   };
 
@@ -367,30 +428,30 @@ export default function PromptForgeApp() {
       resetAppState(true); 
 
       setSelectedIdea({ title: project.ideaTitle, description: project.ideaDescription });
-      setProposal({ 
+      const loadedProposal = { 
         appName: project.appName, 
         coreFeatures: project.coreFeatures, 
         uiUxGuidelines: project.uiUxGuidelines 
-      });
+      };
+      setProposal(loadedProposal);
+      initializeEditingStates(loadedProposal);
+
       setMockupImages(project.mockupImageUrls || null);
       setTextToAppPrompt(project.textToAppPrompt || null);
       setReferenceImageDataUri(project.referenceImageDataUri || null);
       if (project.referenceImageDataUri) {
-        // If there was a reference image, we don't have the File object, so we clear the file input.
-        // The URI is set, and the preview will show.
         setReferenceImageFile(null); 
       } else {
         resetReferenceImage();
       }
       setCurrentProjectId(project.id);
-      setCurrentView('app'); // Switch to app view
+      setCurrentView('app'); 
       
       toast({
         title: "Project Loaded",
         description: `${project.appName} has been loaded from your library.`,
       });
       
-      // Scroll to the proposal section after loading
       setTimeout(() => { 
         const proposalSection = document.getElementById('proposal-generation');
         if (proposalSection) {
@@ -411,13 +472,12 @@ export default function PromptForgeApp() {
     deleteProjectFromLibrary(projectId);
     setSavedProjects(getProjectsFromLibrary()); 
     if (currentProjectId === projectId) {
-        // If the currently loaded project is deleted, reset the main view
         resetAppState(true); 
     }
     toast({
       title: "Project Deleted",
       description: "The project has been removed from your library.",
-      variant: "destructive" // Changed to destructive for better UX
+      variant: "destructive"
     });
   };
 
@@ -444,14 +504,12 @@ export default function PromptForgeApp() {
       <main className="container mx-auto p-6 md:p-10 max-w-4xl space-y-12 mt-4">
         {currentView === 'app' && (
           <>
-            {/* Initial Welcome / Prompt Section */}
             <div className="text-center space-y-2 mb-10">
               <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
                 Craft brilliant application ideas, detailed proposals, visual mockups, and AI developer prompts.
               </p>
             </div>
 
-            {/* Section 1: Idea Generation */}
             <section id="idea-generation" className="space-y-6">
               <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
                 <CardHeader className="bg-muted/30 dark:bg-muted/10">
@@ -513,7 +571,6 @@ export default function PromptForgeApp() {
               )}
             </section>
 
-            {/* Section 2: Proposal Generation & Editing */}
             {selectedIdea && (
               <section id="proposal-generation" className="space-y-6">
                 <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
@@ -528,184 +585,252 @@ export default function PromptForgeApp() {
                       {currentProjectId && <span className="text-xs text-muted-foreground ml-2">(Loaded from Library)</span>}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="p-6">
-                    {!proposal && (
-                      <Button onClick={handleGenerateProposal} disabled={isLoadingProposal || !selectedIdea} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
-                        {isLoadingProposal ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Wand2 className="mr-2 h-4 w-4" />
-                        )}
+                  <CardContent className="p-6 space-y-6">
+                    {!proposal && !isLoadingProposal && (
+                      <Button onClick={handleGenerateProposal} disabled={!selectedIdea} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
+                        <Wand2 className="mr-2 h-4 w-4" />
                         Generate Detailed Proposal
                       </Button>
                     )}
-                  </CardContent>
-                </Card>
-                
-                {isLoadingProposal && (
-                  <div className="flex justify-center items-center py-8">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    <p className="ml-4 text-muted-foreground">Generating proposal...</p>
-                  </div>
-                )}
+                     {isLoadingProposal && (
+                        <div className="flex justify-center items-center py-8">
+                            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                            <p className="ml-4 text-muted-foreground">Generating proposal...</p>
+                        </div>
+                    )}
 
-                {proposal && !isLoadingProposal && (
-                  <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
-                    <CardHeader className="bg-muted/30 dark:bg-muted/10">
-                      <div className="flex items-center gap-3">
-                          <Sparkles className="h-8 w-8 text-primary" />
-                          <Input 
-                              type="text"
-                              value={proposal.appName}
-                              onChange={handleAppNameChange}
-                              placeholder="Application Name"
-                              className="text-3xl font-bold text-primary bg-transparent border-0 focus:ring-0 p-0 h-auto"
-                              aria-label="Application Name"
-                          />
-                      </div>
-                      <CardDescription>Your application name and details. You can edit them below.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6 space-y-8">
-                      {/* Core Features Editing */}
-                      <div className="space-y-4">
-                        <h3 className="flex items-center gap-2 text-xl font-semibold mb-3 text-foreground/90">
-                          <ListChecks className="text-primary h-5 w-5" /> Core Features
-                        </h3>
-                        {proposal.coreFeatures.map((feature, index) => (
-                          <div key={index} className="p-4 border rounded-lg shadow-sm bg-card space-y-3 relative">
-                            <Label htmlFor={`feature-title-${index}`} className="font-medium text-foreground/80">Feature Title</Label>
-                            <Input
-                              id={`feature-title-${index}`}
-                              type="text"
-                              value={feature.feature}
-                              onChange={(e) => handleCoreFeatureChange(index, 'feature', e.target.value)}
-                              placeholder="Feature Title"
-                              className="text-base rounded-md"
-                            />
-                            <Label htmlFor={`feature-desc-${index}`} className="font-medium text-foreground/80">Description</Label>
-                            <Textarea
-                              id={`feature-desc-${index}`}
-                              value={feature.description}
-                              onChange={(e) => handleCoreFeatureChange(index, 'description', e.target.value)}
-                              placeholder="Feature Description"
-                              rows={3}
-                              className="text-sm rounded-md"
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeCoreFeature(index)}
-                              className="absolute top-2 right-2 text-muted-foreground hover:text-destructive h-7 w-7"
-                              aria-label="Remove feature"
-                            >
-                              <XCircle className="h-5 w-5" />
-                            </Button>
-                          </div>
-                        ))}
-                        <Button onClick={addCoreFeature} variant="outline" className="rounded-md text-sm shadow-sm hover:shadow-md transition-shadow">
-                          <PlusCircle className="mr-2 h-4 w-4" /> Add Feature
-                        </Button>
-                      </div>
-
-                      {/* UI/UX Guidelines Editing */}
-                      <div className="space-y-4">
-                        <h3 className="flex items-center gap-2 text-xl font-semibold mb-3 text-foreground/90">
-                          <Palette className="text-primary h-5 w-5" /> UI/UX Guidelines
-                        </h3>
-                        {proposal.uiUxGuidelines.map((guideline, index) => (
-                          <div key={index} className="p-4 border rounded-lg shadow-sm bg-card space-y-3 relative">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                  <div>
-                                      <Label htmlFor={`guideline-cat-${index}`} className="font-medium text-foreground/80">Category</Label>
+                    {proposal && !isLoadingProposal && (
+                      <>
+                        {/* App Name Editing */}
+                        <Card className="shadow-sm rounded-lg">
+                          <CardHeader className="flex flex-row items-center justify-between pb-3 px-4 pt-3">
+                            <CardTitle className="text-lg font-semibold">Application Name</CardTitle>
+                            {!editingStates.appName ? (
+                              <Button onClick={() => toggleEditState('appName', true)} variant="ghost" size="icon" aria-label="Edit App Name" className="h-7 w-7">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            ) : (
+                              <Button onClick={() => toggleEditState('appName', false)} variant="ghost" size="icon" aria-label="Save App Name" className="h-7 w-7">
+                                <Check className="h-4 w-4 text-green-600" />
+                              </Button>
+                            )}
+                          </CardHeader>
+                          <CardContent className="px-4 pb-4">
+                            {editingStates.appName ? (
+                              <Input
+                                type="text"
+                                value={proposal.appName}
+                                onChange={handleAppNameChange}
+                                placeholder="Enter Application Name"
+                                className="text-base"
+                              />
+                            ) : (
+                              <p className="text-base font-medium text-primary">{proposal.appName || "Not set"}</p>
+                            )}
+                          </CardContent>
+                        </Card>
+                        
+                        {/* Core Features Editing */}
+                        <Card className="shadow-sm rounded-lg">
+                          <CardHeader className="px-4 pt-3 pb-3">
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                                <ListChecks className="text-primary h-5 w-5" /> Core Features
+                              </CardTitle>
+                              <Button onClick={addCoreFeature} variant="outline" size="sm" className="rounded-md text-xs">
+                                <PlusCircle className="mr-1.5 h-3.5 w-3.5" /> Add Feature
+                              </Button>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-3 px-4 pb-4">
+                            {proposal.coreFeatures.map((feature, index) => (
+                              <Card key={index} className="bg-muted/20 p-3 rounded-md shadow-none border-border/50">
+                                <div className="flex justify-between items-start">
+                                  {editingStates.coreFeatures[index] ? (
+                                    <div className="flex-grow space-y-2 mr-2">
+                                      <Label htmlFor={`feature-title-${index}`} className="text-xs font-medium">Title</Label>
                                       <Input
+                                        id={`feature-title-${index}`}
+                                        value={feature.feature}
+                                        onChange={(e) => handleCoreFeatureChange(index, 'feature', e.target.value)}
+                                        placeholder="Feature Title"
+                                        className="text-sm h-8"
+                                      />
+                                      <Label htmlFor={`feature-desc-${index}`} className="text-xs font-medium">Description</Label>
+                                      <Textarea
+                                        id={`feature-desc-${index}`}
+                                        value={feature.description}
+                                        onChange={(e) => handleCoreFeatureChange(index, 'description', e.target.value)}
+                                        placeholder="Feature Description"
+                                        rows={2}
+                                        className="text-sm min-h-[40px]"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="flex-grow space-y-0.5 mr-2">
+                                      <h4 className="font-medium text-sm text-foreground">{feature.feature || "Untitled Feature"}</h4>
+                                      <p className="text-xs text-muted-foreground whitespace-pre-wrap">{feature.description || "No description."}</p>
+                                    </div>
+                                  )}
+                                  <div className="flex flex-col items-center gap-0.5 shrink-0">
+                                    {editingStates.coreFeatures[index] ? (
+                                      <Button onClick={() => toggleEditState('coreFeatures', index, false)} variant="ghost" size="icon" aria-label="Save Feature" className="h-7 w-7">
+                                        <Check className="h-4 w-4 text-green-600" />
+                                      </Button>
+                                    ) : (
+                                      <Button onClick={() => toggleEditState('coreFeatures', index, true)} variant="ghost" size="icon" aria-label="Edit Feature" className="h-7 w-7">
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => removeCoreFeature(index)}
+                                      aria-label="Remove Feature"
+                                      disabled={editingStates.coreFeatures[index]}
+                                      className="text-muted-foreground hover:text-destructive h-7 w-7"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </Card>
+                            ))}
+                            {proposal.coreFeatures.length === 0 && (
+                              <p className="text-xs text-muted-foreground text-center py-2">No core features added yet.</p>
+                            )}
+                          </CardContent>
+                        </Card>
+
+                        {/* UI/UX Guidelines Editing */}
+                        <Card className="shadow-sm rounded-lg">
+                           <CardHeader className="px-4 pt-3 pb-3">
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                                <Palette className="text-primary h-5 w-5" /> UI/UX Guidelines
+                              </CardTitle>
+                              <Button onClick={addUiUxGuideline} variant="outline" size="sm" className="rounded-md text-xs">
+                                <PlusCircle className="mr-1.5 h-3.5 w-3.5" /> Add Guideline
+                              </Button>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-3 px-4 pb-4">
+                            {proposal.uiUxGuidelines.map((guideline, index) => (
+                              <Card key={index} className="bg-muted/20 p-3 rounded-md shadow-none border-border/50">
+                                <div className="flex justify-between items-start">
+                                  {editingStates.uiUxGuidelines[index] ? (
+                                    <div className="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-2 mr-2">
+                                      <div>
+                                        <Label htmlFor={`guideline-cat-${index}`} className="text-xs font-medium">Category</Label>
+                                        <Input
                                           id={`guideline-cat-${index}`}
-                                          type="text"
                                           value={guideline.category}
                                           onChange={(e) => handleUiUxGuidelineChange(index, 'category', e.target.value)}
-                                          placeholder="Guideline Category (e.g., Color)"
-                                          className="text-sm rounded-md"
-                                      />
-                                  </div>
-                                  <div>
-                                      <Label htmlFor={`guideline-text-${index}`} className="font-medium text-foreground/80">Guideline</Label>
-                                      <Input
+                                          placeholder="e.g., Color"
+                                          className="text-sm h-8"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label htmlFor={`guideline-text-${index}`} className="text-xs font-medium">Guideline</Label>
+                                        <Input
                                           id={`guideline-text-${index}`}
-                                          type="text"
                                           value={guideline.guideline}
                                           onChange={(e) => handleUiUxGuidelineChange(index, 'guideline', e.target.value)}
                                           placeholder="Guideline Text"
-                                          className="text-sm rounded-md"
-                                      />
+                                          className="text-sm h-8"
+                                        />
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="flex-grow space-y-0.5 mr-2">
+                                      <h4 className="font-medium text-sm text-foreground">{guideline.category || "Uncategorized"}</h4>
+                                      <p className="text-xs text-muted-foreground whitespace-pre-wrap">{guideline.guideline || "No guideline text."}</p>
+                                    </div>
+                                  )}
+                                  <div className="flex flex-col items-center gap-0.5 shrink-0">
+                                    {editingStates.uiUxGuidelines[index] ? (
+                                      <Button onClick={() => toggleEditState('uiUxGuidelines', index, false)} variant="ghost" size="icon" aria-label="Save Guideline" className="h-7 w-7">
+                                        <Check className="h-4 w-4 text-green-600" />
+                                      </Button>
+                                    ) : (
+                                      <Button onClick={() => toggleEditState('uiUxGuidelines', index, true)} variant="ghost" size="icon" aria-label="Edit Guideline" className="h-7 w-7">
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => removeUiUxGuideline(index)}
+                                      aria-label="Remove Guideline"
+                                      disabled={editingStates.uiUxGuidelines[index]}
+                                      className="text-muted-foreground hover:text-destructive h-7 w-7"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
                                   </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeUiUxGuideline(index)}
-                              className="absolute top-2 right-2 text-muted-foreground hover:text-destructive h-7 w-7"
-                              aria-label="Remove guideline"
-                            >
-                              <XCircle className="h-5 w-5" />
-                            </Button>
-                          </div>
-                        ))}
-                        <Button onClick={addUiUxGuideline} variant="outline" className="rounded-md text-sm shadow-sm hover:shadow-md transition-shadow">
-                          <PlusCircle className="mr-2 h-4 w-4" /> Add Guideline
-                        </Button>
-                      </div>
-                      
-                      {/* Reference Image Upload */}
-                      <div className="space-y-4 pt-6 border-t border-border/30">
-                          <h3 className="flex items-center gap-2 text-xl font-semibold text-foreground/90">
-                              <UploadCloud className="text-primary h-5 w-5" /> Style Reference (Optional)
-                          </h3>
-                          <div className="space-y-2">
-                              <Label htmlFor="reference-image" className="text-sm font-medium text-muted-foreground">
+                                </div>
+                              </Card>
+                            ))}
+                            {proposal.uiUxGuidelines.length === 0 && (
+                               <p className="text-xs text-muted-foreground text-center py-2">No UI/UX guidelines added yet.</p>
+                            )}
+                          </CardContent>
+                        </Card>
+                        
+                        {/* Reference Image Upload */}
+                        <Card className="shadow-sm rounded-lg">
+                          <CardHeader className="px-4 pt-3 pb-3">
+                            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                                <UploadCloud className="text-primary h-5 w-5" /> Style Reference (Optional)
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="px-4 pb-4">
+                              <Label htmlFor="reference-image" className="text-xs font-medium text-muted-foreground">
                                   Upload an image to guide the mockup&apos;s visual style.
                               </Label>
                               <Input
                                   id="reference-image"
-                                  key={referenceImageInputKey} // To reset the input field
+                                  key={referenceImageInputKey}
                                   type="file"
                                   accept="image/*"
                                   onChange={handleReferenceImageChange}
-                                  className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 rounded-md shadow-sm"
+                                  className="mt-1 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 rounded-md shadow-sm h-10"
                               />
-                              {referenceImageDataUri && ( // Show preview if an image is selected or loaded
-                                  <div className="mt-3 p-3 border rounded-lg bg-muted/20 dark:bg-muted/10 shadow-sm">
-                                      <p className="text-xs text-muted-foreground mb-1.5">
+                              {referenceImageDataUri && (
+                                  <div className="mt-3 p-2 border rounded-md bg-muted/20 dark:bg-muted/10 shadow-sm">
+                                      <p className="text-xs text-muted-foreground mb-1">
                                         {referenceImageFile ? `Selected: ${referenceImageFile.name}` : 'Current reference image:'}
                                       </p>
                                       <img 
                                           src={referenceImageDataUri} 
                                           alt="Reference preview" 
-                                          className="h-24 w-auto rounded-md border shadow-sm"
+                                          className="h-20 w-auto rounded border shadow-sm"
                                           data-ai-hint="style reference"
                                       />
                                   </div>
                               )}
-                          </div>
-                      </div>
+                          </CardContent>
+                        </Card>
 
-                      {/* Mockup Generation Trigger */}
-                      <div className="pt-6 flex flex-wrap gap-4">
-                        <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="rounded-md shadow-md hover:shadow-lg transition-shadow">
-                          {isLoadingMockup && !mockupImages ? ( // Show loader only on initial generation
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <ImageIcon className="mr-2 h-4 w-4" />
-                          )}
-                          Generate Mockup
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                        {/* Mockup Generation Trigger */}
+                        <div className="pt-2 flex flex-wrap gap-3">
+                          <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="rounded-md shadow-md hover:shadow-lg transition-shadow text-sm">
+                            {isLoadingMockup && !mockupImages ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <ImageIcon className="mr-2 h-4 w-4" />
+                            )}
+                            Generate Mockup
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
               </section>
             )}
 
-            {/* Section 3: Mockup Display */}
-            {isLoadingMockup && (!mockupImages || mockupImages.length === 0) && ( // Show this loader when mockups are initially generating
+            {isLoadingMockup && (!mockupImages || mockupImages.length === 0) && (
               <div className="flex justify-center items-center py-8">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 <p className="ml-4 text-muted-foreground">Generating mockup...</p>
@@ -736,20 +861,20 @@ export default function PromptForgeApp() {
                           />
                       </div>
                     ))}
-                    {isLoadingMockup && mockupImages.length > 0 && ( // Show smaller loader when appending
+                    {isLoadingMockup && mockupImages.length > 0 && (
                       <div className="col-span-full flex justify-center items-center py-8">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         <p className="ml-3 text-muted-foreground">Generating more mockups...</p>
                       </div>
                     )}
                   </CardContent>
-                  {!isLoadingMockup && ( // Show buttons only when not loading
+                  {!isLoadingMockup && (
                     <CardFooter className="border-t border-border/30 pt-6 p-6 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-start bg-muted/30 dark:bg-muted/10">
-                      <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow">
+                      <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-sm">
                         <RefreshCw className="mr-2 h-4 w-4" />
                         Generate New Set
                       </Button>
-                      <Button onClick={() => handleGenerateMockup(true)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow" variant="outline">
+                      <Button onClick={() => handleGenerateMockup(true)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-sm" variant="outline">
                         <Plus className="mr-2 h-4 w-4" />
                         Add More Mockups
                       </Button>
@@ -759,8 +884,7 @@ export default function PromptForgeApp() {
               </section>
             )}
 
-            {/* Section 4: Text-to-App Prompt Generation */}
-            {proposal && !isLoadingProposal && ( // Only show if proposal is available and not loading
+            {proposal && !isLoadingProposal && (
               <section id="text-to-app-prompt-generation" className="space-y-6">
                 <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
                   <CardHeader className="bg-muted/30 dark:bg-muted/10">
@@ -773,7 +897,7 @@ export default function PromptForgeApp() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-6">
-                    <Button onClick={handleGenerateTextToAppPrompt} disabled={isLoadingTextToAppPrompt || !proposal || !selectedIdea} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
+                    <Button onClick={handleGenerateTextToAppPrompt} disabled={isLoadingTextToAppPrompt || !proposal || !selectedIdea} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow text-sm">
                       {isLoadingTextToAppPrompt ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
@@ -813,9 +937,8 @@ export default function PromptForgeApp() {
                       </div>
                     </CardContent>
                   )}
-                  {/* Save to Library Button */}
                   <CardFooter className="border-t border-border/30 pt-6 p-6 bg-muted/30 dark:bg-muted/10 flex justify-start">
-                      <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow">
+                      <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow text-sm">
                           <Save className="mr-2 h-4 w-4" /> {currentProjectId ? "Update Project in Library" : "Save Project to Library"}
                       </Button>
                   </CardFooter>
@@ -825,7 +948,6 @@ export default function PromptForgeApp() {
           </>
         )}
 
-        {/* Library View */}
         {currentView === 'library' && (
           <section id="library-view-content" className="space-y-6">
             <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
@@ -878,7 +1000,6 @@ export default function PromptForgeApp() {
           </section>
         )}
         
-        {/* Global Error Display */}
         {error && (
           <Card role="alert" className="mt-8 p-4 bg-destructive/10 border-destructive text-destructive rounded-xl shadow-md">
           <CardContent className="flex items-start gap-3 p-0">
