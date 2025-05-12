@@ -245,7 +245,7 @@ export default function PromptForgeApp() {
       const newProposal = { ...prevProposal, coreFeatures: [...prevProposal.coreFeatures, { feature: '', description: '' }] };
       setEditingStates(prevEditing => ({
         ...prevEditing,
-        coreFeatures: [...prevEditing.coreFeatures, false]
+        coreFeatures: [...prevEditing.coreFeatures, true] // Set new feature to edit mode
       }));
       return newProposal;
     });
@@ -278,7 +278,7 @@ export default function PromptForgeApp() {
       const newProposal = { ...prevProposal, uiUxGuidelines: [...prevProposal.uiUxGuidelines, { category: '', guideline: '' }] };
       setEditingStates(prevEditing => ({
         ...prevEditing,
-        uiUxGuidelines: [...prevEditing.uiUxGuidelines, false]
+        uiUxGuidelines: [...prevEditing.uiUxGuidelines, true] // Set new guideline to edit mode
       }));
       return newProposal;
     });
@@ -410,7 +410,7 @@ export default function PromptForgeApp() {
 
           setEditingStates(prevEditing => ({
             ...prevEditing,
-            coreFeatures: [...prevEditing.coreFeatures, ...new Array(newFeatureCount).fill(false)]
+            coreFeatures: [...prevEditing.coreFeatures, ...new Array(newFeatureCount).fill(true)] // Set new features to edit mode
           }));
 
           if (newFeatureCount > 0) {
@@ -559,7 +559,7 @@ export default function PromptForgeApp() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 max-w-4xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-3">
             <Cpu className="h-8 w-8 text-primary" />
@@ -579,9 +579,14 @@ export default function PromptForgeApp() {
       <main className="container mx-auto p-6 md:p-10 max-w-4xl space-y-12 mt-4">
         {currentView === 'app' && (
           <>
-            <div className="text-center space-y-2 mb-10">
-              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-                Craft brilliant application ideas, detailed proposals, visual mockups, and AI developer prompts.
+            <div className="text-center space-y-3 mb-12 p-6 bg-card border border-border/40 rounded-xl shadow-lg">
+              <Wand2 className="h-10 w-10 text-primary mx-auto" />
+              <h2 className="text-3xl font-bold tracking-tight text-foreground">
+                Let&apos;s Forge Your Next App
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Start by describing your vision, and let AI help you craft{' '}
+                <span className="font-semibold text-primary">brilliant</span> application ideas, detailed proposals, visual mockups, and developer-ready prompts.
               </p>
             </div>
 
@@ -608,7 +613,7 @@ export default function PromptForgeApp() {
                       {isLoadingIdeas ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
-                        <Wand2 className="mr-2 h-4 w-4" />
+                        <Sparkles className="mr-2 h-4 w-4" />
                       )}
                       Generate Ideas
                     </Button>
@@ -639,6 +644,11 @@ export default function PromptForgeApp() {
                         <CardContent>
                           <p className="text-sm text-muted-foreground">{idea.description}</p>
                         </CardContent>
+                         {selectedIdea?.title === idea.title && (
+                            <div className="absolute top-2 right-2 bg-primary text-primary-foreground p-1 rounded-full">
+                                <Check className="h-3 w-3" />
+                            </div>
+                        )}
                       </Card>
                     ))}
                   </div>
@@ -655,8 +665,8 @@ export default function PromptForgeApp() {
                       <span>Detailed Application Proposal</span>
                     </CardTitle>
                     <CardDescription className="flex items-center gap-2 pt-2">
-                      <CheckCircle2 className="text-primary h-5 w-5" /> 
-                      Selected Idea: <span className="font-semibold">{selectedIdea.title}</span>
+                      <CheckCircle2 className="text-green-500 h-5 w-5" /> 
+                      Selected Idea: <span className="font-semibold text-foreground">{selectedIdea.title}</span>
                       {currentProjectId && <span className="text-xs text-muted-foreground ml-2">(Loaded from Library)</span>}
                     </CardDescription>
                   </CardHeader>
@@ -677,59 +687,59 @@ export default function PromptForgeApp() {
                     {proposal && !isLoadingProposal && (
                       <>
                         {/* App Name Editing */}
-                        <Card className="shadow-sm rounded-lg">
-                          <CardHeader className="flex flex-row items-center justify-between pb-3 px-4 pt-3">
+                        <Card className="shadow-sm rounded-lg border border-border/30">
+                          <CardHeader className="flex flex-row items-center justify-between pb-3 px-4 pt-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
                             <CardTitle className="text-lg font-semibold">Application Name</CardTitle>
                             {!editingStates.appName ? (
-                              <Button onClick={() => toggleEditState('appName', true)} variant="ghost" size="icon" aria-label="Edit App Name" className="h-7 w-7">
+                              <Button onClick={() => toggleEditState('appName', true)} variant="ghost" size="icon" aria-label="Edit App Name" className="h-7 w-7 text-muted-foreground hover:text-primary">
                                 <Pencil className="h-4 w-4" />
                               </Button>
                             ) : (
-                              <Button onClick={() => toggleEditState('appName', false)} variant="ghost" size="icon" aria-label="Save App Name" className="h-7 w-7">
+                              <Button onClick={() => toggleEditState('appName', false)} variant="ghost" size="icon" aria-label="Save App Name" className="h-7 w-7 text-muted-foreground hover:text-green-600">
                                 <Check className="h-4 w-4 text-green-600" />
                               </Button>
                             )}
                           </CardHeader>
-                          <CardContent className="px-4 pb-4">
+                          <CardContent className="px-4 py-4">
                             {editingStates.appName ? (
                               <Input
                                 type="text"
                                 value={proposal.appName}
                                 onChange={handleAppNameChange}
                                 placeholder="Enter Application Name"
-                                className="text-base"
+                                className="text-base rounded-md"
                               />
                             ) : (
-                              <p className="text-base font-medium text-primary">{proposal.appName || "Not set"}</p>
+                              <p className="text-xl font-semibold text-primary">{proposal.appName || "Not set"}</p>
                             )}
                           </CardContent>
                         </Card>
                         
                         {/* Core Features Editing */}
-                        <Card className="shadow-sm rounded-lg">
-                          <CardHeader className="px-4 pt-3 pb-3">
+                        <Card className="shadow-sm rounded-lg border border-border/30">
+                          <CardHeader className="px-4 pt-3 pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
                             <div className="flex items-center justify-between">
                               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                                 <ListChecks className="text-primary h-5 w-5" /> Core Features
                               </CardTitle>
-                              <Button onClick={addCoreFeature} variant="outline" size="sm" className="rounded-md text-xs">
+                              <Button onClick={addCoreFeature} variant="outline" size="sm" className="rounded-md text-xs shadow-sm hover:shadow">
                                 <PlusCircle className="mr-1.5 h-3.5 w-3.5" /> Add Feature
                               </Button>
                             </div>
                           </CardHeader>
-                          <CardContent className="space-y-3 px-4 pb-4">
+                          <CardContent className="space-y-3 px-4 py-4">
                             {proposal.coreFeatures.map((feature, index) => (
-                              <Card key={index} className="bg-muted/20 p-3 rounded-md shadow-none border-border/50">
-                                <div className="flex justify-between items-start">
+                              <Card key={index} className="bg-card p-3 rounded-md shadow-none border border-border/50">
+                                <div className="flex justify-between items-start gap-2">
                                   {editingStates.coreFeatures[index] ? (
-                                    <div className="flex-grow space-y-2 mr-2">
+                                    <div className="flex-grow space-y-2">
                                       <Label htmlFor={`feature-title-${index}`} className="text-xs font-medium">Title</Label>
                                       <Input
                                         id={`feature-title-${index}`}
                                         value={feature.feature}
                                         onChange={(e) => handleCoreFeatureChange(index, 'feature', e.target.value)}
                                         placeholder="Feature Title"
-                                        className="text-sm h-8"
+                                        className="text-sm h-8 rounded-md"
                                       />
                                       <Label htmlFor={`feature-desc-${index}`} className="text-xs font-medium">Description</Label>
                                       <Textarea
@@ -738,22 +748,22 @@ export default function PromptForgeApp() {
                                         onChange={(e) => handleCoreFeatureChange(index, 'description', e.target.value)}
                                         placeholder="Feature Description"
                                         rows={2}
-                                        className="text-sm min-h-[40px]"
+                                        className="text-sm min-h-[40px] rounded-md"
                                       />
                                     </div>
                                   ) : (
-                                    <div className="flex-grow space-y-0.5 mr-2">
+                                    <div className="flex-grow space-y-0.5">
                                       <h4 className="font-medium text-sm text-foreground">{feature.feature || "Untitled Feature"}</h4>
                                       <p className="text-xs text-muted-foreground whitespace-pre-wrap">{feature.description || "No description."}</p>
                                     </div>
                                   )}
                                   <div className="flex flex-col items-center gap-0.5 shrink-0">
                                     {editingStates.coreFeatures[index] ? (
-                                      <Button onClick={() => toggleEditState('coreFeatures', index, false)} variant="ghost" size="icon" aria-label="Save Feature" className="h-7 w-7">
+                                      <Button onClick={() => toggleEditState('coreFeatures', index, false)} variant="ghost" size="icon" aria-label="Save Feature" className="h-7 w-7 text-muted-foreground hover:text-green-600">
                                         <Check className="h-4 w-4 text-green-600" />
                                       </Button>
                                     ) : (
-                                      <Button onClick={() => toggleEditState('coreFeatures', index, true)} variant="ghost" size="icon" aria-label="Edit Feature" className="h-7 w-7">
+                                      <Button onClick={() => toggleEditState('coreFeatures', index, true)} variant="ghost" size="icon" aria-label="Edit Feature" className="h-7 w-7 text-muted-foreground hover:text-primary">
                                         <Pencil className="h-4 w-4" />
                                       </Button>
                                     )}
@@ -775,12 +785,12 @@ export default function PromptForgeApp() {
                               <p className="text-xs text-muted-foreground text-center py-2">No core features added yet.</p>
                             )}
                           </CardContent>
-                          <CardFooter className="border-t border-border/30 pt-4 p-4 bg-muted/20 dark:bg-muted/10 flex justify-start">
+                          <CardFooter className="border-t border-border/30 pt-4 p-4 bg-muted/20 dark:bg-muted/10 flex justify-start rounded-b-lg">
                             <Button 
                                 onClick={handleGenerateMoreFeatures} 
                                 variant="outline" 
                                 size="sm" 
-                                className="rounded-md text-xs"
+                                className="rounded-md text-xs shadow-sm hover:shadow"
                                 disabled={isLoadingMoreFeatures || !proposal || !selectedIdea}
                             >
                                 {isLoadingMoreFeatures ? (
@@ -794,23 +804,23 @@ export default function PromptForgeApp() {
                         </Card>
 
                         {/* UI/UX Guidelines Editing */}
-                        <Card className="shadow-sm rounded-lg">
-                           <CardHeader className="px-4 pt-3 pb-3">
+                        <Card className="shadow-sm rounded-lg border border-border/30">
+                           <CardHeader className="px-4 pt-3 pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
                             <div className="flex items-center justify-between">
                               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                                 <Palette className="text-primary h-5 w-5" /> UI/UX Guidelines
                               </CardTitle>
-                              <Button onClick={addUiUxGuideline} variant="outline" size="sm" className="rounded-md text-xs">
+                              <Button onClick={addUiUxGuideline} variant="outline" size="sm" className="rounded-md text-xs shadow-sm hover:shadow">
                                 <PlusCircle className="mr-1.5 h-3.5 w-3.5" /> Add Guideline
                               </Button>
                             </div>
                           </CardHeader>
-                          <CardContent className="space-y-3 px-4 pb-4">
+                          <CardContent className="space-y-3 px-4 py-4">
                             {proposal.uiUxGuidelines.map((guideline, index) => (
-                              <Card key={index} className="bg-muted/20 p-3 rounded-md shadow-none border-border/50">
-                                <div className="flex justify-between items-start">
+                              <Card key={index} className="bg-card p-3 rounded-md shadow-none border border-border/50">
+                                <div className="flex justify-between items-start gap-2">
                                   {editingStates.uiUxGuidelines[index] ? (
-                                    <div className="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-2 mr-2">
+                                    <div className="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-2">
                                       <div>
                                         <Label htmlFor={`guideline-cat-${index}`} className="text-xs font-medium">Category</Label>
                                         <Input
@@ -818,7 +828,7 @@ export default function PromptForgeApp() {
                                           value={guideline.category}
                                           onChange={(e) => handleUiUxGuidelineChange(index, 'category', e.target.value)}
                                           placeholder="e.g., Color"
-                                          className="text-sm h-8"
+                                          className="text-sm h-8 rounded-md"
                                         />
                                       </div>
                                       <div>
@@ -828,23 +838,23 @@ export default function PromptForgeApp() {
                                           value={guideline.guideline}
                                           onChange={(e) => handleUiUxGuidelineChange(index, 'guideline', e.target.value)}
                                           placeholder="Guideline Text"
-                                          className="text-sm h-8"
+                                          className="text-sm h-8 rounded-md"
                                         />
                                       </div>
                                     </div>
                                   ) : (
-                                    <div className="flex-grow space-y-0.5 mr-2">
+                                    <div className="flex-grow space-y-0.5">
                                       <h4 className="font-medium text-sm text-foreground">{guideline.category || "Uncategorized"}</h4>
                                       <p className="text-xs text-muted-foreground whitespace-pre-wrap">{guideline.guideline || "No guideline text."}</p>
                                     </div>
                                   )}
                                   <div className="flex flex-col items-center gap-0.5 shrink-0">
                                     {editingStates.uiUxGuidelines[index] ? (
-                                      <Button onClick={() => toggleEditState('uiUxGuidelines', index, false)} variant="ghost" size="icon" aria-label="Save Guideline" className="h-7 w-7">
+                                      <Button onClick={() => toggleEditState('uiUxGuidelines', index, false)} variant="ghost" size="icon" aria-label="Save Guideline" className="h-7 w-7 text-muted-foreground hover:text-green-600">
                                         <Check className="h-4 w-4 text-green-600" />
                                       </Button>
                                     ) : (
-                                      <Button onClick={() => toggleEditState('uiUxGuidelines', index, true)} variant="ghost" size="icon" aria-label="Edit Guideline" className="h-7 w-7">
+                                      <Button onClick={() => toggleEditState('uiUxGuidelines', index, true)} variant="ghost" size="icon" aria-label="Edit Guideline" className="h-7 w-7 text-muted-foreground hover:text-primary">
                                         <Pencil className="h-4 w-4" />
                                       </Button>
                                     )}
@@ -869,13 +879,13 @@ export default function PromptForgeApp() {
                         </Card>
                         
                         {/* Reference Image Upload */}
-                        <Card className="shadow-sm rounded-lg">
-                          <CardHeader className="px-4 pt-3 pb-3">
+                        <Card className="shadow-sm rounded-lg border border-border/30">
+                          <CardHeader className="px-4 pt-3 pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
                             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                                 <UploadCloud className="text-primary h-5 w-5" /> Style Reference (Optional)
                             </CardTitle>
                           </CardHeader>
-                          <CardContent className="px-4 pb-4">
+                          <CardContent className="px-4 py-4">
                               <Label htmlFor="reference-image" className="text-xs font-medium text-muted-foreground">
                                   Upload an image to guide the mockup&apos;s visual style.
                               </Label>
@@ -960,7 +970,7 @@ export default function PromptForgeApp() {
                     )}
                   </CardContent>
                   {!isLoadingMockup && (
-                    <CardFooter className="border-t border-border/30 pt-6 p-6 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-start bg-muted/30 dark:bg-muted/10">
+                    <CardFooter className="border-t border-border/30 pt-6 p-6 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-start bg-muted/30 dark:bg-muted/10 rounded-b-xl">
                       <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-sm">
                         <RefreshCw className="mr-2 h-4 w-4" />
                         Generate New Set
@@ -1028,7 +1038,7 @@ export default function PromptForgeApp() {
                       </div>
                     </CardContent>
                   )}
-                  <CardFooter className="border-t border-border/30 pt-6 p-6 bg-muted/30 dark:bg-muted/10 flex justify-start">
+                  <CardFooter className="border-t border-border/30 pt-6 p-6 bg-muted/30 dark:bg-muted/10 rounded-b-xl flex justify-start">
                       <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow text-sm">
                           <Save className="mr-2 h-4 w-4" /> {currentProjectId ? "Update Project in Library" : "Save Project to Library"}
                       </Button>
@@ -1074,11 +1084,11 @@ export default function PromptForgeApp() {
                                 )}
                             </CardContent>
                         )}
-                        <CardFooter className="gap-2 pt-0 p-4 border-t bg-muted/20 dark:bg-muted/10">
-                          <Button variant="outline" size="sm" onClick={() => handleLoadFromLibrary(project.id)} className="rounded-md text-xs">
+                        <CardFooter className="gap-2 pt-0 p-4 border-t bg-muted/20 dark:bg-muted/10 rounded-b-lg">
+                          <Button variant="outline" size="sm" onClick={() => handleLoadFromLibrary(project.id)} className="rounded-md text-xs shadow-sm hover:shadow">
                             <FolderOpen className="mr-1.5 h-3.5 w-3.5" /> Load
                           </Button>
-                          <Button variant="destructive" size="sm" onClick={() => handleDeleteFromLibrary(project.id)} className="rounded-md text-xs">
+                          <Button variant="destructive" size="sm" onClick={() => handleDeleteFromLibrary(project.id)} className="rounded-md text-xs shadow-sm hover:shadow">
                             <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
                           </Button>
                         </CardFooter>
@@ -1106,3 +1116,4 @@ export default function PromptForgeApp() {
     </>
   );
 }
+
