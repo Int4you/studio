@@ -15,7 +15,7 @@ const CoreFeatureSchema = z.object({
   description: z.string().describe('A short description of the core feature.'),
 });
 
-export const AnalyzeMarketInputSchema = z.object({
+const AnalyzeMarketInputSchema = z.object({
   appName: z.string().describe('The name of the application.'),
   appDescription: z.string().describe('A detailed description of the application and its purpose.'),
   coreFeatures: z.array(CoreFeatureSchema).describe('The list of core features of the application.'),
@@ -42,7 +42,7 @@ const SwotAnalysisSchema = z.object({
   threats: z.array(z.string()).describe('External market threats to the application.'),
 });
 
-export const AnalyzeMarketOutputSchema = z.object({
+const AnalyzeMarketOutputSchema = z.object({
   marketOverview: z.string().describe("A brief overview of the current market state relevant to the app."),
   marketTrends: z.array(TrendSchema).describe('Key current market trends relevant to the application (provide 2-3 distinct trends).'),
   potentialCompetitors: z.array(CompetitorSchema).describe('List of 2-3 key potential competitors with their strengths, weaknesses, and primary offering.'),
