@@ -16,15 +16,15 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
       },
-      size: { // Added size variants
+      size: { 
         default: "px-2.5 py-0.5 text-xs",
-        sm: "px-2 py-0.5 text-[0.7rem]", // Smaller padding and text
-        lg: "px-3 py-1 text-sm", // Larger padding and text
+        sm: "px-2 py-0.5 text-[0.65rem]", // Slightly smaller text for sm
+        lg: "px-3 py-1 text-sm", 
       }
     },
     defaultVariants: {
       variant: "default",
-      size: "default", // Default size
+      size: "default", 
     },
   }
 )
@@ -40,3 +40,5 @@ function Badge({ className, variant, size, ...props }: BadgeProps) {
 }
 
 export { Badge, badgeVariants }
+
+```

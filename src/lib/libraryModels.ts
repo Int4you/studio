@@ -26,10 +26,13 @@ export interface SavedProject {
   ideaDescription: string;
   coreFeatures: CoreFeatureData[];
   uiUxGuidelines: UiUxGuidelineData[];
-  marketAnalysis?: AnalyzeMarketOutput; // Added market analysis data
+  marketAnalysis?: AnalyzeMarketOutput; 
   prioritizedFeatures?: PrioritizedFeatureData[];
   mockupImageUrls?: string[];
   textToAppPrompt?: string;
   referenceImageDataUri?: string | null;
   savedAt: string; // ISO date string
+  originalPrompt?: string; // Added to store the initial prompt for idea generation
 }
+
+```
