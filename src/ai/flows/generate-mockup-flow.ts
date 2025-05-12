@@ -48,16 +48,25 @@ const generateMockupFlow = ai.defineFlow(
     const featuresString = input.coreFeatures.map(f => `- ${f.feature}: ${f.description}`).join('\n');
     const uiGuidelinesString = input.uiUxGuidelines.map(g => `- ${g.category}: ${g.guideline}`).join('\n');
 
-    const promptText = `You are an expert UI/UX designer specializing in creating high-quality mobile application mockups.
+    // Construct the prompt text based on whether referenceImageDataUri is provided
+    let promptParts: (string | { media: { url: string } })[] = [];
+    
+    let basePromptText = `You are an expert UI/UX designer specializing in creating high-quality mobile application mockups.
 Your primary task is to generate multiple distinct mobile app mockup screens for an application called "${input.appName}".
-**You MUST generate 3 separate image outputs. If a fourth screen is highly relevant and distinct, you may generate 4 separate image outputs.** Each image output must be a single, individual mobile screen. Do not combine screens into one image.
+**You MUST generate 3 separate image outputs. If a fourth screen is highly relevant and distinct, you may generate 4 separate image outputs.** Each image output must be a single, individual mobile screen. Do not combine screens into one image.`;
 
-{{#if referenceImageDataUri}}
+    if (input.referenceImageDataUri) {
+        basePromptText += `
 **Style Reference:**
 Use the following image as a strong visual and stylistic reference for the mockups. Adapt its color palette, typography style, element shapes, and overall modern aesthetic:
-{{media url=referenceImageDataUri}}
-{{/if}}
+`; // Placeholder for media, will be added as a separate part
+        promptParts.push({text: basePromptText});
+        promptParts.push({media: {url: input.referenceImageDataUri}});
+    } else {
+        promptParts.push({text: basePromptText});
+    }
 
+    let remainingPromptText = `
 Key Requirements for the Mockups:
 1.  **Mobile-First Design**: All screens must be designed for a standard smartphone display (e.g., portrait orientation).
 2.  **Multiple Distinct Screens/Image Outputs**: You **must** generate 3 (or up to 4) different screens, each as a separate image. These screens should represent a typical user flow or showcase different key functionalities. Examples could include:
@@ -81,10 +90,12 @@ If no specific color palette is provided in the UI/UX guidelines (and no referen
 **Final Instruction on Output Format:**
 Present these screens as clearly separated individual mobile screen mockups. You must provide 3 (or 4, if appropriate) distinct image outputs. Each image file should contain only one screen.
       `;
+    promptParts.push({text: remainingPromptText});
+
 
     const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash-exp', 
-      prompt: promptText,
+      prompt: input.referenceImageDataUri ? promptParts : promptParts.map(p => (p as {text: string}).text).join(''), // Use array of parts if image is present
       config: {
         responseModalities: ['TEXT', 'IMAGE'], 
       },

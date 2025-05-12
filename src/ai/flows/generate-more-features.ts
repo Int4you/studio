@@ -15,14 +15,14 @@ const CoreFeatureSchema = z.object({
   description: z.string().describe('A short description of the core feature.'),
 });
 
-export const GenerateMoreFeaturesInputSchema = z.object({
+const GenerateMoreFeaturesInputSchema = z.object({
   appName: z.string().describe('The name of the application.'),
   appDescription: z.string().describe('The description of the application idea.'),
   existingFeatures: z.array(CoreFeatureSchema).describe('The list of existing core features.'),
 });
 export type GenerateMoreFeaturesInput = z.infer<typeof GenerateMoreFeaturesInputSchema>;
 
-export const GenerateMoreFeaturesOutputSchema = z.object({
+const GenerateMoreFeaturesOutputSchema = z.object({
   newFeatures: z.array(CoreFeatureSchema).describe('An array of new, distinct core feature ideas.'),
 });
 export type GenerateMoreFeaturesOutput = z.infer<typeof GenerateMoreFeaturesOutputSchema>;
@@ -88,3 +88,4 @@ const generateMoreFeaturesFlow = ai.defineFlow(
     return { newFeatures: uniqueNewFeaturesAmongGenerated };
   }
 );
+
