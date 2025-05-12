@@ -42,10 +42,17 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateDetailedProposalInputSchema},
   output: {schema: GenerateDetailedProposalOutputSchema},
   prompt: `You are an expert in generating detailed application proposals based on a selected idea.
-  Based on the following application idea, generate a detailed proposal including an application name, a list of distinct core features with descriptions, and distinct UI/UX guidelines categorized by color, typography, iconography, layout and animation. 
-  Ensure there are absolutely no duplicate features or guidelines. "Distinct" means the feature titles or guideline texts are different, even if they fall under the same category. For example, you can have multiple "Color" guidelines as long as each guideline text is unique.
+Based on the following application idea, generate a detailed proposal including:
+1.  An application name.
+2.  A list of truly distinct core features with descriptions. Each feature's title and its core concept must be unique.
+3.  A list of truly distinct UI/UX guidelines, categorized by areas like color, typography, iconography, layout, and animation. For UI/UX guidelines:
+    *   Each individual guideline text MUST be unique and offer a substantially different piece of advice, even if multiple guidelines fall under the same category (e.g., "Color").
+    *   Avoid rephrasing the same concept. For instance, do not provide "Use a clean font" and "Employ legible typography" as separate guidelines if they mean essentially the same thing. Each guideline must be meaningfully different from all others.
+    *   Focus on providing a diverse set of actionable guidelines within each category. For example, for "Color", you might have one guideline about primary palette, another about secondary/accent colors, and another about ensuring contrast for accessibility. Each of these provides distinct advice.
 
-  Application Idea: {{{idea}}}`,
+Your response must ensure no semantic or textual duplication in features or guidelines. "Distinct" means that both the title/category and the descriptive text/guideline text must offer unique value and not just be rewordings of each other or previous items.
+
+Application Idea: {{{idea}}}`,
 });
 
 const generateDetailedProposalFlow = ai.defineFlow(
@@ -60,7 +67,7 @@ const generateDetailedProposalFlow = ai.defineFlow(
       throw new Error("Failed to generate detailed proposal. The AI returned no output.");
     }
 
-    // Deduplicate coreFeatures
+    // Deduplicate coreFeatures by feature title (case-insensitive, trimmed)
     const uniqueCoreFeatures = output.coreFeatures.reduce((acc, current) => {
       const currentFeatureTrimmedLower = current.feature.trim().toLowerCase();
       const x = acc.find(item => item.feature.trim().toLowerCase() === currentFeatureTrimmedLower);
@@ -71,17 +78,18 @@ const generateDetailedProposalFlow = ai.defineFlow(
       }
     }, [] as z.infer<typeof CoreFeatureSchema>[]);
 
-    // Deduplicate uiUxGuidelines
+    // Deduplicate uiUxGuidelines by category AND guideline text (case-insensitive, trimmed)
     const uniqueUiUxGuidelines = output.uiUxGuidelines.reduce((acc, current) => {
       const currentCategoryTrimmedLower = current.category.trim().toLowerCase();
       const currentGuidelineTrimmedLower = current.guideline.trim().toLowerCase();
-      const x = acc.find(item => 
-        item.category.trim().toLowerCase() === currentCategoryTrimmedLower && 
+      const x = acc.find(item =>
+        item.category.trim().toLowerCase() === currentCategoryTrimmedLower &&
         item.guideline.trim().toLowerCase() === currentGuidelineTrimmedLower
       );
       if (!x) {
         return acc.concat([current]);
       } else {
+        // console.log(`Duplicate UI/UX guideline removed: Category: ${current.category}, Guideline: ${current.guideline}`);
         return acc;
       }
     }, [] as z.infer<typeof UiUxGuidelineSchema>[]);
