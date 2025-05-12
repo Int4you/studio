@@ -4,7 +4,7 @@
 import React from 'react'; // Added explicit React import
 import type { GenerateApplicationIdeasOutput } from '@/ai/flows/generate-application-ideas';
 import { generateApplicationIdeas } from '@/ai/flows/generate-application-ideas';
-import { generateDetailedProposal } from '@/ai/flows/generate-detailed-proposal';
+import { generateDetailedProposal } from '@/ai/flows/generate-detailed-proposal-flow';
 import type { GenerateMockupInput, GenerateMockupOutput } from '@/ai/flows/generate-mockup-flow';
 import { generateMockup } from '@/ai/flows/generate-mockup-flow';
 import type { GenerateTextToAppPromptInput, GenerateTextToAppPromptOutput } from '@/ai/flows/generate-text-to-app-prompt';
@@ -31,7 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, ChevronDown, ChevronUp, BarChart3, Search, Briefcase, TrendingDown, ThumbsUp, ThumbsDown, DollarSign, Network, Zap, Users, ShieldCheck, BarChartHorizontalBig, Target } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
-import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
+import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal-flow';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -1081,7 +1081,7 @@ export default function PromptForgeApp() {
                         ))}
                       </div>
                       {selectedIdea && ( 
-                        <Button onClick={() => { setCurrentStep('proposal'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-2-proposal'])]);}} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4">
+                        <Button onClick={() => { setCurrentStep('proposal'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-2-proposal'])]); document.getElementById('step-2-proposal')?.scrollIntoView({behavior: 'smooth', block: 'center'});}} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4">
                             Next: Craft Proposal <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                       )}
@@ -1307,7 +1307,7 @@ export default function PromptForgeApp() {
                         </Card>
                         {proposal.coreFeatures.length > 0 && (
                             <Button 
-                                onClick={() => { setCurrentStep('marketAnalysis'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-3-market-analysis'])]); }}
+                                onClick={() => { setCurrentStep('marketAnalysis'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-3-market-analysis'])]); document.getElementById('step-3-market-analysis')?.scrollIntoView({behavior: 'smooth', block: 'center'});}}
                                 className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
                             >
                                 Next: Market Analysis <ArrowRight className="ml-2 h-4 w-4" />
@@ -1463,7 +1463,7 @@ export default function PromptForgeApp() {
                               </Card>
                               {currentStep === 'marketAnalysis' && (
                                   <Button 
-                                      onClick={() => { setCurrentStep('prioritization'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-4-prioritization'])]); }}
+                                      onClick={() => { setCurrentStep('prioritization'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-4-prioritization'])]); document.getElementById('step-4-prioritization')?.scrollIntoView({behavior: 'smooth', block: 'center'});}}
                                       className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
                                   >
                                       Next: Prioritize Features <ArrowRight className="ml-2 h-4 w-4" />
@@ -1537,7 +1537,7 @@ export default function PromptForgeApp() {
                                 ))}
                                 {currentStep === 'prioritization' && (
                                     <Button 
-                                        onClick={() => { setCurrentStep('mockups'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-5-mockups'])]); }}
+                                        onClick={() => { setCurrentStep('mockups'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-5-mockups'])]); document.getElementById('step-5-mockups')?.scrollIntoView({behavior: 'smooth', block: 'center'});}}
                                         className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
                                     >
                                         Next: Visualize Mockups <ArrowRight className="ml-2 h-4 w-4" />
@@ -1646,7 +1646,7 @@ export default function PromptForgeApp() {
                             </div>
                         )}
                         {proposal && mockupImages && mockupImages.length > 0 && (
-                            <Button onClick={() => { setCurrentStep('devPrompt'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-6-devprompt'])]); }} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4">
+                            <Button onClick={() => { setCurrentStep('devPrompt'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-6-devprompt'])]); document.getElementById('step-6-devprompt')?.scrollIntoView({behavior: 'smooth', block: 'center'});}} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4">
                                 Next: AI Developer Prompt <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         )}
@@ -1700,7 +1700,7 @@ export default function PromptForgeApp() {
                             </div>
                              {currentStep === 'devPrompt' && (
                                 <Button 
-                                    onClick={() => { setCurrentStep('save'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-7-save'])]); }}
+                                    onClick={() => { setCurrentStep('save'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-7-save'])]); document.getElementById('step-7-save')?.scrollIntoView({behavior: 'smooth', block: 'center'});}}
                                     className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
                                 >
                                     Next: Save Project <ArrowRight className="ml-2 h-4 w-4" />
