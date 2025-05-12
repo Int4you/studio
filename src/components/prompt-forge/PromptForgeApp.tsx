@@ -8,17 +8,21 @@ import type { GenerateMockupInput, GenerateMockupOutput } from '@/ai/flows/gener
 import { generateMockup } from '@/ai/flows/generate-mockup-flow';
 import type { GenerateTextToAppPromptInput, GenerateTextToAppPromptOutput } from '@/ai/flows/generate-text-to-app-prompt';
 import { generateTextToAppPrompt } from '@/ai/flows/generate-text-to-app-prompt';
+import type { SavedProject } from '@/lib/libraryModels';
+import { getProjectsFromLibrary, saveProjectToLibrary, deleteProjectFromLibrary, getProjectById } from '@/lib/libraryService';
 
-import { useState, type ChangeEvent, type FormEvent, Fragment } from 'react';
+
+import { useState, type ChangeEvent, type FormEvent, Fragment, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, XCircle, Pencil } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, XCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
 import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
+import { format } from 'date-fns';
 
 
 interface Idea {
@@ -58,6 +62,27 @@ export default function PromptForgeApp() {
   const [referenceImageDataUri, setReferenceImageDataUri] = useState<string | null>(null);
   const [referenceImageInputKey, setReferenceImageInputKey] = useState<string>(`ref-img-${Date.now()}`);
 
+  const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Ensure localStorage is accessed only on the client side
+    if (typeof window !== 'undefined') {
+      setSavedProjects(getProjectsFromLibrary());
+    }
+  }, []);
+
+  const resetAppState = (clearPrompt = false) => {
+    if (clearPrompt) setPrompt('');
+    setIdeas([]);
+    setSelectedIdea(null);
+    setProposal(null);
+    setMockupImages(null);
+    setTextToAppPrompt(null);
+    resetReferenceImage();
+    setCurrentProjectId(null);
+    setError(null);
+  };
 
   const handlePromptChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setPrompt(event.target.value);
@@ -91,13 +116,7 @@ export default function PromptForgeApp() {
       return;
     }
     setIsLoadingIdeas(true);
-    setError(null);
-    setIdeas([]);
-    setSelectedIdea(null);
-    setProposal(null);
-    setMockupImages(null);
-    setTextToAppPrompt(null);
-    resetReferenceImage();
+    resetAppState(); // Reset other parts of the state, but keep the prompt
 
 
     try {
@@ -131,6 +150,7 @@ export default function PromptForgeApp() {
     setMockupImages(null);
     setTextToAppPrompt(null);
     setError(null); 
+    setCurrentProjectId(null); // New idea, not from library
   };
 
   const handleGenerateProposal = async () => {
@@ -158,7 +178,6 @@ export default function PromptForgeApp() {
     }
   };
 
-  // --- Proposal Editing Handlers ---
   const handleAppNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     setProposal(prev => prev ? { ...prev, appName: event.target.value } : null);
   };
@@ -208,8 +227,6 @@ export default function PromptForgeApp() {
       return { ...prev, uiUxGuidelines: prev.uiUxGuidelines.filter((_, i) => i !== index) };
     });
   };
-  // --- End Proposal Editing Handlers ---
-
 
   const handleGenerateMockup = async (append: boolean = false) => {
     if (!proposal) return;
@@ -308,6 +325,93 @@ export default function PromptForgeApp() {
       });
   };
 
+  const handleSaveToLibrary = () => {
+    if (!selectedIdea || !proposal) {
+      toast({
+        title: "Cannot Save Project",
+        description: "An idea and a proposal must be generated before saving to the library.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const projectToSave: SavedProject = {
+      id: currentProjectId || `proj-${Date.now()}`, // Use existing ID if updating, else new
+      appName: proposal.appName,
+      ideaTitle: selectedIdea.title,
+      ideaDescription: selectedIdea.description,
+      coreFeatures: proposal.coreFeatures,
+      uiUxGuidelines: proposal.uiUxGuidelines,
+      mockupImageUrls: mockupImages || undefined,
+      textToAppPrompt: textToAppPrompt || undefined,
+      referenceImageDataUri: referenceImageDataUri || undefined,
+      savedAt: new Date().toISOString(),
+    };
+
+    saveProjectToLibrary(projectToSave);
+    setSavedProjects(getProjectsFromLibrary()); // Refresh library list
+    setCurrentProjectId(projectToSave.id); // Set current project ID after saving
+    toast({
+      title: currentProjectId ? "Project Updated" : "Project Saved",
+      description: `${projectToSave.appName} has been ${currentProjectId ? 'updated in' : 'saved to'} your library.`,
+    });
+  };
+
+  const handleLoadFromLibrary = (projectId: string) => {
+    const project = getProjectById(projectId);
+    if (project) {
+      resetAppState(true); // Clear entire state including prompt
+
+      setSelectedIdea({ title: project.ideaTitle, description: project.ideaDescription });
+      setProposal({ 
+        appName: project.appName, 
+        coreFeatures: project.coreFeatures, 
+        uiUxGuidelines: project.uiUxGuidelines 
+      });
+      setMockupImages(project.mockupImageUrls || null);
+      setTextToAppPrompt(project.textToAppPrompt || null);
+      setReferenceImageDataUri(project.referenceImageDataUri || null);
+      if (project.referenceImageDataUri) {
+        // No file to set, just the data URI
+        setReferenceImageFile(null); 
+      } else {
+        resetReferenceImage();
+      }
+      setCurrentProjectId(project.id);
+      
+      toast({
+        title: "Project Loaded",
+        description: `${project.appName} has been loaded from your library.`,
+      });
+       // Scroll to proposal section smoothly
+      const proposalSection = document.getElementById('proposal-generation');
+      if (proposalSection) {
+        proposalSection.scrollIntoView({ behavior: 'smooth' });
+      }
+
+    } else {
+      toast({
+        title: "Error Loading Project",
+        description: "Could not find the selected project in your library.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteFromLibrary = (projectId: string) => {
+    deleteProjectFromLibrary(projectId);
+    setSavedProjects(getProjectsFromLibrary()); // Refresh library list
+    if (currentProjectId === projectId) {
+        resetAppState(true); // If current project is deleted, reset the app state
+    }
+    toast({
+      title: "Project Deleted",
+      description: "The project has been removed from your library.",
+      variant: "destructive" // Or "default" if preferred
+    });
+  };
+
+
   return (
     <div className="container mx-auto p-6 md:p-10 max-w-4xl space-y-12">
       <header className="text-center space-y-4">
@@ -321,6 +425,53 @@ export default function PromptForgeApp() {
           Craft brilliant application ideas, detailed proposals, visual mockups, and AI developer prompts.
         </p>
       </header>
+
+      {/* Library Section */}
+      <section id="library" className="space-y-6">
+        <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
+          <CardHeader className="bg-muted/30 dark:bg-muted/10">
+            <CardTitle className="flex items-center gap-2 text-2xl">
+              <LibraryIcon className="text-primary h-6 w-6" />
+              <span>My Project Library</span>
+            </CardTitle>
+            <CardDescription>View and manage your saved application projects.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            {savedProjects.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">Your library is empty. Generate and save a project to see it here.</p>
+            ) : (
+              <div className="space-y-4">
+                {savedProjects.map((project) => (
+                  <Card key={project.id} className={`border rounded-lg shadow-sm hover:shadow-md transition-shadow ${currentProjectId === project.id ? 'ring-2 ring-primary border-primary' : 'border-border/50'}`}>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-xl">{project.appName}</CardTitle>
+                      <CardDescription className="text-xs text-muted-foreground">
+                        Idea: {project.ideaTitle} | Saved: {format(new Date(project.savedAt), "PPp")}
+                      </CardDescription>
+                    </CardHeader>
+                    {project.mockupImageUrls && project.mockupImageUrls.length > 0 && (
+                         <CardContent className="py-0 px-6 flex gap-2 mb-3">
+                            {project.mockupImageUrls.slice(0,3).map((url, idx)=>( // Show max 3 previews
+                                 <img key={idx} src={url} alt={`Mockup preview ${idx+1}`} className="h-16 w-auto rounded border" data-ai-hint="mockup preview" />
+                            ))}
+                         </CardContent>
+                    )}
+                    <CardFooter className="gap-2 pt-0 p-4 border-t bg-muted/20 dark:bg-muted/10">
+                      <Button variant="outline" size="sm" onClick={() => handleLoadFromLibrary(project.id)} className="rounded-md text-xs">
+                        <FolderOpen className="mr-1.5 h-3.5 w-3.5" /> Load
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleDeleteFromLibrary(project.id)} className="rounded-md text-xs">
+                        <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
 
       <section id="idea-generation" className="space-y-6">
         <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
@@ -394,17 +545,20 @@ export default function PromptForgeApp() {
               <CardDescription className="flex items-center gap-2 pt-2">
                 <CheckCircle2 className="text-primary h-5 w-5" /> 
                 Selected Idea: <span className="font-semibold">{selectedIdea.title}</span>
+                {currentProjectId && <span className="text-xs text-muted-foreground ml-2">(Loaded from Library)</span>}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              <Button onClick={handleGenerateProposal} disabled={isLoadingProposal || !selectedIdea} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
-                {isLoadingProposal ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Wand2 className="mr-2 h-4 w-4" />
-                )}
-                Generate Detailed Proposal
-              </Button>
+              {!proposal && (
+                <Button onClick={handleGenerateProposal} disabled={isLoadingProposal || !selectedIdea} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
+                  {isLoadingProposal ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="mr-2 h-4 w-4" />
+                  )}
+                  Generate Detailed Proposal
+                </Button>
+              )}
             </CardContent>
           </Card>
           
@@ -536,9 +690,11 @@ export default function PromptForgeApp() {
                             onChange={handleReferenceImageChange}
                             className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 rounded-md shadow-sm"
                         />
-                        {referenceImageDataUri && referenceImageFile && (
+                        {referenceImageDataUri && ( // Only show preview if URI exists
                             <div className="mt-3 p-3 border rounded-lg bg-muted/20 dark:bg-muted/10 shadow-sm">
-                                <p className="text-xs text-muted-foreground mb-1.5">Selected: {referenceImageFile.name}</p>
+                                <p className="text-xs text-muted-foreground mb-1.5">
+                                  {referenceImageFile ? `Selected: ${referenceImageFile.name}` : 'Current reference image:'}
+                                </p>
                                 <img 
                                     src={referenceImageDataUri} 
                                     alt="Reference preview" 
@@ -550,14 +706,17 @@ export default function PromptForgeApp() {
                     </div>
                 </div>
 
-                <div className="pt-6">
-                   <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
+                <div className="pt-6 flex flex-wrap gap-4">
+                   <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="rounded-md shadow-md hover:shadow-lg transition-shadow">
                     {isLoadingMockup && !mockupImages ? ( 
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
                       <ImageIcon className="mr-2 h-4 w-4" />
                     )}
                     Generate Mockup
+                  </Button>
+                  <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow">
+                    <Save className="mr-2 h-4 w-4" /> {currentProjectId ? "Update in Library" : "Save to Library"}
                   </Button>
                 </div>
               </CardContent>
@@ -671,6 +830,9 @@ export default function PromptForgeApp() {
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
+                <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow mt-4">
+                    <Save className="mr-2 h-4 w-4" /> {currentProjectId ? "Update in Library" : "Save to Library"}
+                </Button>
               </CardContent>
             )}
           </Card>
