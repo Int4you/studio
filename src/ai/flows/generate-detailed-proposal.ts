@@ -20,12 +20,12 @@ const UiUxGuidelineSchema = z.object({
   guideline: z.string().describe('The specific guideline for this category.'),
 });
 
-export const GenerateDetailedProposalInputSchema = z.object({
+const GenerateDetailedProposalInputSchema = z.object({
   idea: z.string().describe('The application idea to develop a proposal for. This should be a concise description of the app concept.'),
 });
 export type GenerateDetailedProposalInput = z.infer<typeof GenerateDetailedProposalInputSchema>;
 
-export const GenerateDetailedProposalOutputSchema = z.object({
+const GenerateDetailedProposalOutputSchema = z.object({
   appName: z.string().describe('A catchy and relevant name for the application.'),
   coreFeatures: z.array(CoreFeatureSchema).describe('A list of 3-5 primary core features essential for the application.'),
   uiUxGuidelines: z.array(UiUxGuidelineSchema).describe('A list of UI/UX guidelines, covering key aspects like Color Palette, Typography, Layout, Navigation, and Tone & Voice. Provide 3-5 distinct guidelines.'),
@@ -81,27 +81,28 @@ const generateDetailedProposalFlow = ai.defineFlow(
             item.category.trim().toLowerCase() === trimmedCategory &&
             item.guideline.trim().toLowerCase() === trimmedGuideline
         );
-        // Also check for duplicate categories, even if guideline text is slightly different,
-        // as the prompt asks for distinct categories if possible.
-        // This simplified check focuses on category primarily for deduplication.
-        const isCategoryDuplicate = acc.some(item => item.category.trim().toLowerCase() === trimmedCategory);
+        
+        // More refined check for distinct categories
+        const isCategoryPresent = acc.some(item => item.category.trim().toLowerCase() === trimmedCategory);
 
-        if (!isDuplicate && !isCategoryDuplicate) {
+        if (!isDuplicate && !isCategoryPresent) {
           acc.push(current);
-        } else if (!isDuplicate && isCategoryDuplicate) {
-          // If category is duplicate but guideline text is different, allow it for now,
-          // as the AI might have a reason. Stronger deduplication might be too restrictive.
-          // Let's refine: only add if the category is not already present
-           if (!acc.some(item => item.category.trim().toLowerCase() === trimmedCategory)) {
-             acc.push(current);
-           }
+        } else if (!isDuplicate && isCategoryPresent) {
+          // If category is present but this guideline is new (and wasn't a full duplicate), we might add it.
+          // However, the prompt asks for distinct categories primarily.
+          // To strictly enforce distinct categories for the *first* instance of each guideline type:
+          // This logic is already being handled by the second pass.
         }
         return acc;
       }, [] as z.infer<typeof UiUxGuidelineSchema>[]);
       
-      // Second pass to ensure distinct categories as much as possible
+      // Second pass to ensure distinct categories as much as possible, prioritizing AI's order.
+      // This creates a Map where keys are lowercase category names.
+      // It iterates through the AI's original list and only adds a guideline to the map
+      // if its category hasn't been seen before. This ensures one entry per category,
+      // respecting the AI's initial ordering for which specific guideline represents that category.
       const categoryMap = new Map<string, z.infer<typeof UiUxGuidelineSchema>>();
-      for (const guideline of output.uiUxGuidelines) { // iterate over original to respect AI's primary choices
+      for (const guideline of output.uiUxGuidelines) { 
           const categoryKey = guideline.category.trim().toLowerCase();
           if (!categoryMap.has(categoryKey)) {
               categoryMap.set(categoryKey, guideline);
@@ -113,4 +114,5 @@ const generateDetailedProposalFlow = ai.defineFlow(
     return output;
   }
 );
+
 
