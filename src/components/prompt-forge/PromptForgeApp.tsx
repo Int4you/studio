@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, ChevronDown, ChevronUp, BarChart3, Search, Briefcase, TrendingDown, ThumbsUp, ThumbsDown, DollarSign } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, ChevronDown, ChevronUp, BarChart3, Search, Briefcase, TrendingDown, ThumbsUp, ThumbsDown, DollarSign, Network, Zap, Users, ShieldCheck, BarChartHorizontalBig, Target } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
 import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 import { format } from 'date-fns';
@@ -37,6 +37,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { cn } from "@/lib/utils";
 
 
 interface Idea {
@@ -65,6 +66,38 @@ interface EditingStates {
   coreFeatures: boolean[];
   uiUxGuidelines: boolean[];
 }
+
+// Helper component for segmented display
+const SegmentedDisplay = ({ title, value, segments, segmentsLowToHigh = true, icon: Icon }: { title: string, value: string | undefined, segments: string[], segmentsLowToHigh?: boolean, icon?: React.ElementType }) => {
+  if (!value) return null;
+  const orderedSegments = segmentsLowToHigh ? segments : [...segments].reverse();
+  
+  return (
+    <div className="mb-3 p-3 border border-border/30 rounded-md bg-muted/20 dark:bg-muted/10 shadow-sm">
+      <div className="flex items-center text-sm font-medium mb-1.5 text-foreground/90">
+        {Icon && <Icon className="h-4 w-4 mr-2 text-primary/80" />}
+        {title}:
+        <Badge variant="outline" className="ml-2 text-xs">{value}</Badge>
+      </div>
+      <div className="flex gap-1 mt-1">
+        {orderedSegments.map(segment => (
+          <div
+            key={segment}
+            className={cn(
+              "flex-1 py-1.5 px-1 text-xs rounded text-center transition-all duration-300 ease-in-out border",
+              value.toLowerCase() === segment.toLowerCase()
+                ? "bg-primary text-primary-foreground border-primary/50 shadow-md scale-105"
+                : "bg-muted/50 text-muted-foreground border-transparent opacity-70"
+            )}
+          >
+            {segment}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 
 export default function PromptForgeApp() {
   const [prompt, setPrompt] = useState<string>('');
@@ -239,12 +272,13 @@ export default function PromptForgeApp() {
     setIsLoadingIdeas(true);
     setIdeas([]); // Clear previous ideas immediately
     setSelectedIdea(null); // Deselect any previously selected idea
+    // Clear all subsequent data if generating new ideas
     setProposal(null);
     setMarketAnalysis(null);
     setPrioritizedFeatures(null);
     setMockupImages(null);
     setTextToAppPrompt(null);
-    setCurrentProjectId(null); // New ideas mean it's a new "project" context until saved
+    setCurrentProjectId(null); 
     initializeEditingStates(null);
 
 
@@ -259,8 +293,8 @@ export default function PromptForgeApp() {
           variant: "default",
         });
       } else {
-         setCurrentStep('ideas'); // Stay on ideas to select one
-         setOpenAccordionSections(['step-1-ideas']); // Ensure this section is open
+         setCurrentStep('ideas'); 
+         setOpenAccordionSections(['step-1-ideas']); 
       }
     } catch (err) {
       console.error('Error generating ideas:', err);
@@ -277,28 +311,26 @@ export default function PromptForgeApp() {
   };
 
   const handleSelectIdea = (idea: Idea) => {
-    // If the same idea is clicked, deselect it (optional behavior)
-    // if (selectedIdea?.title === idea.title) {
-    //   setSelectedIdea(null);
-    //   // Optionally reset subsequent steps or just allow re-selection
-    //   return;
-    // }
     setSelectedIdea(idea);
-    // Reset subsequent steps as they depend on the selected idea
-    setProposal(null); 
-    setMarketAnalysis(null);
-    setPrioritizedFeatures(null);
-    setMockupImages(null);
-    setTextToAppPrompt(null);
+    // Reset subsequent steps as they depend on the selected idea, unless they are already populated from a loaded project.
+    // This check ensures that if a user just clicks on a selected idea without intending to regenerate, data isn't lost.
+    // However, if they select a *different* idea, then subsequent data should be cleared.
+    if (proposal && (!currentProjectId || (selectedIdea && selectedIdea.title !== idea.title))) {
+        setProposal(null);
+        setMarketAnalysis(null);
+        setPrioritizedFeatures(null);
+        setMockupImages(null);
+        setTextToAppPrompt(null);
+        initializeEditingStates(null);
+    }
     setError(null); 
-    initializeEditingStates(null); 
-    setCurrentStep('proposal'); // Move to proposal step
+    setCurrentStep('proposal'); 
   };
 
   const handleGenerateProposal = async () => {
     if (!selectedIdea) {
        toast({ title: "Idea Not Selected", description: "Please select an idea from Step 1 first.", variant: "destructive" });
-       setCurrentStep('ideas'); // Guide user back
+       setCurrentStep('ideas'); 
        setOpenAccordionSections(['step-1-ideas']);
        return;
     }
@@ -316,7 +348,7 @@ export default function PromptForgeApp() {
       const result: ProposalOutput = await generateDetailedProposal(input);
       setProposal(result);
       initializeEditingStates(result);
-      setCurrentStep('marketAnalysis'); // Move to next step
+      setCurrentStep('marketAnalysis'); 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(`Failed to generate proposal: ${errorMessage}`);
@@ -337,7 +369,8 @@ export default function PromptForgeApp() {
         description: "A selected idea (Step 1) and a generated proposal (Step 2) are required for market analysis.",
         variant: "destructive",
       });
-      setCurrentStep(proposal ? 'proposal' : 'ideas'); // Guide user back
+      if (!selectedIdea) setCurrentStep('ideas');
+      else if (!proposal) setCurrentStep('proposal');
       setOpenAccordionSections(prev => [...new Set([...prev, proposal ? 'step-2-proposal': 'step-1-ideas'])]);
       return;
     }
@@ -350,7 +383,7 @@ export default function PromptForgeApp() {
         appName: proposal.appName,
         appDescription: selectedIdea.title + ": " + selectedIdea.description,
         coreFeatures: proposal.coreFeatures,
-        targetAudience: prompt, // Using original prompt as potential target audience hint
+        targetAudience: prompt, 
       };
       const result: AnalyzeMarketOutput = await analyzeMarket(input);
       setMarketAnalysis(result);
@@ -390,12 +423,13 @@ export default function PromptForgeApp() {
       if (!prev) return null;
       const updatedFeatures = [...prev.coreFeatures];
       updatedFeatures[index] = { ...updatedFeatures[index], [field]: value };
+      if (field === 'feature' || field === 'description') { // If key aspects change
+          setPrioritizedFeatures(null); 
+          // setMarketAnalysis(null); // Market analysis also depends on features
+          setTextToAppPrompt(null);
+      }
       return { ...prev, coreFeatures: updatedFeatures };
     });
-    // Potentially affected downstream data
-    setPrioritizedFeatures(null); 
-    setMarketAnalysis(null); 
-    setTextToAppPrompt(null);
   };
 
   const addCoreFeature = () => {
@@ -409,7 +443,7 @@ export default function PromptForgeApp() {
       return newProposal;
     });
     setPrioritizedFeatures(null); 
-    setMarketAnalysis(null);
+    // setMarketAnalysis(null);
     setTextToAppPrompt(null);
   };
 
@@ -421,11 +455,13 @@ export default function PromptForgeApp() {
         ...prevEditing,
         coreFeatures: prevEditing.coreFeatures.filter((_, i) => i !== index)
       }));
+      if (newProposal.coreFeatures.length !== prevProposal.coreFeatures.length) {
+          setPrioritizedFeatures(null); 
+          // setMarketAnalysis(null);
+          setTextToAppPrompt(null);
+      }
       return newProposal;
     });
-    setPrioritizedFeatures(null); 
-    setMarketAnalysis(null);
-    setTextToAppPrompt(null);
   };
 
   const handleUiUxGuidelineChange = (index: number, field: keyof UiUxGuideline, value: string) => {
@@ -433,11 +469,12 @@ export default function PromptForgeApp() {
       if (!prev) return null;
       const updatedGuidelines = [...prev.uiUxGuidelines];
       updatedGuidelines[index] = { ...updatedGuidelines[index], [field]: value };
+      if (field === 'category' || field === 'guideline') { // If key aspects change
+          setMockupImages(null);
+          setTextToAppPrompt(null);
+      }
       return { ...prev, uiUxGuidelines: updatedGuidelines };
     });
-    // Potentially affected downstream data
-    setMockupImages(null);
-    setTextToAppPrompt(null);
   };
 
   const addUiUxGuideline = () => {
@@ -462,10 +499,12 @@ export default function PromptForgeApp() {
         ...prevEditing,
         uiUxGuidelines: prevEditing.uiUxGuidelines.filter((_, i) => i !== index)
       }));
+      if (newProposal.uiUxGuidelines.length !== prevProposal.uiUxGuidelines.length) {
+        setMockupImages(null);
+        setTextToAppPrompt(null);
+      }
       return newProposal;
     });
-    setMockupImages(null);
-    setTextToAppPrompt(null);
   };
 
   const handleGenerateMockup = async (append: boolean = false) => {
@@ -498,7 +537,7 @@ export default function PromptForgeApp() {
         setMockupImages(newImageUrls);
       }
 
-       if (newImageUrls.length === 0 && !append) { // Only show this if it's the first generation and nothing came back
+       if (newImageUrls.length === 0 && !append) { 
         toast({
           title: "No Mockups Generated",
           description: "The AI didn't return any mockups. You might want to try again, adjust the proposal, or add/change the reference image.",
@@ -524,7 +563,8 @@ export default function PromptForgeApp() {
   const handleGenerateTextToAppPrompt = async () => {
     if (!proposal || !selectedIdea) {
       toast({ title: "Prerequisites Missing", description: "An idea (Step 1) and proposal (Step 2) are required.", variant: "destructive" });
-      setCurrentStep(proposal ? 'proposal' : 'ideas');
+      if (!selectedIdea) setCurrentStep('ideas');
+      else if (!proposal) setCurrentStep('proposal');
       setOpenAccordionSections(prev => [...new Set([...prev, proposal ? 'step-2-proposal': 'step-1-ideas'])]);
       return;
     }
@@ -535,7 +575,7 @@ export default function PromptForgeApp() {
     try {
       const input: GenerateTextToAppPromptInput = {
         appName: proposal.appName,
-        appIdeaDescription: selectedIdea.description, // Use selectedIdea.description
+        appIdeaDescription: selectedIdea.description, 
         coreFeatures: proposal.coreFeatures,
         uiUxGuidelines: proposal.uiUxGuidelines,
       };
@@ -567,7 +607,8 @@ export default function PromptForgeApp() {
         description: "A proposal (Step 2) and selected idea (Step 1) are required to generate more features.",
         variant: "destructive",
       });
-      setCurrentStep(proposal ? 'proposal' : 'ideas');
+      if (!selectedIdea) setCurrentStep('ideas');
+      else if (!proposal) setCurrentStep('proposal');
       setOpenAccordionSections(prev => [...new Set([...prev, proposal ? 'step-2-proposal': 'step-1-ideas'])]);
       return;
     }
@@ -577,7 +618,7 @@ export default function PromptForgeApp() {
     try {
       const input: GenerateMoreFeaturesInput = {
         appName: proposal.appName,
-        appDescription: selectedIdea.description, // Use selectedIdea.description
+        appDescription: selectedIdea.description, 
         existingFeatures: proposal.coreFeatures,
       };
       const result: GenerateMoreFeaturesOutput = await generateMoreFeatures(input);
@@ -612,9 +653,8 @@ export default function PromptForgeApp() {
               variant: "default",
             });
           }
-          // Reset downstream data that depends on features
           setPrioritizedFeatures(null); 
-          setMarketAnalysis(null); // Market analysis depends on features too
+          // setMarketAnalysis(null); 
           setTextToAppPrompt(null);
           return { ...prevProposal, coreFeatures: combinedFeatures };
         });
@@ -646,7 +686,8 @@ export default function PromptForgeApp() {
         description: "A proposal (Step 2) with core features and a selected idea (Step 1) are required.",
         variant: "destructive",
       });
-      setCurrentStep(proposal && proposal.coreFeatures.length > 0 ? 'proposal' : 'ideas');
+      if (!selectedIdea) setCurrentStep('ideas');
+      else if (!proposal || proposal.coreFeatures.length === 0) setCurrentStep('proposal');
       setOpenAccordionSections(prev => [...new Set([...prev, proposal && proposal.coreFeatures.length > 0 ? 'step-2-proposal': 'step-1-ideas'])]);
       return;
     }
@@ -657,9 +698,9 @@ export default function PromptForgeApp() {
     try {
       const input: GenerateFeaturePrioritizationInput = {
         appName: proposal.appName,
-        appDescription: selectedIdea.description, // Use selectedIdea.description
+        appDescription: selectedIdea.description, 
         coreFeatures: proposal.coreFeatures,
-        targetAudience: prompt, // Using original prompt as target audience hint
+        targetAudience: prompt, 
       };
       const result: GenerateFeaturePrioritizationOutput = await generateFeaturePrioritization(input);
       setPrioritizedFeatures(result.prioritizedFeatures || []);
@@ -715,7 +756,8 @@ export default function PromptForgeApp() {
         description: "An idea (Step 1) and a proposal (Step 2) must be generated before saving to the library.",
         variant: "destructive",
       });
-      setCurrentStep(proposal ? 'proposal' : 'ideas');
+      if (!selectedIdea) setCurrentStep('ideas');
+      else if (!proposal) setCurrentStep('proposal');
       setOpenAccordionSections(prev => [...new Set([...prev, proposal ? 'step-2-proposal': 'step-1-ideas'])]);
       return;
     }
@@ -733,7 +775,7 @@ export default function PromptForgeApp() {
       textToAppPrompt: textToAppPrompt || undefined,
       referenceImageDataUri: referenceImageDataUri || undefined,
       savedAt: new Date().toISOString(),
-      originalPrompt: prompt, // Save the original prompt used for idea generation
+      originalPrompt: prompt, 
     };
 
     saveProjectToLibrary(projectToSave);
@@ -743,15 +785,14 @@ export default function PromptForgeApp() {
       title: currentProjectId ? "Project Updated" : "Project Saved",
       description: `${projectToSave.appName} has been ${currentProjectId ? 'updated in' : 'saved to'} your library.`,
     });
-    // setCurrentStep('save'); // User is already on save step or this action confirms it
   };
 
   const handleLoadFromLibrary = (projectId: string) => {
     const project = getProjectById(projectId);
     if (project) {
-      resetAppState(false); // Keep original prompt field as is, or load from project.originalPrompt
+      resetAppState(false); 
 
-      setPrompt(project.originalPrompt || project.ideaTitle); // Load original prompt
+      setPrompt(project.originalPrompt || project.ideaTitle); 
       setSelectedIdea({ title: project.ideaTitle, description: project.ideaDescription });
       const loadedProposal = { 
         appName: project.appName, 
@@ -766,11 +807,7 @@ export default function PromptForgeApp() {
       setTextToAppPrompt(project.textToAppPrompt || null);
       setReferenceImageDataUri(project.referenceImageDataUri || null);
       if (project.referenceImageDataUri) {
-        // If there was a reference image URI, we can't reconstruct the File object
-        // but we can keep the URI. The input field will be empty.
         setReferenceImageFile(null); 
-        // Optionally, you could add a state to indicate that a saved URI is active
-        // without a corresponding file input.
       } else {
         resetReferenceImage();
       }
@@ -792,7 +829,6 @@ export default function PromptForgeApp() {
         description: `${project.appName} has been loaded from your library. Resuming at ${resumeStep} step.`,
       });
       
-      // Scroll to the relevant section after loading
       setTimeout(() => { 
         const stepToAccordionId: Record<AppStep, string> = {
             ideas: 'step-1-ideas',
@@ -806,7 +842,7 @@ export default function PromptForgeApp() {
         const targetAccordionElement = document.getElementById(stepToAccordionId[resumeStep]);
         if (targetAccordionElement) {
             targetAccordionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else { // Fallback if ID not found
+        } else { 
             const firstAccordion = document.getElementById('step-1-ideas');
             firstAccordion?.scrollIntoView({ behavior: 'smooth', block: 'start'});
         }
@@ -825,7 +861,7 @@ export default function PromptForgeApp() {
     deleteProjectFromLibrary(projectId);
     setSavedProjects(getProjectsFromLibrary()); 
     if (currentProjectId === projectId) {
-        resetAppState(true); // Reset if the currently loaded project is deleted
+        resetAppState(true); 
     }
     toast({
       title: "Project Deleted",
@@ -844,12 +880,12 @@ export default function PromptForgeApp() {
     if (level === "High") return "default";
     if (level === "Medium") return "secondary";
     if (level === "Low") return "outline";
-    return "outline"; // Default for undefined
+    return "outline"; 
   };
 
   const getRevenuePotentialBadgeVariant = (level?: "Low" | "Medium" | "High" | "Very High" | "Uncertain"): "default" | "secondary" | "outline" | "destructive" => {
     switch (level) {
-      case "Very High": return "default"; // e.g., primary color
+      case "Very High": return "default"; 
       case "High": return "default";
       case "Medium": return "secondary";
       case "Low": return "outline";
@@ -937,7 +973,6 @@ export default function PromptForgeApp() {
                         prioritization: 'step-4-prioritization', mockups: 'step-5-mockups', devPrompt: 'step-6-devprompt', save: 'step-7-save',
                     };
                     setOpenAccordionSections(prev => [...new Set([...prev, stepToAccordionId[requiredStep]])]);
-                    // Scroll to it
                     setTimeout(()=> document.getElementById(stepToAccordionId[requiredStep])?.scrollIntoView({behavior: 'smooth', block: 'center'}), 50);
                 }}
                 className="border-amber-500 text-amber-700 hover:bg-amber-100 dark:border-amber-400 dark:text-amber-400 dark:hover:bg-amber-800/50"
@@ -1045,8 +1080,8 @@ export default function PromptForgeApp() {
                           </Card>
                         ))}
                       </div>
-                      {selectedIdea && ( // Show "Next" button if an idea is selected
-                        <Button onClick={() => setCurrentStep('proposal')} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4">
+                      {selectedIdea && ( 
+                        <Button onClick={() => { setCurrentStep('proposal'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-2-proposal'])]);}} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4">
                             Next: Craft Proposal <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                       )}
@@ -1272,7 +1307,7 @@ export default function PromptForgeApp() {
                         </Card>
                         {proposal.coreFeatures.length > 0 && (
                             <Button 
-                                onClick={() => setCurrentStep('marketAnalysis')}
+                                onClick={() => { setCurrentStep('marketAnalysis'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-3-market-analysis'])]); }}
                                 className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
                             >
                                 Next: Market Analysis <ArrowRight className="ml-2 h-4 w-4" />
@@ -1313,52 +1348,66 @@ export default function PromptForgeApp() {
                       )}
                       {marketAnalysis && (
                           <div className="space-y-6">
-                              <Card>
-                                  <CardHeader><CardTitle className="text-xl">Market Overview</CardTitle></CardHeader>
-                                  <CardContent><p className="text-sm text-muted-foreground">{marketAnalysis.marketOverview}</p></CardContent>
+                              <Card className="shadow-sm">
+                                  <CardHeader className="pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
+                                    <CardTitle className="text-xl flex items-center gap-2"><Briefcase className="h-5 w-5 text-primary"/>Market Overview</CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="pt-4"><p className="text-sm text-muted-foreground">{marketAnalysis.marketOverview}</p></CardContent>
                               </Card>
                               
-                              <Card>
-                                  <CardHeader><CardTitle className="text-xl">Market Size & Growth</CardTitle></CardHeader>
-                                  <CardContent className="text-sm space-y-3">
-                                      <div className="flex items-center gap-2"><strong>Estimation:</strong> <Badge variant={getMarketAttributeBadgeVariant(marketAnalysis.marketSizeAndGrowth.estimation)}>{marketAnalysis.marketSizeAndGrowth.estimation}</Badge></div>
-                                      <p><strong>Potential:</strong> <span className="text-muted-foreground">{marketAnalysis.marketSizeAndGrowth.potential}</span></p>
-                                      <div className="flex items-center gap-2"><strong>Saturation:</strong> <Badge variant={getMarketAttributeBadgeVariant(marketAnalysis.marketSizeAndGrowth.marketSaturation)}>{marketAnalysis.marketSizeAndGrowth.marketSaturation}</Badge></div>
-                                      <div className="flex items-center gap-2"><strong>Growth Outlook:</strong> <Badge variant={getMarketAttributeBadgeVariant(marketAnalysis.marketSizeAndGrowth.growthRateOutlook)}>{marketAnalysis.marketSizeAndGrowth.growthRateOutlook}</Badge></div>
+                              <Card className="shadow-sm">
+                                  <CardHeader className="pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
+                                    <CardTitle className="text-xl flex items-center gap-2"><BarChartHorizontalBig className="h-5 w-5 text-primary"/>Market Size & Growth</CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="pt-4 text-sm space-y-3">
+                                      <div className="flex items-center gap-2">
+                                        <strong className="text-sm">Estimation:</strong> 
+                                        <Badge variant={getMarketAttributeBadgeVariant(marketAnalysis.marketSizeAndGrowth.estimation)} className="text-xs">{marketAnalysis.marketSizeAndGrowth.estimation}</Badge>
+                                      </div>
+                                      <p><strong className="text-sm">Potential:</strong> <span className="text-muted-foreground">{marketAnalysis.marketSizeAndGrowth.potential}</span></p>
+                                      <SegmentedDisplay title="Market Saturation" value={marketAnalysis.marketSizeAndGrowth.marketSaturation} segments={["Low", "Medium", "High"]} icon={Users}/>
+                                      <SegmentedDisplay title="Growth Outlook" value={marketAnalysis.marketSizeAndGrowth.growthRateOutlook} segments={["Slow", "Moderate", "Rapid"]} icon={TrendingUp}/>
                                   </CardContent>
                               </Card>
 
-                              <Card>
-                                  <CardHeader><CardTitle className="text-xl">Market Trends</CardTitle></CardHeader>
-                                  <CardContent className="space-y-4">
+                              <Card className="shadow-sm">
+                                  <CardHeader className="pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
+                                    <CardTitle className="text-xl flex items-center gap-2"><Zap className="h-5 w-5 text-primary"/>Market Trends</CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="pt-4 space-y-4">
                                       {marketAnalysis.marketTrends.map((trend, idx) => (
-                                          <div key={idx} className="p-3 bg-muted/30 dark:bg-muted/10 rounded-md border border-border/30">
-                                              <h5 className="font-semibold text-md mb-1">{trend.trend}</h5>
-                                              <p className="text-xs text-muted-foreground mb-2">{trend.description}</p>
-                                              <div className="flex flex-wrap gap-2 items-center text-xs">
-                                                <Badge variant={getMarketAttributeBadgeVariant(trend.relevanceToApp)}>Relevance: {trend.relevanceToApp}</Badge>
-                                                <Badge variant={getTrendImpactBadgeVariant(trend.potentialImpactMagnitude)}>Impact: {trend.potentialImpactMagnitude}</Badge>
+                                          <div key={idx} className="p-3 bg-card dark:bg-muted/20 rounded-md border border-border/50 shadow-sm">
+                                              <h5 className="font-semibold text-md mb-1.5 text-foreground/90">{trend.trend}</h5>
+                                              <p className="text-xs text-muted-foreground mb-2.5">{trend.description}</p>
+                                              <div className="space-y-2">
+                                                <SegmentedDisplay title="Relevance to App" value={trend.relevanceToApp} segments={["Low", "Medium", "High"]} icon={Target}/>
+                                                <div className="flex items-center gap-2 text-xs">
+                                                  <strong className="text-xs">Potential Impact:</strong> 
+                                                  <Badge variant={getTrendImpactBadgeVariant(trend.potentialImpactMagnitude)} size="sm">{trend.potentialImpactMagnitude}</Badge>
+                                                </div>
                                               </div>
                                           </div>
                                       ))}
                                   </CardContent>
                               </Card>
-                               <Card>
-                                  <CardHeader><CardTitle className="text-xl">Potential Competitors</CardTitle></CardHeader>
-                                  <CardContent className="space-y-4">
+                               <Card className="shadow-sm">
+                                  <CardHeader className="pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
+                                    <CardTitle className="text-xl flex items-center gap-2"><Network className="h-5 w-5 text-primary"/>Potential Competitors</CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="pt-4 space-y-4">
                                       {marketAnalysis.potentialCompetitors.map((competitor, idx) => (
-                                          <Accordion key={idx} type="single" collapsible className="w-full border border-border/30 rounded-md overflow-hidden">
+                                          <Accordion key={idx} type="single" collapsible className="w-full border border-border/40 rounded-md overflow-hidden shadow-sm">
                                             <AccordionItem value={`competitor-${idx}`} className="border-b-0">
-                                                <AccordionTrigger className="p-3 bg-muted/30 dark:bg-muted/10 hover:no-underline hover:bg-muted/50 dark:hover:bg-muted/20 text-md">
+                                                <AccordionTrigger className="p-3 bg-card dark:bg-muted/20 hover:no-underline hover:bg-muted/30 dark:hover:bg-muted/30 text-md rounded-t-md data-[state=closed]:rounded-b-md">
                                                     <span className="font-semibold">{competitor.name}</span>
                                                 </AccordionTrigger>
-                                                <AccordionContent className="p-4 text-sm space-y-2 bg-card">
+                                                <AccordionContent className="p-4 text-sm space-y-2 bg-card border-t border-border/40">
                                                     <p><strong>Primary Offering:</strong> <span className="text-muted-foreground">{competitor.primaryOffering}</span></p>
                                                     <div><strong>Strengths:</strong> <ul className="list-disc list-inside text-muted-foreground text-xs ml-4">{competitor.strengths.map((s,i) => <li key={i}>{s}</li>)}</ul></div>
                                                     <div><strong>Weaknesses:</strong> <ul className="list-disc list-inside text-muted-foreground text-xs ml-4">{competitor.weaknesses.map((w,i) => <li key={i}>{w}</li>)}</ul></div>
-                                                    <div className="flex items-center gap-2 mt-1">
+                                                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/30">
                                                       <strong>Est. Revenue Potential:</strong> 
-                                                      <Badge variant={getRevenuePotentialBadgeVariant(competitor.estimatedRevenuePotential)}>
+                                                      <Badge variant={getRevenuePotentialBadgeVariant(competitor.estimatedRevenuePotential)} className="shadow-sm">
                                                         <DollarSign className="h-3 w-3 mr-1"/>{competitor.estimatedRevenuePotential}
                                                       </Badge>
                                                     </div>
@@ -1370,34 +1419,43 @@ export default function PromptForgeApp() {
                                   </CardContent>
                               </Card>
                              
-                              <Card>
-                                <CardHeader><CardTitle className="text-xl">SWOT Analysis</CardTitle></CardHeader>
-                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                                    <div className="space-y-2">
-                                        <h5 className="font-semibold flex items-center gap-2 text-lg"><ThumbsUp className="h-5 w-5 text-green-500"/>Strengths</h5>
-                                        <ul className="list-disc list-inside text-muted-foreground text-sm space-y-1 pl-2">{marketAnalysis.swotAnalysis.strengths.map((s,i) => <li key={i}>{s}</li>)}</ul>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h5 className="font-semibold flex items-center gap-2 text-lg"><ThumbsDown className="h-5 w-5 text-red-500"/>Weaknesses</h5>
-                                        <ul className="list-disc list-inside text-muted-foreground text-sm space-y-1 pl-2">{marketAnalysis.swotAnalysis.weaknesses.map((w,i) => <li key={i}>{w}</li>)}</ul>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h5 className="font-semibold flex items-center gap-2 text-lg"><TrendingUp className="h-5 w-5 text-blue-500"/>Opportunities</h5>
-                                        <ul className="list-disc list-inside text-muted-foreground text-sm space-y-1 pl-2">{marketAnalysis.swotAnalysis.opportunities.map((o,i) => <li key={i}>{o}</li>)}</ul>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h5 className="font-semibold flex items-center gap-2 text-lg"><TrendingDown className="h-5 w-5 text-orange-500"/>Threats</h5>
-                                        <ul className="list-disc list-inside text-muted-foreground text-sm space-y-1 pl-2">{marketAnalysis.swotAnalysis.threats.map((t,i) => <li key={i}>{t}</li>)}</ul>
-                                    </div>
+                              <Card className="shadow-sm">
+                                <CardHeader className="pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
+                                  <CardTitle className="text-xl flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary"/>SWOT Analysis</CardTitle>
+                                </CardHeader>
+                                <CardContent className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    {[
+                                      { title: "Strengths", items: marketAnalysis.swotAnalysis.strengths, Icon: ThumbsUp, color: "text-green-500 dark:text-green-400", bg: "bg-green-50/50 dark:bg-green-900/20 border-green-500/30" },
+                                      { title: "Weaknesses", items: marketAnalysis.swotAnalysis.weaknesses, Icon: ThumbsDown, color: "text-red-500 dark:text-red-400", bg: "bg-red-50/50 dark:bg-red-900/20 border-red-500/30" },
+                                      { title: "Opportunities", items: marketAnalysis.swotAnalysis.opportunities, Icon: TrendingUp, color: "text-blue-500 dark:text-blue-400", bg: "bg-blue-50/50 dark:bg-blue-900/20 border-blue-500/30" },
+                                      { title: "Threats", items: marketAnalysis.swotAnalysis.threats, Icon: TrendingDown, color: "text-orange-500 dark:text-orange-400", bg: "bg-orange-50/50 dark:bg-orange-900/20 border-orange-500/30" },
+                                    ].map(category => (
+                                        <Card key={category.title} className={`shadow-sm rounded-lg ${category.bg} border`}>
+                                            <CardHeader className="pb-2 pt-3 px-4">
+                                                <CardTitle className={`flex items-center gap-2 text-lg font-semibold ${category.color}`}>
+                                                    <category.Icon className={`h-5 w-5 ${category.color}`}/>{category.title}
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="px-4 pb-3">
+                                                <ul className="list-disc list-inside text-muted-foreground text-xs space-y-1 pl-2">
+                                                    {category.items.map((item, i) => <li key={i}>{item}</li>)}
+                                                </ul>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
                                 </CardContent>
                               </Card>
-                              <Card>
-                                  <CardHeader><CardTitle className="text-xl">Competitive Landscape Summary</CardTitle></CardHeader>
-                                  <CardContent><p className="text-sm text-muted-foreground">{marketAnalysis.competitiveLandscapeSummary}</p></CardContent>
+                              <Card className="shadow-sm">
+                                  <CardHeader className="pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
+                                    <CardTitle className="text-xl">Competitive Landscape Summary</CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="pt-4"><p className="text-sm text-muted-foreground">{marketAnalysis.competitiveLandscapeSummary}</p></CardContent>
                               </Card>
-                              <Card>
-                                  <CardHeader><CardTitle className="text-xl">Strategic Recommendations</CardTitle></CardHeader>
-                                  <CardContent>
+                              <Card className="shadow-sm">
+                                  <CardHeader className="pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
+                                    <CardTitle className="text-xl">Strategic Recommendations</CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="pt-4">
                                       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-2">
                                           {marketAnalysis.strategicRecommendations.map((rec, idx) => <li key={idx} className="leading-relaxed">{rec}</li>)}
                                       </ul>
@@ -1405,7 +1463,7 @@ export default function PromptForgeApp() {
                               </Card>
                               {currentStep === 'marketAnalysis' && (
                                   <Button 
-                                      onClick={() => setCurrentStep('prioritization')}
+                                      onClick={() => { setCurrentStep('prioritization'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-4-prioritization'])]); }}
                                       className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
                                   >
                                       Next: Prioritize Features <ArrowRight className="ml-2 h-4 w-4" />
@@ -1479,7 +1537,7 @@ export default function PromptForgeApp() {
                                 ))}
                                 {currentStep === 'prioritization' && (
                                     <Button 
-                                        onClick={() => setCurrentStep('mockups')}
+                                        onClick={() => { setCurrentStep('mockups'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-5-mockups'])]); }}
                                         className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
                                     >
                                         Next: Visualize Mockups <ArrowRight className="ml-2 h-4 w-4" />
@@ -1567,13 +1625,13 @@ export default function PromptForgeApp() {
                                         />
                                     </div>
                                     ))}
-                                    {isLoadingMockup && mockupImages.length > 0 && ( // Loader for additional mockups
+                                    {isLoadingMockup && mockupImages.length > 0 && ( 
                                     <div className="bg-card p-3 rounded-lg border border-border/30 shadow-lg flex justify-center items-center aspect-[9/19]">
                                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                     </div>
                                     )}
                                 </div>
-                                 {!isLoadingMockup && ( // Show these buttons only when not loading
+                                 {!isLoadingMockup && ( 
                                     <div className="border-t border-border/30 pt-6 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-start">
                                         <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-sm">
                                             <RefreshCw className="mr-2 h-4 w-4" />
@@ -1588,7 +1646,7 @@ export default function PromptForgeApp() {
                             </div>
                         )}
                         {proposal && mockupImages && mockupImages.length > 0 && (
-                            <Button onClick={() => setCurrentStep('devPrompt')} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4">
+                            <Button onClick={() => { setCurrentStep('devPrompt'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-6-devprompt'])]); }} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4">
                                 Next: AI Developer Prompt <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         )}
@@ -1642,7 +1700,7 @@ export default function PromptForgeApp() {
                             </div>
                              {currentStep === 'devPrompt' && (
                                 <Button 
-                                    onClick={() => setCurrentStep('save')}
+                                    onClick={() => { setCurrentStep('save'); setOpenAccordionSections(prev => [...new Set([...prev, 'step-7-save'])]); }}
                                     className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow mt-4"
                                 >
                                     Next: Save Project <ArrowRight className="ml-2 h-4 w-4" />
