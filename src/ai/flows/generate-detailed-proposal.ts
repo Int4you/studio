@@ -79,18 +79,17 @@ const generateDetailedProposalFlow = ai.defineFlow(
       }
     }, [] as z.infer<typeof CoreFeatureSchema>[]);
 
-    // Deduplicate uiUxGuidelines by category AND guideline text (case-insensitive, trimmed)
+    // Deduplicate uiUxGuidelines by guideline text (case-insensitive, trimmed)
+    // as per prompt: "The exact text of a guideline should not be repeated, neither within the same category nor across different categories."
     const uniqueUiUxGuidelines = output.uiUxGuidelines.reduce((acc, current) => {
-      const currentCategoryTrimmedLower = current.category.trim().toLowerCase();
       const currentGuidelineTrimmedLower = current.guideline.trim().toLowerCase();
-      const x = acc.find(item =>
-        item.category.trim().toLowerCase() === currentCategoryTrimmedLower &&
+      const x = acc.find(item => 
         item.guideline.trim().toLowerCase() === currentGuidelineTrimmedLower
       );
       if (!x) {
         return acc.concat([current]);
       } else {
-        // console.log(`Duplicate UI/UX guideline removed: Category: ${current.category}, Guideline: ${current.guideline}`);
+        // console.log(`Duplicate UI/UX guideline (by text only) removed: Guideline: ${current.guideline}`);
         return acc;
       }
     }, [] as z.infer<typeof UiUxGuidelineSchema>[]);
@@ -102,3 +101,4 @@ const generateDetailedProposalFlow = ai.defineFlow(
     };
   }
 );
+
