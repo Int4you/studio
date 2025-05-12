@@ -687,9 +687,6 @@ export default function PromptForgeApp() {
                           )}
                           Generate Mockup
                         </Button>
-                        <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow">
-                          <Save className="mr-2 h-4 w-4" /> {currentProjectId ? "Update in Library" : "Save to Library"}
-                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -802,11 +799,13 @@ export default function PromptForgeApp() {
                           <Copy className="h-4 w-4" />
                         </Button>
                       </div>
-                      <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow mt-4">
-                          <Save className="mr-2 h-4 w-4" /> {currentProjectId ? "Update in Library" : "Save to Library"}
-                      </Button>
                     </CardContent>
                   )}
+                  <CardFooter className="border-t border-border/30 pt-6 p-6 bg-muted/30 dark:bg-muted/10 flex justify-start">
+                      <Button onClick={handleSaveToLibrary} variant="outline" className="rounded-md shadow-sm hover:shadow-md transition-shadow">
+                          <Save className="mr-2 h-4 w-4" /> {currentProjectId ? "Update Project in Library" : "Save Project to Library"}
+                      </Button>
+                  </CardFooter>
                 </Card>
               </section>
             )}
