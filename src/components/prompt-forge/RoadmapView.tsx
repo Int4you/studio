@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Milestone, Route, CheckCircle2, Library, ArrowRight, ListChecks, Target, ListOrdered, Lightbulb, TrendingUp } from 'lucide-react';
+import { Loader2, Milestone, Route, CheckCircle2, Library as LibraryIcon, ArrowRight, ListChecks, Target, ListOrdered, Lightbulb, TrendingUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -216,3 +216,4 @@ export default function RoadmapView({ savedProjects }: RoadmapViewProps) {
     </section>
   );
 }
+
