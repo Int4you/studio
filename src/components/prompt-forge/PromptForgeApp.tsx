@@ -29,14 +29,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, BarChart3, Search, Briefcase, BarChartHorizontalBig, Network, ShieldCheck, Users, ThumbsUp, ThumbsDown, DollarSign, Target } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, BarChart3, Search, Briefcase, BarChartHorizontalBig, Network, ShieldCheck, Users, ThumbsUp, ThumbsDown, DollarSign, Target, TrendingDown } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
 import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'; // Still used for competitors in market analysis
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'; 
 import { cn } from "@/lib/utils";
 import {
   ChartContainer,
@@ -674,6 +674,40 @@ export default function PromptForgeApp() {
     }
   };
 
+  const handleRemovePrioritizedFeature = (featureTitle: string) => {
+    setPrioritizedFeatures(prev => {
+      const updatedFeatures = prev ? prev.filter(f => f.feature !== featureTitle) : null;
+      return updatedFeatures;
+    });
+
+    setProposal(prevProposal => {
+      if (!prevProposal) return null;
+      const coreFeatureIndexToRemove = prevProposal.coreFeatures.findIndex(cf => cf.feature === featureTitle);
+      
+      if (coreFeatureIndexToRemove === -1) return prevProposal; // Feature not found in proposal (should not happen if synced)
+
+      const updatedCoreFeatures = prevProposal.coreFeatures.filter(cf => cf.feature !== featureTitle);
+      
+      setEditingStates(prevEditing => {
+        const updatedEditingCoreFeatures = [...prevEditing.coreFeatures];
+        updatedEditingCoreFeatures.splice(coreFeatureIndexToRemove, 1);
+        return {
+          ...prevEditing,
+          coreFeatures: updatedEditingCoreFeatures,
+        };
+      });
+      
+      return { ...prevProposal, coreFeatures: updatedCoreFeatures };
+    });
+
+    setTextToAppPrompt(null); // Reset dev prompt as features changed
+
+    toast({
+      title: "Feature Removed",
+      description: `"${featureTitle}" has been removed from the prioritization list and proposal.`,
+    });
+  };
+
 
   const handleCopyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -819,15 +853,21 @@ export default function PromptForgeApp() {
   };
 
   const getMarketAttributeBadgeVariant = (level?: "Low" | "Medium" | "High" | "Slow" | "Moderate" | "Rapid" | string ): "default" | "secondary" | "outline" => {
-     switch (level) {
-      case "High":
-      case "Rapid":
+     switch (level?.toLowerCase()) {
+      case "high":
+      case "rapid":
+      case "large":
+      case "growing":
+      case "mature":
         return "default";
-      case "Medium":
-      case "Moderate":
+      case "medium":
+      case "moderate":
+      case "emerging":
         return "secondary";
-      case "Low":
-      case "Slow":
+      case "low":
+      case "slow":
+      case "niche":
+      case "saturated":
         return "outline";
       default: return "outline";
      }
@@ -868,10 +908,7 @@ export default function PromptForgeApp() {
         switch (stepToCheck) {
             case 'ideas': if (!selectedIdea) return false; break;
             case 'proposal': if (!proposal) return false; break;
-            case 'marketAnalysis': if(!marketAnalysis) return false; break;
-            case 'prioritization': if (!prioritizedFeatures || prioritizedFeatures.length === 0) return false; break;
-            case 'mockups': if(!mockupImages || mockupImages.length === 0) return false; break;
-            case 'devPrompt': if(!textToAppPrompt) return false; break;
+            // Market analysis, prioritization, mockups, dev prompt are not strict blockers for navigation, but for generation within their step
             // Save step doesn't block subsequent navigation as it's the last one.
         }
     }
@@ -879,28 +916,21 @@ export default function PromptForgeApp() {
   };
 
   const navigateToStep = (stepId: AppStep) => {
-    if (isStepAccessible(stepId)) {
-      setCurrentStep(stepId);
-    } else {
-      const prerequisiteStep = stepsConfig.find((s, i) => i < stepsConfig.findIndex(ts => ts.id === stepId) && !isStepCompleted(s.id));
-      toast({
-        title: "Step Locked",
-        description: `Please complete the ${prerequisiteStep?.title || 'previous steps'} first.`,
-        variant: "destructive"
-      });
-    }
+    // Allow navigation to any step, prerequisites are checked before generation actions within each step
+    setCurrentStep(stepId);
   };
 
   const handleNextStep = () => {
     const currentIndex = stepsConfig.findIndex(s => s.id === currentStep);
     if (currentIndex < stepsConfig.length - 1) {
       const nextStepId = stepsConfig[currentIndex + 1].id;
-      if (isStepAccessible(nextStepId)) {
+       // Check if current step is completed before allowing "Next"
+      if (isStepCompleted(currentStep)) {
         setCurrentStep(nextStepId);
       } else {
          toast({
             title: "Cannot Proceed",
-            description: "Please complete the current step before moving to the next one.",
+            description: `Please complete the "${stepsConfig[currentIndex].title}" step before moving to the next one. Make sure to generate content if required.`,
             variant: "destructive",
         });
       }
@@ -1011,10 +1041,8 @@ export default function PromptForgeApp() {
                       className={cn(
                         "w-full justify-start text-left px-3 py-2 h-auto",
                         currentStep === step.id && "shadow-md",
-                        !isStepAccessible(step.id) && "opacity-50 cursor-not-allowed"
                       )}
                       onClick={() => navigateToStep(step.id)}
-                      disabled={!isStepAccessible(step.id) && currentStep !== step.id}
                     >
                       <step.icon className={cn("mr-3 h-5 w-5", currentStep === step.id ? "text-primary-foreground" : "text-primary")} />
                       <div>
@@ -1028,7 +1056,7 @@ export default function PromptForgeApp() {
                 </div>
               </nav>
 
-              {/* Mobile Step Navigation (Dropdown/Select might be better) */}
+              {/* Mobile Step Navigation */}
                 <div className="md:hidden mb-6">
                      <Button onClick={() => resetAppState(true)} variant="outline" size="sm" className="w-full mb-4">
                         <RefreshCw className="mr-2 h-4 w-4" /> Start New Project
@@ -1039,7 +1067,7 @@ export default function PromptForgeApp() {
                         className="w-full p-3 border border-input rounded-md bg-background text-foreground shadow-sm"
                     >
                         {stepsConfig.map(step => (
-                            <option key={step.id} value={step.id} disabled={!isStepAccessible(step.id) && currentStep !== step.id}>
+                            <option key={step.id} value={step.id} >
                                 {step.title} {isStepCompleted(step.id) ? '✔' : ''}
                             </option>
                         ))}
@@ -1575,10 +1603,28 @@ export default function PromptForgeApp() {
                                     {prioritizedFeatures.map((pFeature, index) => (
                                     <Card key={index} className="bg-muted/20 dark:bg-muted/10 p-4 rounded-lg shadow-sm border">
                                         <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-2">
-                                        <h4 className="text-lg font-semibold text-foreground">{pFeature.feature}</h4>
-                                        <Badge variant={getPriorityBadgeVariant(pFeature.priorityScore)} className="text-sm">
-                                            Priority: {pFeature.priorityScore}/10
-                                        </Badge>
+                                            <h4 className="text-lg font-semibold text-foreground">{pFeature.feature}</h4>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant={getPriorityBadgeVariant(pFeature.priorityScore)} className="text-sm">
+                                                    Priority: {pFeature.priorityScore}/10
+                                                </Badge>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                                                            onClick={() => handleRemovePrioritizedFeature(pFeature.feature)}
+                                                            aria-label={`Remove ${pFeature.feature}`}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent side="top">
+                                                        <p>Remove Feature</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </div>
                                         </div>
                                         <p className="text-sm text-muted-foreground mb-3">{pFeature.description}</p>
                                         <div className="text-xs space-y-2">
@@ -1604,9 +1650,12 @@ export default function PromptForgeApp() {
                                     ))}
                                 </div>
                             )}
-                            {prioritizedFeatures && prioritizedFeatures.length === 0 && !isLoadingPrioritization && (
-                                <p className="text-sm text-muted-foreground">No features were prioritized. Ensure core features are defined in Step 2.</p>
+                            {prioritizedFeatures && prioritizedFeatures.length === 0 && !isLoadingPrioritization && proposal && proposal.coreFeatures.length > 0 && (
+                                <p className="text-sm text-muted-foreground">All features from the proposal have been removed from prioritization. You can re-generate prioritization if you add features back in Step 2.</p>
                             )}
+                             {proposal && proposal.coreFeatures.length === 0 && (
+                                <p className="text-sm text-muted-foreground">No core features available to prioritize. Please add features in Step 2.</p>
+                             )}
                             </>
                         )}
 
@@ -1786,9 +1835,10 @@ export default function PromptForgeApp() {
                                     Previous Step
                                 </Button>
                             )}
-                            {currentStep !== 'save' && isStepCompleted(currentStep) && (
+                            {currentStep !== 'save' && ( // Always show Next button unless on the last step
                                 <Button 
                                     onClick={handleNextStep}
+                                    disabled={!isStepCompleted(currentStep) && currentStep !== 'ideas' && currentStep !== 'proposal'} // Example: disable if current step incomplete, refine logic as needed
                                     className="rounded-md shadow-md hover:shadow-lg transition-shadow"
                                 >
                                     Next: {stepsConfig[stepsConfig.findIndex(s => s.id === currentStep) + 1]?.title || 'Finish'} <ArrowRight className="ml-2 h-4 w-4" />
