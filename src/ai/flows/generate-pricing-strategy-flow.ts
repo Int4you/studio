@@ -38,7 +38,7 @@ const MarketAnalysisSummarySchema = z.object({
 }).optional().describe('A summary of the market analysis findings, focusing on competition, market size, and SWOT.');
 
 
-export const GeneratePricingStrategyInputSchema = z.object({
+const GeneratePricingStrategyInputSchema = z.object({
   appName: z.string().describe('The name of the application.'),
   appDescription: z.string().describe('A detailed description of the application and its purpose.'),
   coreFeatures: z.array(CoreFeatureSchema).describe('The list of core features of the application.'),
@@ -67,7 +67,7 @@ const PricingModelSchema = z.object({
   suitabilityReasoning: z.string().describe('Justification for the suitability score, linking back to app details, market, and goals.'),
 });
 
-export const GeneratePricingStrategyOutputSchema = z.object({
+const GeneratePricingStrategyOutputSchema = z.object({
   recommendedPricingModels: z.array(PricingModelSchema).min(1).max(3).describe('A list of 1 to 3 recommended pricing models, detailed with tiers, pros, cons, and suitability.'),
   competitorPricingInsights: z.string().optional().describe('Summary of how similar applications are typically priced, based on general market knowledge if specific competitor data is not available from input.'),
   valuePropositionFocus: z.string().describe('Key value propositions of the app that should be emphasized to justify its pricing.'),
@@ -183,3 +183,4 @@ const generatePricingStrategyFlow = ai.defineFlow(
     return output;
   }
 );
+
