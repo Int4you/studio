@@ -3,7 +3,7 @@ import React from 'react';
 import PricingContent from '@/components/pricing/PricingContent';
 import LandingPageFooter from '@/components/landing/LandingPageFooter';
 import CallToActionSection from '@/components/landing/CallToActionSection';
-import LandingPageHeader from '@/components/layout/LandingPageHeader'; // New import
+import { LandingPageHeader } from '@/components/prompt-forge/layout'; 
 
 const MemoizedPricingContent = React.memo(PricingContent);
 const MemoizedCallToActionSection = React.memo(CallToActionSection);

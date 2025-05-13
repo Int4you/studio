@@ -1,6 +1,6 @@
 
 import React from 'react';
-import LandingPageHeader from '@/components/layout/LandingPageHeader';
+import { LandingPageHeader } from '@/components/prompt-forge/layout';
 import LandingPageFooter from '@/components/landing/LandingPageFooter';
 import AffiliateProgramOverview from '@/components/affiliate/AffiliateProgramOverview';
 import CallToActionSection from '@/components/landing/CallToActionSection';

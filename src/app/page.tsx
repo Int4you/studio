@@ -4,7 +4,7 @@ import HeroSection from '@/components/landing/HeroSection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
 import CallToActionSection from '@/components/landing/CallToActionSection';
 import LandingPageFooter from '@/components/landing/LandingPageFooter';
-import LandingPageHeader from '@/components/layout/LandingPageHeader'; // New import
+import { LandingPageHeader } from '@/components/prompt-forge/layout'; 
 
 // Memoize sections for potential performance improvement
 const MemoizedHeroSection = React.memo(HeroSection);

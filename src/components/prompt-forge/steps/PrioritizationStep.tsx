@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, TrendingUp, Wand2, Info, Trash2, BadgeHelp, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import type { AppStepId } from '../AppView';
+import type { AppStepId } from '../appWorkflowTypes';
 
 interface PrioritizationStepProps {
   proposal: ProposalOutput | null;
@@ -104,6 +104,7 @@ export default function PrioritizationStep({
       )}
       {prioritizedFeatures && prioritizedFeatures.length > 0 && (
         <div className="space-y-4">
+          <TooltipProvider>
             {prioritizedFeatures.map((pFeature, index) => (
             <Card key={index} className="bg-muted/20 dark:bg-muted/10 p-4 rounded-lg shadow-sm border">
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-2">
@@ -152,6 +153,7 @@ export default function PrioritizationStep({
                 </div>
             </Card>
             ))}
+          </TooltipProvider>
         </div>
       )}
       {prioritizedFeatures && prioritizedFeatures.length === 0 && !isLoadingPrioritization && (
@@ -163,3 +165,4 @@ export default function PrioritizationStep({
     </>
   );
 }
+

@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Loader2, Wand2, ListChecks, Palette, PlusCircle, Pencil, Check, Trash2, Bot, CheckCircle2, BadgeHelp, ArrowRight } from 'lucide-react';
-import type { EditingStates, AppStepId } from '../AppView';
+import type { EditingStates, AppStepId } from '../appWorkflowTypes';
 
 interface ProposalStepProps {
   selectedIdea: Idea | null;
@@ -293,3 +293,4 @@ export default function ProposalStep({
     </>
   );
 }
+

@@ -1,5 +1,5 @@
 
-import LegalPageLayout from '@/components/layout/LegalPageLayout';
+import { LegalPageLayout } from '@/components/prompt-forge/layout';
 import Link from 'next/link';
 
 export default function PrivacyPage() {

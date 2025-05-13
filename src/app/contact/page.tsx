@@ -3,7 +3,7 @@ import React from 'react';
 import ContactForm from '@/components/contact/ContactForm';
 import LandingPageFooter from '@/components/landing/LandingPageFooter';
 import CallToActionSection from '@/components/landing/CallToActionSection';
-import LandingPageHeader from '@/components/layout/LandingPageHeader'; // New import
+import { LandingPageHeader } from '@/components/prompt-forge/layout'; 
 
 const MemoizedCallToActionSection = React.memo(CallToActionSection);
 const MemoizedLandingPageFooter = React.memo(LandingPageFooter);
