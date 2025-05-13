@@ -1,5 +1,6 @@
-import PromptForgeApp from '@/components/prompt-forge/PromptForgeApp';
+
+import AppView from '@/components/prompt-forge/AppViewWrapper'; // Updated import if wrapper is used
 
 export default function DashboardPage() {
-  return <PromptForgeApp />;
+  return <AppView />;
 }

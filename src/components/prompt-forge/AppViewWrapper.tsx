@@ -1,15 +1,13 @@
-/* eslint-disable @next/next/no-img-element */
+
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import AppView from '@/components/prompt-forge/AppView'; // The refactored AppView
 import type { SavedProject } from '@/lib/libraryModels';
 import { getProjectsFromLibrary, saveProjectToLibrary as saveProjectToLibraryService, deleteProjectFromLibrary as deleteProjectFromLibraryService, getProjectById as getProjectByIdService } from '@/lib/libraryService';
-
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Cpu, Wand2, Library as LibraryIcon, Milestone, LogOut, Zap, Award, ArrowRight } from 'lucide-react';
+import { Loader2, Cpu, Wand2, Library as LibraryIcon, Milestone, LogOut, Zap, Award } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +15,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CheckCircle2 } from 'lucide-react';
 
-import AppView from './AppView';
 import RoadmapView from './RoadmapView';
 import LibraryView from './LibraryView';
 
@@ -34,7 +31,8 @@ const freePlanDetails = {
   ],
 };
 
-export default function PromptForgeApp() {
+// This new component will manage the tabs and overall structure previously in PromptForgeApp.tsx
+export default function AppViewWrapper() {
   const { toast } = useToast();
   const router = useRouter();
 
@@ -43,7 +41,6 @@ export default function PromptForgeApp() {
   const [authStatus, setAuthStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
   const [currentUserPlan, setCurrentUserPlan] = useState<string>('Free Explorer');
   
-  // State to pass a loaded project to AppView
   const [projectToLoadInApp, setProjectToLoadInApp] = useState<SavedProject | null>(null);
 
 
@@ -53,7 +50,7 @@ export default function PromptForgeApp() {
       const token = localStorage.getItem(AUTH_TOKEN_KEY);
       if (token) {
         setAuthStatus('authenticated');
-        setCurrentUserPlan('Free Explorer'); // Default to Free plan on auth
+        setCurrentUserPlan('Free Explorer'); 
       } else {
         setAuthStatus('unauthenticated');
       }
@@ -69,11 +66,6 @@ export default function PromptForgeApp() {
   const handleTabChange = (value: string) => {
     const newView = value as CurrentView;
     setCurrentView(newView);
-    if (newView === 'app' && projectToLoadInApp) {
-        // If switching to app view and a project was meant to be loaded, clear it
-        // as AppView will handle its own state or receive it.
-        // This helps if user navigates away before AppView processes it.
-    }
   };
 
   const handleLogout = () => {
@@ -85,8 +77,8 @@ export default function PromptForgeApp() {
   const loadProjectFromLibrary = (projectId: string) => {
     const project = getProjectByIdService(projectId);
     if (project) {
-      setProjectToLoadInApp(project); // Set project to load
-      setCurrentView('app'); // Switch to app view
+      setProjectToLoadInApp(project); 
+      setCurrentView('app'); 
       toast({
         title: "Project Loaded",
         description: `${project.appName} is ready to be viewed/edited in the App tab.`,
@@ -104,7 +96,6 @@ export default function PromptForgeApp() {
     deleteProjectFromLibraryService(projectId);
     const updatedProjects = getProjectsFromLibrary();
     setSavedProjects(updatedProjects);
-    // If the deleted project was the one intended to be loaded into AppView, clear it
     if (projectToLoadInApp?.id === projectId) {
         setProjectToLoadInApp(null);
     }
@@ -119,8 +110,6 @@ export default function PromptForgeApp() {
     saveProjectToLibraryService(project);
     const updatedProjects = getProjectsFromLibrary();
     setSavedProjects(updatedProjects);
-    // If projectToLoadInApp matches the one being saved, update it or clear it
-    // to ensure AppView gets fresh data if it reloads, or relies on its own state.
     if (projectToLoadInApp?.id === project.id) {
       setProjectToLoadInApp(project); 
     }
@@ -140,9 +129,6 @@ export default function PromptForgeApp() {
     );
   }
 
-  // This useEffect will run after router.push, so the redirect should happen first.
-  // If still unauthenticated after router.push (e.g., if navigation is slow or prevented),
-  // this fallback can show a message or a minimal UI.
   if (authStatus === 'unauthenticated') {
      return (
        <div className="flex flex-col items-center justify-center min-h-screen bg-background">
@@ -240,7 +226,7 @@ export default function PromptForgeApp() {
             onLoadProject={loadProjectFromLibrary}
             onDeleteProject={deleteProjectFromLibrary}
             onStartNewProject={() => {
-                setProjectToLoadInApp(null); // Ensure no project is pre-loaded
+                setProjectToLoadInApp(null); 
                 setCurrentView('app');
             }}
           />
