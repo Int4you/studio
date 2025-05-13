@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CheckCircle2 } from 'lucide-react';
+import { Button } from '@/components/ui/button'; // Added import
 
 import RoadmapView from './RoadmapView';
 import LibraryView from './LibraryView';
