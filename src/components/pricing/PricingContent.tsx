@@ -107,9 +107,9 @@ export default function PricingContent() {
                 </CardDescription>
             </Card>
             <Card className="p-4 bg-card border rounded-lg shadow-sm">
-                <CardTitle className="text-md font-medium text-foreground mb-1">What counts as a "Project Generation"?</CardTitle>
+                <CardTitle className="text-md font-medium text-foreground mb-1">What counts as a "Project Credit"?</CardTitle>
                 <CardDescription className="text-sm text-muted-foreground">
-                    A project generation involves initiating a new app idea through the "Spark Idea" step. Editing an existing project or generating subsequent steps for it does not count towards this limit.
+                    A project credit is used when you initiate a new app idea through the "Spark Idea" step. Editing an existing project or generating subsequent steps for it (like Proposal, Market Analysis, etc.) for that same initial idea does not consume additional credits.
                 </CardDescription>
             </Card>
              <Card className="p-4 bg-card border rounded-lg shadow-sm">
@@ -124,3 +124,4 @@ export default function PricingContent() {
     </section>
   );
 }
+

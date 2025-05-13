@@ -28,9 +28,9 @@ interface UseAppWorkflowProps {
   onProjectSave: (project: SavedProject, plan: string) => boolean;
   clearInitialProject: () => void;
   currentUserPlan: string;
-  generationsUsed: number;
-  maxFreeGenerations: number;
-  onGenerationUsed: () => void;
+  creditsUsed: number;
+  maxFreeCredits: number;
+  onCreditUsed: () => void;
 }
 
 export function useAppWorkflow({ 
@@ -38,9 +38,9 @@ export function useAppWorkflow({
     onProjectSave, 
     clearInitialProject,
     currentUserPlan,
-    generationsUsed,
-    maxFreeGenerations,
-    onGenerationUsed
+    creditsUsed,
+    maxFreeCredits,
+    onCreditUsed
 }: UseAppWorkflowProps) {
   const [prompt, setPrompt] = useState<string>('');
   const [ideas, setIdeas] = useState<Idea[]>([]);
@@ -163,7 +163,7 @@ export function useAppWorkflow({
 
     const isStartingNewProjectFromScratch = !selectedIdea && !currentProjectId;
 
-    if (isStartingNewProjectFromScratch && currentUserPlan === FREE_TIER_NAME && generationsUsed >= maxFreeGenerations) {
+    if (isStartingNewProjectFromScratch && currentUserPlan === FREE_TIER_NAME && creditsUsed >= maxFreeCredits) {
       setShowUpgradeModal(true);
       return;
     }
@@ -191,7 +191,7 @@ export function useAppWorkflow({
         });
       } else {
          if (isStartingNewProjectFromScratch && currentUserPlan === FREE_TIER_NAME) {
-          onGenerationUsed();
+          onCreditUsed();
         }
       }
     } catch (err) {
@@ -595,3 +595,4 @@ export function useAppWorkflow({
     resetAppCreationState,
   };
 }
+

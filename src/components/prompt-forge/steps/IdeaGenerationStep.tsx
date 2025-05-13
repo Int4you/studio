@@ -18,7 +18,7 @@ interface IdeaGenerationStepProps {
   selectedIdea: Idea | null;
   onSelectIdea: (idea: Idea) => void;
   error: string | null;
-  canGenerate: boolean; // New prop
+  canGenerate: boolean; 
 }
 
 export default function IdeaGenerationStep({
@@ -30,7 +30,7 @@ export default function IdeaGenerationStep({
   selectedIdea,
   onSelectIdea,
   error,
-  canGenerate, // Use the new prop
+  canGenerate,
 }: IdeaGenerationStepProps) {
   return (
     <form onSubmit={onGenerateIdeas} className="space-y-4">
@@ -48,7 +48,7 @@ export default function IdeaGenerationStep({
         type="submit" 
         disabled={isLoadingIdeas || !prompt.trim() || !canGenerate} 
         className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow"
-        title={!canGenerate ? "Generation limit reached for Free Tier" : "Generate application ideas"}
+        title={!canGenerate ? "Credit limit reached for Free Tier" : "Generate application ideas"}
       >
         {isLoadingIdeas ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -59,7 +59,7 @@ export default function IdeaGenerationStep({
       </Button>
       {!canGenerate && !isLoadingIdeas && (
           <p className="text-xs text-destructive mt-1">
-              You've reached your generation limit for the Free Tier. Please upgrade for unlimited generations.
+              You've reached your credit limit for the Free Tier. Please upgrade for unlimited credits.
           </p>
       )}
       
@@ -99,3 +99,4 @@ export default function IdeaGenerationStep({
     </form>
   );
 }
+

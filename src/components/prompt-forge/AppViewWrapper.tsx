@@ -17,11 +17,11 @@ import { Button } from '@/components/ui/button';
 
 import RoadmapView from './RoadmapView';
 import LibraryView from './LibraryView';
-import { FREE_TIER_NAME, PREMIUM_CREATOR_NAME, MAX_FREE_GENERATIONS, freePlanUIDetails, premiumPlanUIDetails } from '@/config/plans';
+import { FREE_TIER_NAME, PREMIUM_CREATOR_NAME, MAX_FREE_CREDITS, freePlanUIDetails, premiumPlanUIDetails } from '@/config/plans';
 
 export type CurrentView = 'app' | 'roadmap' | 'library';
 const AUTH_TOKEN_KEY = 'promptForgeAuthToken';
-const FREE_GENERATIONS_STORAGE_KEY = 'promptForgeFreeGenerationsUsed';
+const FREE_CREDITS_STORAGE_KEY = 'promptForgeFreeCreditsUsed';
 
 export default function AppViewWrapper() {
   const { toast } = useToast();
@@ -31,7 +31,7 @@ export default function AppViewWrapper() {
   const [currentView, setCurrentView] = useState<CurrentView>('app');
   const [authStatus, setAuthStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
   const [currentUserPlan, setCurrentUserPlan] = useState<string>(FREE_TIER_NAME);
-  const [generationsUsed, setGenerationsUsed] = useState<number>(0);
+  const [creditsUsed, setCreditsUsed] = useState<number>(0);
   
   const [projectToLoadInApp, setProjectToLoadInApp] = useState<SavedProject | null>(null);
 
@@ -44,9 +44,9 @@ export default function AppViewWrapper() {
         // In a real app, plan would be fetched from backend
         // For demo, assuming all authenticated users start on Free Tier unless manually changed/mocked
         setCurrentUserPlan(FREE_TIER_NAME); 
-        const storedGenerations = localStorage.getItem(FREE_GENERATIONS_STORAGE_KEY);
-        if (storedGenerations) {
-          setGenerationsUsed(parseInt(storedGenerations, 10));
+        const storedCredits = localStorage.getItem(FREE_CREDITS_STORAGE_KEY);
+        if (storedCredits) {
+          setCreditsUsed(parseInt(storedCredits, 10));
         }
       } else {
         setAuthStatus('unauthenticated');
@@ -67,8 +67,8 @@ export default function AppViewWrapper() {
 
   const handleLogout = () => {
     localStorage.removeItem(AUTH_TOKEN_KEY);
-    // Optionally, clear generations used if it's tied to login session for demo
-    // localStorage.removeItem(FREE_GENERATIONS_STORAGE_KEY); 
+    // Optionally, clear credits used if it's tied to login session for demo
+    // localStorage.removeItem(FREE_CREDITS_STORAGE_KEY); 
     setAuthStatus('unauthenticated');
     toast({ title: "Logged Out", description: "You have been successfully logged out." });
   };
@@ -120,18 +120,18 @@ export default function AppViewWrapper() {
     } else {
          toast({
             title: "Library Full for Free Tier",
-            description: `Free Tier allows saving ${MAX_FREE_GENERATIONS} project. Please upgrade or delete an existing project.`,
+            description: `Free Tier allows saving ${MAX_FREE_CREDITS} project. Please upgrade or delete an existing project.`,
             variant: "destructive",
         });
     }
     return success;
   };
 
-  const incrementGenerationUsed = () => {
+  const incrementCreditUsed = () => {
     if (currentUserPlan === FREE_TIER_NAME) {
-      setGenerationsUsed(prev => {
+      setCreditsUsed(prev => {
         const newCount = prev + 1;
-        localStorage.setItem(FREE_GENERATIONS_STORAGE_KEY, newCount.toString());
+        localStorage.setItem(FREE_CREDITS_STORAGE_KEY, newCount.toString());
         return newCount;
       });
     }
@@ -158,7 +158,7 @@ export default function AppViewWrapper() {
   }
 
   const planDetailsToDisplay = currentUserPlan === FREE_TIER_NAME ? freePlanUIDetails : premiumPlanUIDetails;
-  const generationsLeft = MAX_FREE_GENERATIONS - generationsUsed;
+  const creditsLeft = MAX_FREE_CREDITS - creditsUsed;
 
   return (
     <TooltipProvider>
@@ -170,26 +170,27 @@ export default function AppViewWrapper() {
               <span className="bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text">PromptForge</span>
             </h1>
           </Link>
-          <div className="flex items-center gap-2 md:gap-4">
-            <Tabs value={currentView} onValueChange={handleTabChange} className="w-auto hidden sm:block">
-              <TabsList className="bg-transparent p-0 border-none">
-                <TabsTrigger value="app" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium flex items-center gap-1.5">
-                  <Wand2 className="h-4 w-4" /> App
-                </TabsTrigger>
-                <TabsTrigger value="roadmap" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium flex items-center gap-1.5">
-                  <Milestone className="h-4 w-4" /> Roadmap
-                </TabsTrigger>
-                <TabsTrigger value="library" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium flex items-center gap-1.5">
-                  <LibraryIcon className="h-4 w-4" /> My Library ({savedProjects.length})
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-            
+          
+          <Tabs value={currentView} onValueChange={handleTabChange} className="hidden sm:block mx-auto">
+            <TabsList className="bg-muted/30 dark:bg-muted/20 p-1 rounded-lg shadow-inner">
+              <TabsTrigger value="app" className="px-4 py-1.5 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md rounded-md">
+                <Wand2 className="mr-1.5 h-4 w-4" /> App
+              </TabsTrigger>
+              <TabsTrigger value="roadmap" className="px-4 py-1.5 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md rounded-md">
+                <Milestone className="mr-1.5 h-4 w-4" /> Roadmap
+              </TabsTrigger>
+              <TabsTrigger value="library" className="px-4 py-1.5 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md rounded-md">
+                <LibraryIcon className="mr-1.5 h-4 w-4" /> My Library ({savedProjects.length})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <div className="flex items-center gap-2 md:gap-3">
             <Popover>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="flex items-center gap-1.5 border-border/50 px-2.5 py-1 rounded-md bg-muted/30 dark:bg-muted/10 shadow-sm cursor-pointer">
+                    <Button variant="outline" size="sm" className="flex items-center gap-1.5 border-border/50 px-2.5 py-1 rounded-md bg-muted/30 dark:bg-muted/10 shadow-sm cursor-pointer h-9">
                       {currentUserPlan === FREE_TIER_NAME ? <Zap className="h-4 w-4 text-primary" /> : <Award className="h-4 w-4 text-amber-500" />}
                       <span className="text-xs font-medium">{currentUserPlan}</span>
                     </Button>
@@ -222,17 +223,17 @@ export default function AppViewWrapper() {
             {currentUserPlan === FREE_TIER_NAME && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Badge variant={generationsLeft > 0 ? "secondary" : "destructive"} className="text-xs cursor-default h-7 px-2.5">
-                            {generationsLeft > 0 ? `${generationsLeft} / ${MAX_FREE_GENERATIONS} Gens Left` : "No Gens Left"}
+                        <Badge variant={creditsLeft > 0 ? "secondary" : "destructive"} className="text-xs cursor-default h-9 px-2.5">
+                            {creditsLeft > 0 ? `${creditsLeft} / ${MAX_FREE_CREDITS} Credits Left` : "No Credits Left"}
                         </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
-                        <p>{generationsLeft > 0 ? `You have ${generationsLeft} project generations remaining on the ${FREE_TIER_NAME}.` : `You have used all project generations on the ${FREE_TIER_NAME}. Upgrade for unlimited.`}</p>
+                        <p>{creditsLeft > 0 ? `You have ${creditsLeft} project credits remaining on the ${FREE_TIER_NAME}.` : `You have used all project credits on the ${FREE_TIER_NAME}. Upgrade for unlimited.`}</p>
                     </TooltipContent>
                 </Tooltip>
             )}
 
-            <Button variant="outline" size="icon" onClick={handleLogout} className="ml-1 h-7 w-7">
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="ml-1 h-9 w-9 text-muted-foreground hover:text-destructive">
               <LogOut className="h-4 w-4" />
               <span className="sr-only">Logout</span>
             </Button>
@@ -241,13 +242,13 @@ export default function AppViewWrapper() {
          <div className="sm:hidden border-t">
             <Tabs value={currentView} onValueChange={handleTabChange} className="w-full">
                 <TabsList className="grid w-full grid-cols-3 bg-transparent p-0 border-none rounded-none">
-                    <TabsTrigger value="app" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-none py-2.5 text-xs font-medium flex flex-col items-center gap-1 h-auto">
+                    <TabsTrigger value="app" className="data-[state=active]:bg-muted data-[state=active]:shadow-none data-[state=active]:text-primary rounded-none py-2.5 text-xs font-medium flex flex-col items-center gap-1 h-auto">
                     <Wand2 className="h-4 w-4" /> App
                     </TabsTrigger>
-                    <TabsTrigger value="roadmap" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-none py-2.5 text-xs font-medium flex flex-col items-center gap-1 h-auto">
+                    <TabsTrigger value="roadmap" className="data-[state=active]:bg-muted data-[state=active]:shadow-none data-[state=active]:text-primary rounded-none py-2.5 text-xs font-medium flex flex-col items-center gap-1 h-auto">
                     <Milestone className="h-4 w-4" /> Roadmap
                     </TabsTrigger>
-                    <TabsTrigger value="library" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-none py-2.5 text-xs font-medium flex flex-col items-center gap-1 h-auto">
+                    <TabsTrigger value="library" className="data-[state=active]:bg-muted data-[state=active]:shadow-none data-[state=active]:text-primary rounded-none py-2.5 text-xs font-medium flex flex-col items-center gap-1 h-auto">
                     <LibraryIcon className="h-4 w-4" /> Library ({savedProjects.length})
                     </TabsTrigger>
                 </TabsList>
@@ -262,9 +263,9 @@ export default function AppViewWrapper() {
             onProjectSave={saveProjectToLibrary}
             clearInitialProject={() => setProjectToLoadInApp(null)}
             currentUserPlan={currentUserPlan}
-            generationsUsed={generationsUsed}
-            maxFreeGenerations={MAX_FREE_GENERATIONS}
-            onGenerationUsed={incrementGenerationUsed}
+            creditsUsed={creditsUsed}
+            maxFreeCredits={MAX_FREE_CREDITS}
+            onCreditUsed={incrementCreditUsed}
           />
         )}
         {currentView === 'roadmap' && (
@@ -287,3 +288,4 @@ export default function AppViewWrapper() {
     </TooltipProvider>
   );
 }
+

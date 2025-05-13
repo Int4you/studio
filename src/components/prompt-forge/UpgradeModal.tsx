@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Zap, Star, ArrowRight } from 'lucide-react';
-import { MAX_FREE_GENERATIONS, PREMIUM_CREATOR_NAME, premiumPlanUIDetails } from '@/config/plans';
+import { MAX_FREE_CREDITS, PREMIUM_CREATOR_NAME, premiumPlanUIDetails } from '@/config/plans';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -38,8 +38,8 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
             Unlock Unlimited Potential!
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center text-muted-foreground pt-1">
-            You've used all your {MAX_FREE_GENERATIONS} free project generations for this cycle.
-            Upgrade to <strong className="text-primary">{PREMIUM_CREATOR_NAME}</strong> for unlimited generations and more!
+            You've used all your {MAX_FREE_CREDITS} free project credits for this cycle.
+            Upgrade to <strong className="text-primary">{PREMIUM_CREATOR_NAME}</strong> for unlimited credits and more!
           </AlertDialogDescription>
         </AlertDialogHeader>
         
@@ -48,14 +48,14 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
                 <Zap className="h-5 w-5 text-primary flex-shrink-0" />
                 <div>
                     <p className="text-sm font-medium text-foreground">Current Plan: Free Tier</p>
-                    <p className="text-xs text-muted-foreground">Limited to {MAX_FREE_GENERATIONS} project generations.</p>
+                    <p className="text-xs text-muted-foreground">Limited to {MAX_FREE_CREDITS} project credits.</p>
                 </div>
             </div>
              <div className="flex items-center gap-3 p-3 bg-primary/10 dark:bg-primary/15 rounded-lg border border-primary/30">
                 <Star className="h-5 w-5 text-primary flex-shrink-0" />
                 <div>
                     <p className="text-sm font-medium text-primary">{PREMIUM_CREATOR_NAME}</p>
-                    <p className="text-xs text-primary/80">Unlimited generations, save all projects, priority support, and more for just {premiumPlanUIDetails.price}{premiumPlanUIDetails.frequency}.</p>
+                    <p className="text-xs text-primary/80">Unlimited credits, save all projects, priority support, and more for just {premiumPlanUIDetails.price}{premiumPlanUIDetails.frequency}.</p>
                 </div>
             </div>
         </div>

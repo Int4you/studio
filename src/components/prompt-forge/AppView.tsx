@@ -22,7 +22,7 @@ import type { SavedProject } from '@/lib/libraryModels';
 import { useAppWorkflow } from '@/hooks/useAppWorkflow';
 import type { AppStepId } from './appWorkflowTypes';
 import { stepsConfig } from './appWorkflowTypes';
-import { FREE_TIER_NAME, MAX_FREE_GENERATIONS, PREMIUM_STEP_IDS } from '@/config/plans';
+import { FREE_TIER_NAME, MAX_FREE_CREDITS, PREMIUM_STEP_IDS } from '@/config/plans';
 
 
 interface AppViewProps {
@@ -30,9 +30,9 @@ interface AppViewProps {
   onProjectSave: (project: SavedProject, plan: string) => boolean;
   clearInitialProject: () => void;
   currentUserPlan: string;
-  generationsUsed: number;
-  maxFreeGenerations: number;
-  onGenerationUsed: () => void;
+  creditsUsed: number;
+  maxFreeCredits: number;
+  onCreditUsed: () => void;
 }
 
 export default function AppView({ 
@@ -40,9 +40,9 @@ export default function AppView({
     onProjectSave, 
     clearInitialProject,
     currentUserPlan,
-    generationsUsed,
-    maxFreeGenerations,
-    onGenerationUsed 
+    creditsUsed,
+    maxFreeCredits,
+    onCreditUsed 
 }: AppViewProps) {
   const {
     prompt,
@@ -94,13 +94,13 @@ export default function AppView({
     onProjectSave, 
     clearInitialProject,
     currentUserPlan,
-    generationsUsed,
-    maxFreeGenerations,
-    onGenerationUsed
+    creditsUsed,
+    maxFreeCredits,
+    onCreditUsed
   });
 
   const currentStepDetails = stepsConfig.find(s => s.id === currentStep);
-  const canStartNewProject = !(currentUserPlan === FREE_TIER_NAME && generationsUsed >= MAX_FREE_GENERATIONS);
+  const canStartNewProject = !(currentUserPlan === FREE_TIER_NAME && creditsUsed >= MAX_FREE_CREDITS);
 
   const isCurrentStepPremiumAndLocked = 
     PREMIUM_STEP_IDS.includes(currentStep) &&
@@ -118,7 +118,7 @@ export default function AppView({
                 size="sm" 
                 className="w-full mb-4"
                 disabled={!canStartNewProject && !currentProjectId && !selectedIdea} 
-                title={!canStartNewProject && !currentProjectId && !selectedIdea ? "Free Tier generation limit reached" : "Start a new project"}
+                title={!canStartNewProject && !currentProjectId && !selectedIdea ? "Free Tier credit limit reached" : "Start a new project"}
             >
                 <RefreshCw className="mr-2 h-4 w-4" /> Start New Project
             </Button>
@@ -159,7 +159,7 @@ export default function AppView({
             size="sm" 
             className="w-full mb-4"
             disabled={!canStartNewProject && !currentProjectId && !selectedIdea}
-            title={!canStartNewProject && !currentProjectId && !selectedIdea ? "Free Tier generation limit reached" : "Start a new project"}
+            title={!canStartNewProject && !currentProjectId && !selectedIdea ? "Free Tier credit limit reached" : "Start a new project"}
           >
               <RefreshCw className="mr-2 h-4 w-4" /> Start New Project
           </Button>
@@ -321,3 +321,4 @@ export default function AppView({
     </div>
   );
 }
+
