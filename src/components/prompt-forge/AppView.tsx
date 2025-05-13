@@ -18,7 +18,7 @@ import SaveProjectStep from './steps/SaveProjectStep';
 import type { SavedProject } from '@/lib/libraryModels';
 import { useAppWorkflow } from '@/hooks/useAppWorkflow';
 import type { AppStepId, AppStepConfig } from './appWorkflowTypes';
-import { stepsConfig } from '@/components/prompt-forge/AppView';
+// Removed self-import: import { stepsConfig } from '@/components/prompt-forge/AppView';
 import { FREE_TIER_NAME, MAX_FREE_GENERATIONS } from '@/config/plans';
 
 
@@ -295,3 +295,4 @@ export default function AppView({
     </div>
   );
 }
+
