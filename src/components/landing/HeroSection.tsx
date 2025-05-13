@@ -36,12 +36,12 @@ export default function HeroSection() {
           </div>
           <div className="relative aspect-[4/3] md:aspect-square rounded-2xl overflow-hidden shadow-2xl border-2 border-primary/20 group transform transition-all duration-500 hover:scale-105 hover:shadow-primary/20">
             <Image 
-              src="https://picsum.photos/seed/ai-innovation/800/600" 
+              src="https://picsum.photos/seed/app-prototyping-tool/800/600" 
               alt="Dynamic abstract visualization of AI powered app creation and innovation" 
               layout="fill"
               objectFit="cover"
               className="transform group-hover:scale-110 transition-transform duration-700 ease-in-out"
-              data-ai-hint="AI innovation interface"
+              data-ai-hint="app prototype"
               priority
             />
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-black/20 opacity-70 group-hover:opacity-50 transition-opacity duration-500"></div>
@@ -55,5 +55,6 @@ export default function HeroSection() {
     </section>
   );
 }
+
 
 
