@@ -138,14 +138,14 @@ export default function AppView({
                 onClick={() => navigateToStep(step.id)}
                 title={isLockedForFreeUser ? `${step.title} is a Premium feature.` : step.description}
               >
-                <step.icon className={cn("mr-3 h-5 w-5", currentStep === step.id ? "text-primary-foreground" : "text-primary")} />
-                <div className="flex-grow min-w-0"> {/* Added min-w-0 for flex robustness */}
-                  <span className="font-medium block overflow-hidden text-ellipsis whitespace-nowrap">{step.title}</span> {/* Added block and overflow handling */}
+                <step.icon className={cn("mr-3 h-5 w-5 shrink-0", currentStep === step.id ? "text-primary-foreground" : "text-primary")} />
+                <div className="flex-grow min-w-0"> 
+                  <span className="font-medium block">{step.title}</span>
                   {isStepCompleted(step.id) && currentStep !== step.id && (
                       <CheckCircle2 className="ml-2 inline-block h-4 w-4 text-green-500" />
                   )}
                 </div>
-                {isPremium && <Crown className="ml-auto h-3.5 w-3.5 text-amber-500 fill-amber-500 flex-shrink-0" />} {/* Changed StarIcon to Crown and added fill */}
+                {isPremium && <Crown className="ml-auto h-3.5 w-3.5 text-amber-500 fill-amber-500 flex-shrink-0" />}
               </Button>
             );
           })}
