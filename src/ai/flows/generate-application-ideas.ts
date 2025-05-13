@@ -1,3 +1,4 @@
+
 // This file is machine-generated - do not edit!
 
 'use server';
@@ -13,6 +14,13 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+const IdeaSchema = z.object({
+    title: z.string().describe('The title of the application idea.'),
+    description: z.string().describe('A short description of the application idea.'),
+});
+export type Idea = z.infer<typeof IdeaSchema>;
+
+
 const GenerateApplicationIdeasInputSchema = z.object({
   prompt: z.string().describe('A prompt describing the type of application to build.'),
 });
@@ -23,12 +31,7 @@ export type GenerateApplicationIdeasInput = z.infer<
 
 const GenerateApplicationIdeasOutputSchema = z.object({
   ideas: z
-    .array(
-      z.object({
-        title: z.string().describe('The title of the application idea.'),
-        description: z.string().describe('A short description of the application idea.'),
-      })
-    )
+    .array(IdeaSchema)
     .describe('An array of application ideas.'),
 });
 
@@ -62,3 +65,4 @@ const generateApplicationIdeasFlow = ai.defineFlow(
     return output!;
   }
 );
+

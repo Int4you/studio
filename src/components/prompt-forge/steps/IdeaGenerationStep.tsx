@@ -1,0 +1,90 @@
+
+"use client";
+
+import React, { type ChangeEvent, type FormEvent } from 'react';
+import type { Idea } from '@/ai/flows/generate-application-ideas';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Loader2, Sparkles, Check } from 'lucide-react';
+
+interface IdeaGenerationStepProps {
+  prompt: string;
+  onPromptChange: (event: ChangeEvent<HTMLTextAreaElement>) => void;
+  onGenerateIdeas: (event?: FormEvent) => Promise<void>;
+  isLoadingIdeas: boolean;
+  ideas: Idea[];
+  selectedIdea: Idea | null;
+  onSelectIdea: (idea: Idea) => void;
+  error: string | null; // Assuming error is managed by parent
+}
+
+export default function IdeaGenerationStep({
+  prompt,
+  onPromptChange,
+  onGenerateIdeas,
+  isLoadingIdeas,
+  ideas,
+  selectedIdea,
+  onSelectIdea,
+  error,
+}: IdeaGenerationStepProps) {
+  return (
+    <form onSubmit={onGenerateIdeas} className="space-y-4">
+      <Label htmlFor="idea-prompt" className="text-sm font-medium">Describe your application idea:</Label>
+      <Textarea
+        id="idea-prompt"
+        placeholder="e.g., 'A mobile app for local community gardening that helps track planting schedules and share harvests.'"
+        value={prompt}
+        onChange={onPromptChange}
+        rows={4}
+        className="resize-none text-base rounded-md shadow-sm"
+        aria-label="Application idea prompt"
+      />
+      <Button type="submit" disabled={isLoadingIdeas || !prompt.trim()} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
+        {isLoadingIdeas ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <Sparkles className="mr-2 h-4 w-4" />
+        )}
+        Generate Ideas
+      </Button>
+      
+      {isLoadingIdeas && (
+        <div className="flex justify-center items-center py-8">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="ml-4 text-muted-foreground">Generating ideas...</p>
+        </div>
+      )}
+
+      {ideas.length > 0 && !isLoadingIdeas && (
+        <div className="space-y-4 mt-6">
+          <h3 className="text-lg font-semibold text-foreground/90">Choose an Idea:</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {ideas.map((idea, index) => (
+              <Card 
+                key={index} 
+                onClick={() => onSelectIdea(idea)} 
+                className={`cursor-pointer transition-all duration-200 ease-in-out hover:shadow-xl hover:ring-2 hover:ring-primary/50 rounded-lg overflow-hidden ${selectedIdea?.title === idea.title ? 'ring-2 ring-primary shadow-xl border-primary' : 'border-border/50 shadow-md'}`}
+              >
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-md">{idea.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">{idea.description}</p>
+                </CardContent>
+                {selectedIdea?.title === idea.title && (
+                    <div className="absolute top-2 right-2 bg-primary text-primary-foreground p-1 rounded-full">
+                        <Check className="h-3 w-3" />
+                    </div>
+                )}
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Error display can be handled by parent or here if specific to this step */}
+    </form>
+  );
+}

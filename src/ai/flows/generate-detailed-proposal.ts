@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Generates a detailed application proposal from an idea.
@@ -14,11 +15,14 @@ const CoreFeatureSchema = z.object({
   feature: z.string().describe('The title of the core feature.'),
   description: z.string().describe('A short description of the core feature.'),
 });
+export type CoreFeature = z.infer<typeof CoreFeatureSchema>;
 
 const UiUxGuidelineSchema = z.object({
   category: z.string().describe('The category of the UI/UX guideline (e.g., Color Palette, Typography, Layout, Navigation, Tone & Voice).'),
   guideline: z.string().describe('The specific guideline for this category.'),
 });
+export type UiUxGuideline = z.infer<typeof UiUxGuidelineSchema>;
+
 
 const GenerateDetailedProposalInputSchema = z.object({
   idea: z.string().describe('The application idea to develop a proposal for. This should be a concise description of the app concept.'),
@@ -71,37 +75,8 @@ const generateDetailedProposalFlow = ai.defineFlow(
       throw new Error("Failed to generate detailed proposal. AI returned no output.");
     }
 
-    // Ensure UI/UX Guidelines are reasonably distinct by category and guideline text to avoid obvious duplicates
     if (output.uiUxGuidelines) {
-      const uniqueGuidelines = output.uiUxGuidelines.reduce((acc, current) => {
-        const trimmedCategory = current.category.trim().toLowerCase();
-        const trimmedGuideline = current.guideline.trim().toLowerCase();
-        
-        const isDuplicate = acc.some(item => 
-            item.category.trim().toLowerCase() === trimmedCategory &&
-            item.guideline.trim().toLowerCase() === trimmedGuideline
-        );
-        
-        // More refined check for distinct categories
-        const isCategoryPresent = acc.some(item => item.category.trim().toLowerCase() === trimmedCategory);
-
-        if (!isDuplicate && !isCategoryPresent) {
-          acc.push(current);
-        } else if (!isDuplicate && isCategoryPresent) {
-          // If category is present but this guideline is new (and wasn't a full duplicate), we might add it.
-          // However, the prompt asks for distinct categories primarily.
-          // To strictly enforce distinct categories for the *first* instance of each guideline type:
-          // This logic is already being handled by the second pass.
-        }
-        return acc;
-      }, [] as z.infer<typeof UiUxGuidelineSchema>[]);
-      
-      // Second pass to ensure distinct categories as much as possible, prioritizing AI's order.
-      // This creates a Map where keys are lowercase category names.
-      // It iterates through the AI's original list and only adds a guideline to the map
-      // if its category hasn't been seen before. This ensures one entry per category,
-      // respecting the AI's initial ordering for which specific guideline represents that category.
-      const categoryMap = new Map<string, z.infer<typeof UiUxGuidelineSchema>>();
+      const categoryMap = new Map<string, UiUxGuideline>();
       for (const guideline of output.uiUxGuidelines) { 
           const categoryKey = guideline.category.trim().toLowerCase();
           if (!categoryMap.has(categoryKey)) {
@@ -114,5 +89,6 @@ const generateDetailedProposalFlow = ai.defineFlow(
     return output;
   }
 );
+
 
 
