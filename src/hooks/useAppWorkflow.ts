@@ -375,7 +375,7 @@ export function useAppWorkflow({
   };
   
   const handleGenerateMarketAnalysis = async () => {
-    if (currentUserPlan === FREE_TIER_NAME) {
+    if (currentUserPlan === FREE_TIER_NAME && !isStepCompleted('marketAnalysis')) {
       setShowUpgradeModal(true);
       return;
     }
@@ -434,7 +434,7 @@ export function useAppWorkflow({
   };
 
   const handleGeneratePricingStrategy = async () => {
-    if (currentUserPlan === FREE_TIER_NAME) {
+    if (currentUserPlan === FREE_TIER_NAME && !isStepCompleted('pricingStrategy')) {
       setShowUpgradeModal(true);
       return;
     }
@@ -475,7 +475,7 @@ export function useAppWorkflow({
   };
   
   const handleGenerateTextToAppPrompt = async () => {
-    if (currentUserPlan === FREE_TIER_NAME) {
+    if (currentUserPlan === FREE_TIER_NAME && !isStepCompleted('devPrompt')) {
       setShowUpgradeModal(true);
       return;
     }
@@ -630,6 +630,3 @@ export function useAppWorkflow({
     resetAppCreationState,
   };
 }
-
-    
-```

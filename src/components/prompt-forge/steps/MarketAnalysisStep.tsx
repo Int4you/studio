@@ -416,4 +416,3 @@ const InfoListCard = ({title, items, icon: Icon}: {title: string, items?: string
         </Card>
     );
 }
-```
