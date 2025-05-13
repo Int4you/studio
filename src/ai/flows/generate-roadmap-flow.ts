@@ -35,7 +35,7 @@ const RoadmapFeatureSchema = z.object({
 });
 
 const RoadmapPhaseSchema = z.object({
-  phaseNumber: z.number().int().positive().describe("The chronological number of the phase (e.g., 1, 2, 3)."),
+  phaseNumber: z.number().describe("The chronological number of the phase (e.g., 1, 2, 3). This must be a positive integer."),
   phaseTitle: z.string().describe("A concise and descriptive title for the phase (e.g., 'Phase 1: Core MVP Launch & User Onboarding')."),
   phaseGoal: z.string().describe("The primary objective or main goal to achieve by the end of this phase."),
   estimatedDuration: z.string().describe("An estimated timeframe for this phase (e.g., '4-6 Weeks', '2 Sprints (4 Weeks)', '1 Month')."),
@@ -88,7 +88,7 @@ Roadmap Generation Guidelines:
 2.  **MVP Phases (2-4 Phases)**:
     *   Divide the MVP development into 2 to 4 logical, sequential phases.
     *   For each phase, provide:
-        *   \\\`phaseNumber\\\`: A chronological number (1, 2, etc.).
+        *   \\\`phaseNumber\\\`: A chronological, positive integer number (1, 2, etc.).
         *   \\\`phaseTitle\\\`: A concise, descriptive title (e.g., "Phase 1: Core Functionality & User Onboarding").
         *   \\\`phaseGoal\\\`: The primary objective of this phase.
         *   \\\`estimatedDuration\\\`: An estimated timeframe (e.g., "3-5 Weeks", "1 Sprint (2 Weeks)").
