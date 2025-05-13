@@ -1,13 +1,15 @@
+
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Lightbulb, Brain, FileText, /*ImageIcon,*/ TerminalSquare, HardDriveUpload, ArrowRight, TrendingUp, Search, CheckCircle, Tag, DollarSign } from 'lucide-react'; 
+import { Lightbulb, Brain, FileText, TerminalSquare, HardDriveUpload, ArrowRight, TrendingUp, Search, CheckCircle, Tag } from 'lucide-react'; 
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const steps = [
   {
     icon: Lightbulb,
-    title: '1. Ignite Your Vision: Share Your Idea',
+    title: 'Ignite Your Vision: Share Your Idea',
     description: "Begin by articulating your app concept. Describe the problem it solves, your target audience, and key functionalities. The richer your input, the smarter PromptForge's AI assistance.",
     imageSrc: "https://picsum.photos/seed/vision-spark/800/600",
     imageAlt: "Abstract visual of a lightbulb turning into an app interface",
@@ -15,7 +17,7 @@ const steps = [
   },
   {
     icon: Brain,
-    title: '2. Explore Possibilities: AI-Generated Concepts',
+    title: 'Explore Possibilities: AI-Generated Concepts',
     description: "PromptForge's AI brainstorms diverse application concepts from your prompt. Review these creative options and select the one that perfectly aligns with your vision.",
     imageSrc: "https://picsum.photos/seed/ai-concepts/800/600",
     imageAlt: "Multiple unique app idea cards presented for selection",
@@ -23,7 +25,7 @@ const steps = [
   },
   {
     icon: FileText,
-    title: '3. Solidify Your Plan: Detailed AI Proposal',
+    title: 'Solidify Your Plan: Detailed AI Proposal',
     description: "With your chosen idea, the AI crafts a comprehensive proposal. This includes a compelling app name, detailed core features, and specific UI/UX guidelines, all editable to your preference.",
     imageSrc: "https://picsum.photos/seed/ai-proposal/800/600",
     imageAlt: "A structured document showing app name, features, and UI/UX guidelines",
@@ -31,7 +33,7 @@ const steps = [
   },
   {
     icon: Search,
-    title: '4. Understand the Field: Market & Competitor Analysis',
+    title: 'Understand the Field: Market & Competitor Analysis',
     description: "Gain critical insights into the market landscape. AI analyzes trends, identifies competitors, assesses market size, and provides a SWOT analysis to inform your strategy.",
     imageSrc: "https://picsum.photos/seed/market-scan/800/600",
     imageAlt: "Infographics and charts depicting market trends and competitor data",
@@ -39,31 +41,23 @@ const steps = [
   },
   {
     icon: TrendingUp, 
-    title: '5. Focus Your Efforts: AI Feature Prioritization', 
+    title: 'Focus Your Efforts: AI Feature Prioritization', 
     description: "Leverage AI to analyze and rank your core features by potential market impact and estimated development effort, guiding your MVP strategy effectively.",
     imageSrc: "https://picsum.photos/seed/feature-rank/800/600", 
     imageAlt: "A visual chart or list ranking app features by priority scores",
     aiHint: "priority matrix",
   },
-  { // New Step for Pricing Strategy
-    icon: Tag, // Or DollarSign
-    title: '6. Define Value: AI-Driven Pricing Strategy',
+  {
+    icon: Tag,
+    title: 'Define Value: AI-Driven Pricing Strategy',
     description: "Receive AI-powered recommendations for optimal pricing models, tiers, and strategies, considering your app's value, market, and monetization goals.",
     imageSrc: "https://picsum.photos/seed/pricing-models/800/600",
     imageAlt: "Visual representation of different pricing tiers and models",
     aiHint: "pricing strategy",
   },
-  // { // Removed Mockup Step
-  //   icon: ImageIcon,
-  //   title: '6. See It Come to Life: AI-Generated Mockups',
-  //   description: "Instantly visualize your app with multiple high-fidelity mobile mockups. Optionally provide a reference image to perfectly guide the visual style and aesthetic.",
-  //   imageSrc: "https://picsum.photos/seed/app-visualization/800/600",
-  //   imageAlt: "A gallery of diverse mobile app screen mockups",
-  //   aiHint: "mobile UI",
-  // },
   {
     icon: TerminalSquare,
-    title: '7. Accelerate Development: AI Developer Prompt', // Adjusted step number
+    title: 'Accelerate Development: AI Developer Prompt',
     description: "Transform your detailed proposal into a powerful, structured prompt, specifically engineered for \"Text-to-App\" AI code generation tools, jumpstarting actual development.",
     imageSrc: "https://picsum.photos/seed/dev-prompt/800/600",
     imageAlt: "A code editor interface showing a well-structured prompt for AI code generation",
@@ -71,7 +65,7 @@ const steps = [
   },
   {
     icon: HardDriveUpload,
-    title: '8. Secure Your Progress: Save to Project Library', // Adjusted step number
+    title: 'Secure Your Progress: Save to Project Library',
     description: "Keep all your innovative projects meticulously organized. Save ideas, proposals, analyses, mockups, and prompts to your personal library for easy access and iteration.",
     imageSrc: "https://picsum.photos/seed/project-vault/800/600",
     imageAlt: "A clean interface showing a list or grid of saved app projects",
@@ -96,39 +90,71 @@ export default function HowItWorksContent() {
           </p>
         </div>
 
-        <div className="space-y-16 md:space-y-20">
+        <div className="relative">
+          {/* Path line */}
+          <div className="hidden md:block absolute top-0 bottom-0 left-1/2 w-1 bg-border/40 -translate-x-1/2"></div>
+          
           {steps.map((step, index) => {
             const IconComponent = step.icon;
+            const isEven = index % 2 === 0;
             return (
-              <Card 
-                key={index} 
-                className="overflow-hidden shadow-xl hover:shadow-primary/10 border border-border/20 rounded-xl transition-all duration-300 group bg-card"
-              >
-                <div className={`grid md:grid-cols-2 items-center ${index % 2 === 0 ? '' : 'md:grid-flow-col-dense'}`}>
-                  <div className={`relative min-h-[300px] md:min-h-[450px] w-full ${index % 2 === 0 ? 'md:order-last' : ''}`}>
-                    <Image
-                      src={step.imageSrc}
-                      alt={step.imageAlt}
-                      layout="fill"
-                      objectFit="cover"
-                      className="transform transition-transform duration-500 group-hover:scale-105 rounded-md md:rounded-none"
-                      data-ai-hint={step.aiHint}
-                    />
-                    <div className={`absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent md:bg-gradient-to-${index % 2 === 0 ? 'l' : 'r'} md:from-card md:via-transparent md:to-transparent opacity-40 group-hover:opacity-20 transition-opacity`}></div>
+              <div key={index} className="relative mb-12 md:mb-24">
+                {/* Numbered circle for the path */}
+                <div className={cn(
+                  "absolute top-0 w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold shadow-lg border-4 border-background z-10",
+                  "md:left-1/2 md:-translate-x-1/2 md:-mt-1", // Desktop positioning
+                  "left-0 -translate-x-4 -mt-1 md:translate-x-0" // Mobile positioning (left aligned)
+                )}>
+                  {index + 1}
+                </div>
+
+                <div className={cn(
+                  "flex flex-col md:flex-row items-center",
+                  isEven ? "md:flex-row" : "md:flex-row-reverse"
+                )}>
+                  {/* Content Card */}
+                  <div className={cn(
+                    "w-full md:w-1/2",
+                    isEven ? "md:pr-12" : "md:pl-12",
+                    "md:mt-0 mt-8 ml-8 md:ml-0" // Mobile content offset
+                  )}>
+                    <Card className="overflow-hidden shadow-xl hover:shadow-primary/10 border border-border/20 rounded-xl transition-all duration-300 group bg-card">
+                      <CardHeader className="p-6">
+                        <div className="flex items-center mb-3">
+                          <div className="p-3 rounded-full bg-primary/10 border border-primary/20 mr-4 group-hover:bg-primary/20 transition-colors shadow-sm">
+                            <IconComponent className="h-7 w-7 text-primary group-hover:scale-110 transition-transform" />
+                          </div>
+                          <CardTitle className="text-xl md:text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{step.title}</CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-6 pt-0">
+                        <CardDescription className="text-base text-muted-foreground leading-relaxed">
+                          {step.description}
+                        </CardDescription>
+                      </CardContent>
+                    </Card>
                   </div>
-                  <div className="p-6 md:p-10 lg:p-12 flex flex-col justify-center">
-                    <div className="flex items-center justify-center md:justify-start mb-5">
-                      <div className="p-3.5 rounded-full bg-primary/10 border border-primary/20 w-16 h-16 flex items-center justify-center group-hover:bg-primary/20 transition-colors shadow-sm">
-                         <IconComponent className="h-8 w-8 text-primary group-hover:scale-110 transition-transform" />
-                      </div>
+
+                  {/* Image */}
+                  <div className={cn(
+                    "w-full md:w-1/2 mt-8 md:mt-0",
+                    isEven ? "md:pl-12" : "md:pr-12",
+                     "ml-8 md:ml-0" // Mobile image offset
+                  )}>
+                    <div className="relative aspect-video rounded-xl overflow-hidden shadow-2xl border-2 border-primary/10 group hover:border-primary/30 transition-all">
+                      <Image
+                        src={step.imageSrc}
+                        alt={step.imageAlt}
+                        layout="fill"
+                        objectFit="cover"
+                        className="transform transition-transform duration-500 group-hover:scale-105"
+                        data-ai-hint={step.aiHint}
+                      />
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent group-hover:opacity-75 transition-opacity"></div>
                     </div>
-                    <CardTitle className="text-2xl md:text-3xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors text-center md:text-left">{step.title}</CardTitle>
-                    <CardDescription className="text-base md:text-lg text-muted-foreground leading-relaxed text-center md:text-left">
-                      {step.description}
-                    </CardDescription>
                   </div>
                 </div>
-              </Card>
+              </div>
             );
           })}
         </div>
@@ -152,7 +178,3 @@ export default function HowItWorksContent() {
     </section>
   );
 }
-
-```
-  </change>
-  <change>
