@@ -205,15 +205,15 @@ export default function AppViewWrapper() {
                 <div className="p-4 space-y-3">
                   {/* Current Plan Display */}
                   <div className={`p-3 rounded-md border ${isPremium ? 'border-amber-400/80 bg-amber-50/70 dark:bg-amber-900/25' : 'border-border/30 bg-muted/30 dark:bg-muted/20'}`}>
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1.5">
                       {isPremium ? <Crown className="h-5 w-5 text-amber-500" /> : <Zap className="h-5 w-5 text-primary" />}
                       <h5 className={`font-bold ${isPremium ? 'text-amber-600 dark:text-amber-400' : 'text-primary'}`}>{isPremium ? PREMIUM_CREATOR_NAME : FREE_TIER_NAME}</h5>
                     </div>
-                    <ul className="space-y-1.5 text-xs text-muted-foreground pl-1">
+                    <ul className="space-y-1 text-xs text-muted-foreground pl-1">
                       {(isPremium ? premiumPlanUIDetails.features : freePlanUIDetails.features).map((feature, index) => (
                         <li key={index} className="flex items-start">
                           <CheckCircle2 className={`h-3.5 w-3.5 mr-1.5 mt-0.5 shrink-0 ${isPremium ? 'text-amber-500' : 'text-green-500'}`} />
-                          <span>{feature}</span>
+                          <span>{feature.startsWith("Access to all core AI features") && isPremium ? "Access to all AI features (incl. premium)" : feature}</span>
                         </li>
                       ))}
                     </ul>
@@ -223,22 +223,22 @@ export default function AppViewWrapper() {
                   {!isPremium && (
                     <div className="pt-3 border-t mt-3">
                        <div className="p-3 rounded-md border border-amber-400/80 bg-amber-50/70 dark:bg-amber-900/25 mb-3">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1.5">
                             <Crown className="h-5 w-5 text-amber-500" />
                             <h5 className="font-bold text-amber-600 dark:text-amber-400">{PREMIUM_CREATOR_NAME}</h5>
                           </div>
-                           <p className="text-xs text-amber-700/90 dark:text-amber-400/90 mb-2">{premiumPlanUIDetails.description}</p>
-                          <ul className="space-y-1.5 text-xs text-amber-700/80 dark:text-amber-500/80 pl-1">
+                           <p className="text-xs text-amber-700/90 dark:text-amber-400/90 mb-2.5">{premiumPlanUIDetails.description}</p>
+                          <ul className="space-y-1 text-xs text-amber-700/80 dark:text-amber-500/80 pl-1">
                             {premiumPlanUIDetails.features.slice(0,3).map((feature, index) => (
                               <li key={index} className="flex items-start">
                                 <CheckCircle2 className="h-3.5 w-3.5 text-amber-500 mr-1.5 mt-0.5 shrink-0" />
-                                <span>{feature}</span>
+                                <span>{feature.startsWith("Access to all core AI features") ? "Access to all AI features (incl. premium)" : feature}</span>
                               </li>
                             ))}
                              <li className="flex items-start"><CheckCircle2 className="h-3.5 w-3.5 text-amber-500 mr-1.5 mt-0.5 shrink-0" /><span>And many more...</span></li>
                           </ul>
                        </div>
-                      <Button asChild size="sm" className="w-full bg-amber-500 hover:bg-amber-600 text-white dark:bg-amber-600 dark:hover:bg-amber-700 dark:text-amber-50 shadow-md hover:shadow-lg transition-shadow">
+                      <Button asChild size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground dark:bg-primary dark:hover:bg-primary/90 dark:text-primary-foreground shadow-md hover:shadow-lg transition-shadow">
                         <Link href="/pricing">Upgrade to Premium ({premiumPlanUIDetails.price}{premiumPlanUIDetails.frequency})</Link>
                       </Button>
                     </div>

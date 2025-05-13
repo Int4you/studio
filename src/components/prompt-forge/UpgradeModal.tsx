@@ -44,13 +44,13 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
         <div className="py-6 px-6 sm:px-8 space-y-5 border-t border-b border-border/20">
             <div className="flex flex-col sm:flex-row gap-5 items-stretch">
                 {/* Free Tier Card */}
-                <div className="flex-1 p-4 sm:p-5 bg-muted/20 dark:bg-muted/10 rounded-lg border border-border/30 shadow-sm flex flex-col">
+                <div className="flex-1 p-4 sm:p-5 bg-muted/20 dark:bg-muted/10 rounded-lg border border-border/30 shadow-sm flex flex-col min-h-[260px]">
                     <div className="flex items-center gap-2 mb-2.5">
                         <Zap className="h-5 w-5 text-muted-foreground" />
                         <h3 className="text-md font-semibold text-muted-foreground">{FREE_TIER_NAME}</h3>
                     </div>
                     <p className="text-xs text-muted-foreground/80 mb-3.5 flex-grow">{freePlanUIDetails.features.find(f => f.includes("Project Credits"))}</p>
-                    <ul className="space-y-2 text-xs text-muted-foreground/70">
+                    <ul className="space-y-1.5 text-xs text-muted-foreground/70">
                         {freePlanUIDetails.features.filter(f => !f.includes("Project Credits")).slice(0,2).map((feat, i) => (
                             <li key={`free-${i}`} className="flex items-start">
                                 <CheckCircle2 className={`h-3.5 w-3.5 mr-1.5 mt-px shrink-0 text-green-500`} />
@@ -60,7 +60,7 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
                     </ul>
                 </div>
                 {/* Premium Tier Card */}
-                <div className="flex-1 p-4 sm:p-5 bg-amber-50/80 dark:bg-amber-900/25 rounded-lg border-2 border-amber-400/80 dark:border-amber-500/70 shadow-lg relative overflow-hidden flex flex-col">
+                <div className="flex-1 p-4 sm:p-5 bg-amber-50/80 dark:bg-amber-900/25 rounded-lg border-2 border-amber-400/80 dark:border-amber-500/70 shadow-lg relative overflow-hidden flex flex-col min-h-[260px]">
                     <div className="absolute -top-px -right-px bg-amber-500 text-white text-[0.6rem] font-bold py-1 px-3 rounded-bl-lg shadow-md tracking-wider">
                         BEST VALUE
                     </div>
@@ -69,11 +69,11 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
                         <h3 className="text-md font-semibold text-amber-700 dark:text-amber-300">{PREMIUM_CREATOR_NAME}</h3>
                     </div>
                      <p className="text-xs text-amber-700/90 dark:text-amber-400/90 mb-3.5 flex-grow">{premiumPlanUIDetails.description}</p>
-                    <ul className="space-y-2 text-xs text-amber-700/80 dark:text-amber-500/80">
+                    <ul className="space-y-1.5 text-xs text-amber-700/80 dark:text-amber-500/80">
                         {premiumPlanUIDetails.features.map((feat, i) => (
                             <li key={`prem-${i}`} className="flex items-start">
                                 <CheckCircle2 className="h-3.5 w-3.5 text-amber-500 mr-1.5 mt-px shrink-0" />
-                                <span>{feat}</span>
+                                <span>{feat.startsWith("Access to all core AI features") ? "Access to all AI features (incl. premium)" : feat}</span>
                             </li>
                         ))}
                     </ul>
