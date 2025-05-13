@@ -5,7 +5,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { cn } from "@/lib/utils";
-import { CheckCircle2, RefreshCw, ArrowRight, Star as StarIcon } from 'lucide-react'; // Renamed Star to StarIcon
+import { CheckCircle2, RefreshCw, ArrowRight, Crown } from 'lucide-react'; 
 
 import IdeaGenerationStep from './steps/IdeaGenerationStep';
 import ProposalStep from './steps/ProposalStep';
@@ -139,13 +139,13 @@ export default function AppView({
                 title={isLockedForFreeUser ? `${step.title} is a Premium feature.` : step.description}
               >
                 <step.icon className={cn("mr-3 h-5 w-5", currentStep === step.id ? "text-primary-foreground" : "text-primary")} />
-                <div className="flex-grow">
-                  <span className="font-medium">{step.title}</span>
+                <div className="flex-grow min-w-0"> {/* Added min-w-0 for flex robustness */}
+                  <span className="font-medium block overflow-hidden text-ellipsis whitespace-nowrap">{step.title}</span> {/* Added block and overflow handling */}
                   {isStepCompleted(step.id) && currentStep !== step.id && (
                       <CheckCircle2 className="ml-2 inline-block h-4 w-4 text-green-500" />
                   )}
                 </div>
-                {isPremium && <StarIcon className="ml-auto h-3.5 w-3.5 text-amber-500 flex-shrink-0" />}
+                {isPremium && <Crown className="ml-auto h-3.5 w-3.5 text-amber-500 fill-amber-500 flex-shrink-0" />} {/* Changed StarIcon to Crown and added fill */}
               </Button>
             );
           })}
