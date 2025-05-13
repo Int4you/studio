@@ -1,6 +1,7 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Zap, Eye, Sparkles } from 'lucide-react';
+import { ArrowRight, Zap, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 
 export default function HeroSection() {
@@ -26,12 +27,7 @@ export default function HeroSection() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" asChild className="shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 px-8 py-6 text-base border-border hover:border-primary/50">
-                <Link href="/how-it-works">
-                  How It Works
-                  <Eye className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+              {/* Learn More button removed */}
             </div>
           </div>
           <div className="relative aspect-[4/3] md:aspect-square rounded-2xl overflow-hidden shadow-2xl border-2 border-primary/20 group transform transition-all duration-500 hover:scale-105 hover:shadow-primary/20">
@@ -55,6 +51,7 @@ export default function HeroSection() {
     </section>
   );
 }
+
 
 
 

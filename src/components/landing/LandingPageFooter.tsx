@@ -22,7 +22,6 @@ export default function LandingPageFooter() {
             <h4 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-4">Quick Links</h4>
             <ul className="space-y-2 text-sm">
               <li><Link href="/#features" className="hover:text-primary transition-colors">Features</Link></li>
-              <li><Link href="/how-it-works" className="hover:text-primary transition-colors">How It Works</Link></li>
               <li><Link href="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li> 
               <li><Link href="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
             </ul>

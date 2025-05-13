@@ -3,7 +3,7 @@ import HeroSection from '@/components/landing/HeroSection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
 import CallToActionSection from '@/components/landing/CallToActionSection';
 import LandingPageFooter from '@/components/landing/LandingPageFooter';
-import { Cpu, LogIn, DollarSign, Mail, ArrowRight, Info } from 'lucide-react';
+import { Cpu, LogIn, DollarSign, Mail, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -19,11 +19,6 @@ export default function LandingPage() {
             </h1>
           </Link>
           <nav className="hidden md:flex items-center space-x-1">
-            <Button variant="ghost" asChild>
-              <Link href="/how-it-works" className="flex items-center text-sm">
-                <Info className="mr-1.5 h-4 w-4" /> How It Works
-              </Link>
-            </Button>
             <Button variant="ghost" asChild>
               <Link href="/login" className="flex items-center text-sm"> 
                 <LogIn className="mr-1.5 h-4 w-4" /> Login
