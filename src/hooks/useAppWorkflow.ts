@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, type ChangeEvent, type FormEvent, useCallback } from 'react';
@@ -79,7 +78,27 @@ export function useAppWorkflow({
       coreFeatures: currentProposal ? new Array(currentProposal.coreFeatures.length).fill(false) : [],
       uiUxGuidelines: currentProposal ? new Array(currentProposal.uiUxGuidelines.length).fill(false) : [],
     });
-  }, []);
+  }, []); // Empty dependency array makes it stable
+
+  // Effect to load data from initialProject
+  useEffect(() => {
+    if (initialProject) {
+      setPrompt(initialProject.originalPrompt || initialProject.ideaTitle);
+      setSelectedIdea({ title: initialProject.ideaTitle, description: initialProject.ideaDescription });
+      const loadedProposalData = {
+        appName: initialProject.appName,
+        coreFeatures: initialProject.coreFeatures,
+        uiUxGuidelines: initialProject.uiUxGuidelines
+      };
+      setProposal(loadedProposalData);
+      initializeEditingStates(loadedProposalData); // Call stable function
+      setMarketAnalysis(initialProject.marketAnalysis || null);
+      setPrioritizedFeatures(initialProject.prioritizedFeatures || null);
+      setPricingStrategy(initialProject.pricingStrategy || null);
+      setTextToAppPrompt(initialProject.textToAppPrompt || null);
+      setCurrentProjectId(initialProject.id);
+    }
+  }, [initialProject, initializeEditingStates]);
 
   const isStepCompleted = useCallback((stepId: AppStepId): boolean => {
     switch (stepId) {
@@ -94,6 +113,33 @@ export function useAppWorkflow({
     }
   }, [selectedIdea, ideas.length, isLoadingIdeas, proposal, marketAnalysis, prioritizedFeatures, pricingStrategy, textToAppPrompt, currentProjectId, isLoadingPrioritization]);
 
+  // Effect to set the current step after data is loaded or when relevant states change
+  useEffect(() => {
+    if (initialProject && currentProjectId === initialProject.id) {
+      // Data is loaded from an initial project
+      let resumeStep: AppStepId = 'ideas';
+      if (isStepCompleted('save')) resumeStep = 'save';
+      else if (isStepCompleted('devPrompt')) resumeStep = 'save'; 
+      else if (isStepCompleted('pricingStrategy')) resumeStep = 'devPrompt';
+      else if (isStepCompleted('marketAnalysis')) resumeStep = 'pricingStrategy';
+      else if (isStepCompleted('prioritization')) resumeStep = 'marketAnalysis';
+      else if (isStepCompleted('proposal')) resumeStep = 'prioritization';
+      else if (isStepCompleted('ideas')) resumeStep = 'proposal';
+
+      if (PREMIUM_STEP_IDS.includes(resumeStep) && currentUserPlan === FREE_TIER_NAME && !isStepCompleted(resumeStep)) {
+        const lastNonPremiumCompletedStep = stepsConfig
+          .slice()
+          .reverse()
+          .find(step => !PREMIUM_STEP_IDS.includes(step.id) && isStepCompleted(step.id));
+        resumeStep = lastNonPremiumCompletedStep ? lastNonPremiumCompletedStep.id : 'ideas';
+      }
+      setCurrentStep(resumeStep);
+    } else if (!initialProject) {
+      // This case is handled by resetAppCreationState setting currentStep to 'ideas'
+    }
+  }, [initialProject, currentProjectId, currentUserPlan, isStepCompleted]);
+
+
   const resetAppCreationState = useCallback((clearPromptField = false) => {
     if (clearPromptField) setPrompt('');
     setIdeas([]);
@@ -103,51 +149,13 @@ export function useAppWorkflow({
     setPrioritizedFeatures(null);
     setPricingStrategy(null); 
     setTextToAppPrompt(null);
-    setCurrentProjectId(null);
+    setCurrentProjectId(null); 
     setError(null);
     initializeEditingStates(null);
     setCurrentStep('ideas');
     clearInitialProject();
   }, [initializeEditingStates, clearInitialProject]);
   
-  useEffect(() => {
-    if (initialProject) {
-      setPrompt(initialProject.originalPrompt || initialProject.ideaTitle);
-      setSelectedIdea({ title: initialProject.ideaTitle, description: initialProject.ideaDescription });
-      const loadedProposal = {
-        appName: initialProject.appName,
-        coreFeatures: initialProject.coreFeatures,
-        uiUxGuidelines: initialProject.uiUxGuidelines
-      };
-      setProposal(loadedProposal);
-      initializeEditingStates(loadedProposal);
-      setMarketAnalysis(initialProject.marketAnalysis || null);
-      setPrioritizedFeatures(initialProject.prioritizedFeatures || null);
-      setPricingStrategy(initialProject.pricingStrategy || null);
-      setTextToAppPrompt(initialProject.textToAppPrompt || null);
-      setCurrentProjectId(initialProject.id);
-
-      let resumeStep: AppStepId = 'ideas';
-      if (initialProject.textToAppPrompt) resumeStep = 'save';
-      else if (initialProject.pricingStrategy) resumeStep = 'devPrompt';
-      else if (initialProject.marketAnalysis) resumeStep = 'pricingStrategy';
-      else if (initialProject.prioritizedFeatures && initialProject.prioritizedFeatures.length > 0) resumeStep = 'marketAnalysis';
-      else if (loadedProposal.coreFeatures && loadedProposal.coreFeatures.length > 0) resumeStep = 'prioritization';
-      else if (selectedIdea) resumeStep = 'proposal';
-      
-      // If the user is free and the target step is premium but not completed, start them at the last non-premium completed step
-      if (PREMIUM_STEP_IDS.includes(resumeStep) && currentUserPlan === FREE_TIER_NAME && !isStepCompleted(resumeStep)) {
-         const lastNonPremiumCompletedStep = stepsConfig
-            .slice()
-            .reverse()
-            .find(step => !PREMIUM_STEP_IDS.includes(step.id) && isStepCompleted(step.id));
-        resumeStep = lastNonPremiumCompletedStep ? lastNonPremiumCompletedStep.id : 'ideas';
-      }
-      setCurrentStep(resumeStep);
-
-    }
-  }, [initialProject, initializeEditingStates, currentUserPlan, isStepCompleted]);
-
 
   const handlePromptChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setPrompt(event.target.value);
@@ -178,6 +186,7 @@ export function useAppWorkflow({
     setTextToAppPrompt(null);
     setCurrentProjectId(null); 
     initializeEditingStates(null);
+    setCurrentStep('ideas'); // Reset step to ideas when generating new ideas
 
     try {
       const input: GenerateApplicationIdeasInput = { prompt };
@@ -272,7 +281,7 @@ export function useAppWorkflow({
     setProposal(prevProposal => {
       if (!prevProposal) return null;
       const newProposal = { ...prevProposal, coreFeatures: [...prevProposal.coreFeatures, { feature: '', description: '' }] };
-      setEditingStates(prevEditing => ({ ...prevEditing, coreFeatures: [...prevEditing.coreFeatures, true] }));
+      setEditingStates(prevEditing => ({ ...prevEditing, coreFeatures: [...prevEditing.coreFeatures, ...new Array(newProposal.coreFeatures.length - prevProposal.coreFeatures.length).fill(true)] }));
       return newProposal;
     });
     setPrioritizedFeatures(null); 
@@ -309,7 +318,7 @@ export function useAppWorkflow({
      setProposal(prevProposal => {
       if (!prevProposal) return null;
       const newProposal = { ...prevProposal, uiUxGuidelines: [...prevProposal.uiUxGuidelines, { category: '', guideline: '' }] };
-      setEditingStates(prevEditing => ({ ...prevEditing, uiUxGuidelines: [...prevEditing.uiUxGuidelines, true] }));
+      setEditingStates(prevEditing => ({ ...prevEditing, uiUxGuidelines: [...prevEditing.uiUxGuidelines, ...new Array(newProposal.uiUxGuidelines.length - prevProposal.uiUxGuidelines.length).fill(true)] }));
       return newProposal;
     });
     setPricingStrategy(null); 
@@ -595,4 +604,3 @@ export function useAppWorkflow({
     resetAppCreationState,
   };
 }
-
