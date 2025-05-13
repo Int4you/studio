@@ -20,15 +20,28 @@ import { generatePricingStrategy } from '@/ai/flows/generate-pricing-strategy-fl
 import type { SavedProject } from '@/lib/libraryModels';
 import { useToast } from '@/hooks/use-toast';
 import type { AppStepId, EditingStates } from '@/components/prompt-forge/appWorkflowTypes';
-import { stepsConfig } from '@/components/prompt-forge/AppView'; // Assuming stepsConfig is exported from AppView or moved
+import { stepsConfig } from '@/components/prompt-forge/AppView';
+import { FREE_TIER_NAME } from '@/config/plans';
 
 interface UseAppWorkflowProps {
   initialProject: SavedProject | null;
-  onProjectSave: (project: SavedProject) => void;
+  onProjectSave: (project: SavedProject, plan: string) => boolean; // Updated to return boolean
   clearInitialProject: () => void;
+  currentUserPlan: string;
+  generationsUsed: number;
+  maxFreeGenerations: number;
+  onGenerationUsed: () => void;
 }
 
-export function useAppWorkflow({ initialProject, onProjectSave, clearInitialProject }: UseAppWorkflowProps) {
+export function useAppWorkflow({ 
+    initialProject, 
+    onProjectSave, 
+    clearInitialProject,
+    currentUserPlan,
+    generationsUsed,
+    maxFreeGenerations,
+    onGenerationUsed
+}: UseAppWorkflowProps) {
   const [prompt, setPrompt] = useState<string>('');
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
@@ -122,6 +135,17 @@ export function useAppWorkflow({ initialProject, onProjectSave, clearInitialProj
       toast({ title: "Prompt Required", description: "Please enter a prompt to generate ideas.", variant: "destructive"});
       return;
     }
+
+    const isStartingNewProject = !selectedIdea && !currentProjectId;
+    if (isStartingNewProject && currentUserPlan === FREE_TIER_NAME && generationsUsed >= maxFreeGenerations) {
+      toast({
+        title: "Free Tier Limit Reached",
+        description: `You have used all your ${maxFreeGenerations} free project generations. Please upgrade to continue.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoadingIdeas(true);
     setIdeas([]); 
     setSelectedIdea(null); 
@@ -143,6 +167,10 @@ export function useAppWorkflow({ initialProject, onProjectSave, clearInitialProj
           description: "The AI didn't return any ideas for your prompt. Try refining it.",
           variant: "default",
         });
+      } else {
+         if (isStartingNewProject && currentUserPlan === FREE_TIER_NAME) {
+          onGenerationUsed();
+        }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
@@ -428,8 +456,11 @@ export function useAppWorkflow({ initialProject, onProjectSave, clearInitialProj
       savedAt: new Date().toISOString(),
       originalPrompt: prompt,
     };
-    onProjectSave(projectToSave);
-    setCurrentProjectId(projectToSave.id);
+    const success = onProjectSave(projectToSave, currentUserPlan);
+    if (success) {
+      setCurrentProjectId(projectToSave.id);
+    }
+    // Toast for success/failure is handled by AppViewWrapper's saveProjectToLibrary
   };
 
   const toggleEditState = (section: keyof EditingStates, indexOrValue: number | boolean, value?: boolean) => {
@@ -484,9 +515,6 @@ export function useAppWorkflow({ initialProject, onProjectSave, clearInitialProj
     const currentIndex = stepsConfig.findIndex(s => s.id === currentStep);
     if (currentIndex < stepsConfig.length - 1) {
       const nextStepId = stepsConfig[currentIndex + 1].id;
-      // Allow navigation even if current step isn't fully "completed" by AI,
-      // as user might want to manually fill or skip.
-      // The individual step components should handle prerequisites.
       setCurrentStep(nextStepId);
     }
   };

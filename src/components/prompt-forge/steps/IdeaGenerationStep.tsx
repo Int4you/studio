@@ -17,7 +17,8 @@ interface IdeaGenerationStepProps {
   ideas: Idea[];
   selectedIdea: Idea | null;
   onSelectIdea: (idea: Idea) => void;
-  error: string | null; // Assuming error is managed by parent
+  error: string | null;
+  canGenerate: boolean; // New prop
 }
 
 export default function IdeaGenerationStep({
@@ -29,6 +30,7 @@ export default function IdeaGenerationStep({
   selectedIdea,
   onSelectIdea,
   error,
+  canGenerate, // Use the new prop
 }: IdeaGenerationStepProps) {
   return (
     <form onSubmit={onGenerateIdeas} className="space-y-4">
@@ -42,7 +44,12 @@ export default function IdeaGenerationStep({
         className="resize-none text-base rounded-md shadow-sm"
         aria-label="Application idea prompt"
       />
-      <Button type="submit" disabled={isLoadingIdeas || !prompt.trim()} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
+      <Button 
+        type="submit" 
+        disabled={isLoadingIdeas || !prompt.trim() || !canGenerate} 
+        className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow"
+        title={!canGenerate ? "Generation limit reached for Free Tier" : "Generate application ideas"}
+      >
         {isLoadingIdeas ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (
@@ -50,6 +57,11 @@ export default function IdeaGenerationStep({
         )}
         Generate Ideas
       </Button>
+      {!canGenerate && !isLoadingIdeas && (
+          <p className="text-xs text-destructive mt-1">
+              You've reached your generation limit for the Free Tier. Please upgrade for unlimited generations.
+          </p>
+      )}
       
       {isLoadingIdeas && (
         <div className="flex justify-center items-center py-8">
@@ -84,7 +96,6 @@ export default function IdeaGenerationStep({
           </div>
         </div>
       )}
-      {/* Error display can be handled by parent or here if specific to this step */}
     </form>
   );
 }

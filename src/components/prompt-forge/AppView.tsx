@@ -5,7 +5,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { cn } from "@/lib/utils";
-import { Lightbulb, FileText, Search, TrendingUp, Tag, Terminal, Save, CheckCircle2, RefreshCw, ArrowRight, Zap, Milestone as RoadmapIcon } from 'lucide-react';
+import { Lightbulb, FileText, Search, TrendingUp, Tag, Terminal, Save, CheckCircle2, RefreshCw, ArrowRight } from 'lucide-react';
 
 import IdeaGenerationStep from './steps/IdeaGenerationStep';
 import ProposalStep from './steps/ProposalStep';
@@ -16,8 +16,10 @@ import DeveloperPromptStep from './steps/DeveloperPromptStep';
 import SaveProjectStep from './steps/SaveProjectStep';
 
 import type { SavedProject } from '@/lib/libraryModels';
-import { useAppWorkflow } from '@/hooks/useAppWorkflow'; // Import the new hook
+import { useAppWorkflow } from '@/hooks/useAppWorkflow';
 import type { AppStepId, AppStepConfig } from './appWorkflowTypes';
+import { stepsConfig } from '@/components/prompt-forge/AppView';
+import { FREE_TIER_NAME, MAX_FREE_GENERATIONS } from '@/config/plans';
 
 
 export const stepsConfig: AppStepConfig[] = [
@@ -32,11 +34,23 @@ export const stepsConfig: AppStepConfig[] = [
 
 interface AppViewProps {
   initialProject: SavedProject | null;
-  onProjectSave: (project: SavedProject) => void;
+  onProjectSave: (project: SavedProject, plan: string) => boolean; // Updated signature
   clearInitialProject: () => void;
+  currentUserPlan: string;
+  generationsUsed: number;
+  maxFreeGenerations: number;
+  onGenerationUsed: () => void;
 }
 
-export default function AppView({ initialProject, onProjectSave, clearInitialProject }: AppViewProps) {
+export default function AppView({ 
+    initialProject, 
+    onProjectSave, 
+    clearInitialProject,
+    currentUserPlan,
+    generationsUsed,
+    maxFreeGenerations,
+    onGenerationUsed 
+}: AppViewProps) {
   const {
     prompt,
     ideas,
@@ -80,15 +94,32 @@ export default function AppView({ initialProject, onProjectSave, clearInitialPro
     navigateToStep,
     handleNextStep,
     resetAppCreationState,
-  } = useAppWorkflow({ initialProject, onProjectSave, clearInitialProject });
+  } = useAppWorkflow({ 
+    initialProject, 
+    onProjectSave, 
+    clearInitialProject,
+    currentUserPlan,
+    generationsUsed,
+    maxFreeGenerations,
+    onGenerationUsed
+  });
 
   const currentStepDetails = stepsConfig.find(s => s.id === currentStep);
+
+  const canStartNewProject = !(currentUserPlan === FREE_TIER_NAME && generationsUsed >= MAX_FREE_GENERATIONS);
 
   return (
     <div className="flex flex-col md:flex-row gap-8">
       <nav className="hidden md:block w-full md:w-64 lg:w-72 shrink-0">
         <div className="sticky top-20 space-y-2">
-            <Button onClick={() => resetAppCreationState(true)} variant="outline" size="sm" className="w-full mb-4">
+            <Button 
+                onClick={() => resetAppCreationState(true)} 
+                variant="outline" 
+                size="sm" 
+                className="w-full mb-4"
+                disabled={!canStartNewProject && !currentProjectId && !selectedIdea} // Disable if limit reached and not already in a project
+                title={!canStartNewProject && !currentProjectId && !selectedIdea ? "Free Tier generation limit reached" : "Start a new project"}
+            >
                 <RefreshCw className="mr-2 h-4 w-4" /> Start New Project
             </Button>
           {stepsConfig.map((step) => (
@@ -111,7 +142,14 @@ export default function AppView({ initialProject, onProjectSave, clearInitialPro
       </nav>
 
       <div className="md:hidden mb-6">
-          <Button onClick={() => resetAppCreationState(true)} variant="outline" size="sm" className="w-full mb-4">
+          <Button 
+            onClick={() => resetAppCreationState(true)} 
+            variant="outline" 
+            size="sm" 
+            className="w-full mb-4"
+            disabled={!canStartNewProject && !currentProjectId && !selectedIdea}
+            title={!canStartNewProject && !currentProjectId && !selectedIdea ? "Free Tier generation limit reached" : "Start a new project"}
+          >
               <RefreshCw className="mr-2 h-4 w-4" /> Start New Project
           </Button>
           <select 
@@ -149,6 +187,7 @@ export default function AppView({ initialProject, onProjectSave, clearInitialPro
                   selectedIdea={selectedIdea}
                   onSelectIdea={handleSelectIdea}
                   error={error}
+                  canGenerate={canStartNewProject || selectedIdea != null || currentProjectId != null} // Allow if editing or has gens
                 />
               )}
               {currentStep === 'proposal' && (
@@ -244,7 +283,6 @@ export default function AppView({ initialProject, onProjectSave, clearInitialPro
                     {currentStep !== 'save' && ( 
                         <Button 
                             onClick={handleNextStep}
-                            // Removed: disabled={!isStepCompleted(currentStep) && currentStep !== 'ideas' && currentStep !== 'proposal'} 
                             className="rounded-md shadow-md hover:shadow-lg transition-shadow"
                         >
                             Next: {stepsConfig[stepsConfig.findIndex(s => s.id === currentStep) + 1]?.title || 'Finish'} <ArrowRight className="ml-2 h-4 w-4" />

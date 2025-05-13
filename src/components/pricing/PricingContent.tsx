@@ -1,21 +1,19 @@
 
+"use client";
+
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Star, Zap, Settings2, DollarSignIcon } from 'lucide-react';
+import { CheckCircle, Star, Zap, DollarSignIcon } from 'lucide-react';
 import Link from 'next/link';
+import { FREE_TIER_NAME, PREMIUM_CREATOR_NAME, freePlanUIDetails, premiumPlanUIDetails } from '@/config/plans';
 
 const tiers = [
   {
-    name: 'Free Explorer',
+    name: freePlanUIDetails.name,
     price: '$0',
     frequency: '/ month',
     description: 'Perfect for trying out PromptForge and occasional use.',
-    features: [
-      '3 Project Generations per month',
-      'Access to all core AI features',
-      'Standard support',
-      'Save up to 1 project in library',
-    ],
+    features: freePlanUIDetails.features,
     cta: 'Get Started for Free',
     href: '/dashboard',
     icon: <Zap className="h-8 w-8 mb-4 text-primary" />,
@@ -25,19 +23,13 @@ const tiers = [
     buttonVariant: 'outline' as "outline" | "default",
   },
   {
-    name: 'Premium Creator',
-    price: '$4.99',
-    frequency: '/ month',
-    description: 'Unlock the full power of PromptForge for unlimited creativity.',
-    features: [
-      'Unlimited Project Generations',
-      'Access to all core AI features',
-      'Priority support',
-      'Save unlimited projects in library',
-      'Early access to new features',
-    ],
+    name: premiumPlanUIDetails.name,
+    price: premiumPlanUIDetails.price,
+    frequency: premiumPlanUIDetails.frequency,
+    description: premiumPlanUIDetails.description,
+    features: premiumPlanUIDetails.features,
     cta: 'Upgrade to Premium',
-    href: '/dashboard', // Placeholder, should go to a payment/upgrade page
+    href: '/dashboard', // Placeholder, should go to a payment/upgrade page or contact
     icon: <Star className="h-8 w-8 mb-4 text-primary" />,
     borderColor: 'border-primary/50',
     bgColor: 'bg-primary/5 dark:bg-primary/10',
@@ -68,7 +60,7 @@ export default function PricingContent() {
           {tiers.map((tier) => (
             <Card 
               key={tier.name} 
-              className={`flex flex-col rounded-xl shadow-xl hover:shadow-primary/10 transition-all duration-300 group ${tier.borderColor} ${tier.bgColor} ${tier.popular ? 'border-2 ring-2 ring-primary/60 ring-offset-2 ring-offset-background' : 'border'}`}
+              className={`flex flex-col rounded-xl shadow-xl hover:shadow-primary/10 transition-all duration-300 group ${tier.borderColor} ${tier.bgColor} ${tier.textColor} ${tier.popular ? 'border-2 ring-2 ring-primary/60 ring-offset-2 ring-offset-background' : 'border'}`}
             >
               {tier.popular && (
                 <div className="absolute top-0 right-0 -mt-3 -mr-3">
@@ -117,7 +109,7 @@ export default function PricingContent() {
             <Card className="p-4 bg-card border rounded-lg shadow-sm">
                 <CardTitle className="text-md font-medium text-foreground mb-1">What counts as a "Project Generation"?</CardTitle>
                 <CardDescription className="text-sm text-muted-foreground">
-                    A project generation typically involves the full workflow from idea to AI developer prompt. Generating additional mockups or features for an existing project usually counts towards your limit if new AI calls are made.
+                    A project generation involves initiating a new app idea through the "Spark Idea" step. Editing an existing project or generating subsequent steps for it does not count towards this limit.
                 </CardDescription>
             </Card>
              <Card className="p-4 bg-card border rounded-lg shadow-sm">
