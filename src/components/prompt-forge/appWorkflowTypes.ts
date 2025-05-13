@@ -1,12 +1,13 @@
 
-import type { Lightbulb, FileText, Search, TrendingUp, Tag, Terminal, Save } from 'lucide-react';
+import { Lightbulb, FileText, Search, TrendingUp, Tag, Terminal, Save } from 'lucide-react';
+import type { Icon as LucideIcon } from 'lucide-react';
 
 export type AppStepId = 'ideas' | 'proposal' | 'marketAnalysis' | 'prioritization' | 'pricingStrategy' | 'devPrompt' | 'save';
 
 export interface AppStepConfig {
   id: AppStepId;
   title: string;
-  icon: React.ElementType; // LucideIcon directly
+  icon: LucideIcon; 
   description: string;
 }
 
