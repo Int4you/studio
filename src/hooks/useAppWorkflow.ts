@@ -20,12 +20,12 @@ import { generatePricingStrategy } from '@/ai/flows/generate-pricing-strategy-fl
 import type { SavedProject } from '@/lib/libraryModels';
 import { useToast } from '@/hooks/use-toast';
 import type { AppStepId, EditingStates } from '@/components/prompt-forge/appWorkflowTypes';
-import { stepsConfig } from '@/components/prompt-forge/AppView';
+import { stepsConfig } from '@/components/prompt-forge/appWorkflowTypes'; // Updated import
 import { FREE_TIER_NAME } from '@/config/plans';
 
 interface UseAppWorkflowProps {
   initialProject: SavedProject | null;
-  onProjectSave: (project: SavedProject, plan: string) => boolean; // Updated to return boolean
+  onProjectSave: (project: SavedProject, plan: string) => boolean;
   clearInitialProject: () => void;
   currentUserPlan: string;
   generationsUsed: number;
@@ -64,6 +64,8 @@ export function useAppWorkflow({
 
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<AppStepId>('ideas');
+  const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
+
 
   const [editingStates, setEditingStates] = useState<EditingStates>({
     appName: false,
@@ -136,13 +138,10 @@ export function useAppWorkflow({
       return;
     }
 
-    const isStartingNewProject = !selectedIdea && !currentProjectId;
-    if (isStartingNewProject && currentUserPlan === FREE_TIER_NAME && generationsUsed >= maxFreeGenerations) {
-      toast({
-        title: "Free Tier Limit Reached",
-        description: `You have used all your ${maxFreeGenerations} free project generations. Please upgrade to continue.`,
-        variant: "destructive",
-      });
+    const isStartingNewProjectFromScratch = !selectedIdea && !currentProjectId;
+
+    if (isStartingNewProjectFromScratch && currentUserPlan === FREE_TIER_NAME && generationsUsed >= maxFreeGenerations) {
+      setShowUpgradeModal(true);
       return;
     }
 
@@ -168,7 +167,7 @@ export function useAppWorkflow({
           variant: "default",
         });
       } else {
-         if (isStartingNewProject && currentUserPlan === FREE_TIER_NAME) {
+         if (isStartingNewProjectFromScratch && currentUserPlan === FREE_TIER_NAME) {
           onGenerationUsed();
         }
       }
@@ -460,7 +459,6 @@ export function useAppWorkflow({
     if (success) {
       setCurrentProjectId(projectToSave.id);
     }
-    // Toast for success/failure is handled by AppViewWrapper's saveProjectToLibrary
   };
 
   const toggleEditState = (section: keyof EditingStates, indexOrValue: number | boolean, value?: boolean) => {
@@ -538,6 +536,7 @@ export function useAppWorkflow({
     error,
     currentProjectId,
     currentStep, setCurrentStep,
+    showUpgradeModal, setShowUpgradeModal, // Export modal state controls
     editingStates, setEditingStates,
     handlePromptChange,
     handleGenerateIdeas,
@@ -564,3 +563,5 @@ export function useAppWorkflow({
     resetAppCreationState,
   };
 }
+
+    

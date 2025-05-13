@@ -5,7 +5,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { cn } from "@/lib/utils";
-import { Lightbulb, FileText, Search, TrendingUp, Tag, Terminal, Save, CheckCircle2, RefreshCw, ArrowRight } from 'lucide-react';
+import { CheckCircle2, RefreshCw, ArrowRight } from 'lucide-react';
 
 import IdeaGenerationStep from './steps/IdeaGenerationStep';
 import ProposalStep from './steps/ProposalStep';
@@ -14,27 +14,17 @@ import PrioritizationStep from './steps/PrioritizationStep';
 import PricingStrategyStep from './steps/PricingStrategyStep';
 import DeveloperPromptStep from './steps/DeveloperPromptStep';
 import SaveProjectStep from './steps/SaveProjectStep';
+import UpgradeModal from './UpgradeModal'; // Import the modal
 
 import type { SavedProject } from '@/lib/libraryModels';
 import { useAppWorkflow } from '@/hooks/useAppWorkflow';
-import type { AppStepId, AppStepConfig } from './appWorkflowTypes';
-// Removed self-import: import { stepsConfig } from '@/components/prompt-forge/AppView';
+import type { AppStepId } from './appWorkflowTypes';
+import { stepsConfig } from './appWorkflowTypes'; // Import from types file
 import { FREE_TIER_NAME, MAX_FREE_GENERATIONS } from '@/config/plans';
-
-
-export const stepsConfig: AppStepConfig[] = [
-  { id: 'ideas', title: "Spark Idea", icon: Lightbulb, description: "Describe your app idea to get started." },
-  { id: 'proposal', title: "Craft Proposal", icon: FileText, description: "Develop a detailed proposal with core features & UI/UX." },
-  { id: 'marketAnalysis', title: "Analyze Market", icon: Search, description: "Understand market trends, competitors, and opportunities." },
-  { id: 'prioritization', title: "Prioritize Features", icon: TrendingUp, description: "Rank features by impact and effort for your MVP." },
-  { id: 'pricingStrategy', title: "Pricing Strategy", icon: Tag, description: "Get AI recommendations for pricing models and tiers." },
-  { id: 'devPrompt', title: "AI Developer Prompt", icon: Terminal, description: "Create a prompt for Text-to-App code generation." },
-  { id: 'save', title: "Save Project", icon: Save, description: "Save your complete project to the library." },
-];
 
 interface AppViewProps {
   initialProject: SavedProject | null;
-  onProjectSave: (project: SavedProject, plan: string) => boolean; // Updated signature
+  onProjectSave: (project: SavedProject, plan: string) => boolean;
   clearInitialProject: () => void;
   currentUserPlan: string;
   generationsUsed: number;
@@ -70,6 +60,8 @@ export default function AppView({
     error,
     currentProjectId,
     currentStep,
+    showUpgradeModal, // Get modal state from hook
+    setShowUpgradeModal, // Get modal state setter from hook
     editingStates,
     handlePromptChange,
     handleGenerateIdeas,
@@ -117,7 +109,7 @@ export default function AppView({
                 variant="outline" 
                 size="sm" 
                 className="w-full mb-4"
-                disabled={!canStartNewProject && !currentProjectId && !selectedIdea} // Disable if limit reached and not already in a project
+                disabled={!canStartNewProject && !currentProjectId && !selectedIdea} 
                 title={!canStartNewProject && !currentProjectId && !selectedIdea ? "Free Tier generation limit reached" : "Start a new project"}
             >
                 <RefreshCw className="mr-2 h-4 w-4" /> Start New Project
@@ -187,7 +179,7 @@ export default function AppView({
                   selectedIdea={selectedIdea}
                   onSelectIdea={handleSelectIdea}
                   error={error}
-                  canGenerate={canStartNewProject || selectedIdea != null || currentProjectId != null} // Allow if editing or has gens
+                  canGenerate={canStartNewProject || selectedIdea != null || currentProjectId != null}
                 />
               )}
               {currentStep === 'proposal' && (
@@ -292,7 +284,12 @@ export default function AppView({
             </CardFooter>
         </Card>
       </div>
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      />
     </div>
   );
 }
 
+    
