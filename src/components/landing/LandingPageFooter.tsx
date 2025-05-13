@@ -1,8 +1,11 @@
 
+"use client";
+
+import React from 'react';
 import Link from 'next/link';
 import { Cpu } from 'lucide-react';
 
-export default function LandingPageFooter() {
+const LandingPageFooter = React.memo(() => {
   return (
     <footer className="py-12 md:py-16 border-t border-border/40 bg-background text-muted-foreground">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
@@ -39,11 +42,12 @@ export default function LandingPageFooter() {
           <p className="text-xs">
             &copy; {new Date().getFullYear()} PromptForge. All rights reserved.
           </p>
-          {/* Social media links removed as per previous focus, can be re-added if needed */}
-          {/* <div className="flex space-x-5 mt-4 md:mt-0"> ... </div> */}
         </div>
       </div>
     </footer>
   );
-}
+});
 
+LandingPageFooter.displayName = 'LandingPageFooter';
+
+export default LandingPageFooter;

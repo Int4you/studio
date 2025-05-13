@@ -1,8 +1,12 @@
+
+"use client";
+
+import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Rocket } from 'lucide-react';
+import { Rocket } from 'lucide-react';
 
-export default function CallToActionSection() {
+const CallToActionSection = React.memo(() => {
   return (
     <section className="py-20 md:py-28 bg-gradient-to-b from-background to-muted/30 dark:from-background dark:to-muted/10">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl text-center">
@@ -24,4 +28,8 @@ export default function CallToActionSection() {
       </div>
     </section>
   );
-}
+});
+
+CallToActionSection.displayName = 'CallToActionSection';
+
+export default CallToActionSection;

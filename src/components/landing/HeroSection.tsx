@@ -1,10 +1,13 @@
 
+"use client";
+
+import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Zap, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 
-export default function HeroSection() {
+const HeroSection = React.memo(() => {
   return (
     <section className="py-24 md:py-32 lg:py-40 bg-gradient-to-br from-background via-muted/30 to-background dark:from-background dark:via-muted/10 dark:to-background overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
@@ -50,9 +53,8 @@ export default function HeroSection() {
       </div>
     </section>
   );
-}
+});
 
+HeroSection.displayName = 'HeroSection';
 
-
-
-
+export default HeroSection;

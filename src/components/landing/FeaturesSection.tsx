@@ -1,4 +1,7 @@
-import * as React from 'react';
+
+"use client";
+
+import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Lightbulb, FileText, Search, TerminalSquare, TrendingUp, Tag, Sparkles } from 'lucide-react'; 
 
@@ -53,7 +56,7 @@ const features = [
   },
 ];
 
-export default function FeaturesSection() {
+const FeaturesSection = React.memo(() => {
   return (
     <section id="features" className="py-20 md:py-28 bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
@@ -90,4 +93,8 @@ export default function FeaturesSection() {
       </div>
     </section>
   );
-}
+});
+
+FeaturesSection.displayName = 'FeaturesSection';
+
+export default FeaturesSection;
