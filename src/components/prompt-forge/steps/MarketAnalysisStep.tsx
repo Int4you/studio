@@ -7,13 +7,13 @@ import type { ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 import type { AnalyzeMarketOutput } from '@/ai/flows/analyze-market-flow';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Search, Briefcase, BarChartHorizontalBig, Network, ShieldCheck, Users, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, DollarSign, Target, Zap, Info, BadgeHelp, ArrowRight } from 'lucide-react';
+import { Loader2, Search, Briefcase, BarChartHorizontalBig, Network, ShieldCheck, Users, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, DollarSign, Target, Zap, Info, BadgeHelp, ArrowRight, Milestone } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, PieChart, Pie, Cell, Legend, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
-import type { AppStepId } from '../AppView';
+import type { AppStepId } from '../appWorkflowTypes'; // Updated import
 
 const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
 
@@ -118,9 +118,16 @@ export default function MarketAnalysisStep({
   onNavigateToStep,
 }: MarketAnalysisStepProps) {
 
-  if (!proposal || !selectedIdea) {
-    return <PrerequisiteMessage message="Please complete Steps 1 (Idea) and 2 (Proposal) first." onAction={() => onNavigateToStep(proposal ? 'proposal' : 'ideas')} buttonText={`Go to ${proposal ? 'Proposal' : 'Idea'} Step`} />;
+  if (!selectedIdea) {
+    return <PrerequisiteMessage message="Please complete Step 1 (Idea) first to enable Market Analysis." onAction={() => onNavigateToStep('ideas')} buttonText="Go to Spark Idea Step" />;
   }
+  if (!proposal) {
+    return <PrerequisiteMessage message="Please complete Step 2 (Proposal) first to enable Market Analysis." onAction={() => onNavigateToStep('proposal')} buttonText="Go to Craft Proposal Step" />;
+  }
+   if (proposal.coreFeatures.length === 0) {
+    return <PrerequisiteMessage message="Please add core features in Step 2 (Proposal) before analyzing the market." onAction={() => onNavigateToStep('proposal')} buttonText="Go to Craft Proposal Step" />;
+  }
+
 
   const marketSizeChartData = marketAnalysis ? [
     { name: "Market Size", value: marketAnalysis.marketSizeAndGrowth.estimation, fill: "hsl(var(--chart-1))"},
@@ -239,7 +246,7 @@ export default function MarketAnalysisStep({
 
             <Card className="shadow-sm">
                 <CardHeader className="pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
-                    <CardTitle className="text-xl flex items-center gap-2"><Zap className="h-5 w-5 text-primary"/>Market Trends</CardTitle>
+                    <CardTitle className="text-xl flex items-center gap-2"><Milestone className="h-5 w-5 text-primary"/>Market Trends</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4 space-y-4">
                     {marketAnalysis.marketTrends.map((trend, idx) => (

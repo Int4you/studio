@@ -5,7 +5,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { cn } from "@/lib/utils";
-import { CheckCircle2, RefreshCw, ArrowRight } from 'lucide-react';
+import { CheckCircle2, RefreshCw, ArrowRight, Star as StarIcon } from 'lucide-react'; // Renamed Star to StarIcon
 
 import IdeaGenerationStep from './steps/IdeaGenerationStep';
 import ProposalStep from './steps/ProposalStep';
@@ -14,13 +14,16 @@ import PrioritizationStep from './steps/PrioritizationStep';
 import PricingStrategyStep from './steps/PricingStrategyStep';
 import DeveloperPromptStep from './steps/DeveloperPromptStep';
 import SaveProjectStep from './steps/SaveProjectStep';
-import UpgradeModal from './UpgradeModal'; // Import the modal
+import UpgradeModal from './UpgradeModal';
+import PremiumFeatureMessage from './PremiumFeatureMessage';
+
 
 import type { SavedProject } from '@/lib/libraryModels';
 import { useAppWorkflow } from '@/hooks/useAppWorkflow';
 import type { AppStepId } from './appWorkflowTypes';
-import { stepsConfig } from './appWorkflowTypes'; // Import from types file
-import { FREE_TIER_NAME, MAX_FREE_GENERATIONS } from '@/config/plans';
+import { stepsConfig } from './appWorkflowTypes';
+import { FREE_TIER_NAME, MAX_FREE_GENERATIONS, PREMIUM_STEP_IDS } from '@/config/plans';
+
 
 interface AppViewProps {
   initialProject: SavedProject | null;
@@ -60,8 +63,8 @@ export default function AppView({
     error,
     currentProjectId,
     currentStep,
-    showUpgradeModal, // Get modal state from hook
-    setShowUpgradeModal, // Get modal state setter from hook
+    showUpgradeModal,
+    setShowUpgradeModal,
     editingStates,
     handlePromptChange,
     handleGenerateIdeas,
@@ -97,8 +100,13 @@ export default function AppView({
   });
 
   const currentStepDetails = stepsConfig.find(s => s.id === currentStep);
-
   const canStartNewProject = !(currentUserPlan === FREE_TIER_NAME && generationsUsed >= MAX_FREE_GENERATIONS);
+
+  const isCurrentStepPremiumAndLocked = 
+    PREMIUM_STEP_IDS.includes(currentStep) &&
+    currentUserPlan === FREE_TIER_NAME &&
+    !isStepCompleted(currentStep);
+
 
   return (
     <div className="flex flex-col md:flex-row gap-8">
@@ -114,22 +122,33 @@ export default function AppView({
             >
                 <RefreshCw className="mr-2 h-4 w-4" /> Start New Project
             </Button>
-          {stepsConfig.map((step) => (
-            <Button
-              key={step.id}
-              variant={currentStep === step.id ? 'default' : 'ghost'}
-              className={cn("w-full justify-start text-left px-3 py-2 h-auto", currentStep === step.id && "shadow-md")}
-              onClick={() => navigateToStep(step.id)}
-            >
-              <step.icon className={cn("mr-3 h-5 w-5", currentStep === step.id ? "text-primary-foreground" : "text-primary")} />
-              <div>
-                <span className="font-medium">{step.title}</span>
-                {isStepCompleted(step.id) && currentStep !== step.id && (
-                    <CheckCircle2 className="ml-2 inline-block h-4 w-4 text-green-500" />
+          {stepsConfig.map((step) => {
+            const isPremium = PREMIUM_STEP_IDS.includes(step.id);
+            const isLockedForFreeUser = isPremium && currentUserPlan === FREE_TIER_NAME && !isStepCompleted(step.id);
+
+            return (
+              <Button
+                key={step.id}
+                variant={currentStep === step.id ? 'default' : 'ghost'}
+                className={cn(
+                    "w-full justify-start text-left px-3 py-2 h-auto flex items-center",
+                    currentStep === step.id && "shadow-md",
+                    isLockedForFreeUser && "opacity-70 cursor-not-allowed hover:bg-transparent"
                 )}
-              </div>
-            </Button>
-          ))}
+                onClick={() => navigateToStep(step.id)}
+                title={isLockedForFreeUser ? `${step.title} is a Premium feature.` : step.description}
+              >
+                <step.icon className={cn("mr-3 h-5 w-5", currentStep === step.id ? "text-primary-foreground" : "text-primary")} />
+                <div className="flex-grow">
+                  <span className="font-medium">{step.title}</span>
+                  {isStepCompleted(step.id) && currentStep !== step.id && (
+                      <CheckCircle2 className="ml-2 inline-block h-4 w-4 text-green-500" />
+                  )}
+                </div>
+                {isPremium && <StarIcon className="ml-auto h-3.5 w-3.5 text-amber-500 flex-shrink-0" />}
+              </Button>
+            );
+          })}
         </div>
       </nav>
 
@@ -149,11 +168,17 @@ export default function AppView({
               onChange={(e) => navigateToStep(e.target.value as AppStepId)}
               className="w-full p-3 border border-input rounded-md bg-background text-foreground shadow-sm"
           >
-              {stepsConfig.map(step => (
-                  <option key={step.id} value={step.id}>
-                      {step.title} {isStepCompleted(step.id) ? '✔' : ''}
+              {stepsConfig.map(step => {
+                const isPremium = PREMIUM_STEP_IDS.includes(step.id);
+                const isLockedForFreeUser = isPremium && currentUserPlan === FREE_TIER_NAME && !isStepCompleted(step.id);
+                return (
+                  <option key={step.id} value={step.id} disabled={isLockedForFreeUser}>
+                      {step.title} 
+                      {isStepCompleted(step.id) ? ' ✔' : ''}
+                      {isPremium ? ' (Premium)' : ''}
                   </option>
-              ))}
+                );
+              })}
           </select>
       </div>
 
@@ -169,92 +194,97 @@ export default function AppView({
                 </div>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
-              {currentStep === 'ideas' && (
-                <IdeaGenerationStep
-                  prompt={prompt}
-                  onPromptChange={handlePromptChange}
-                  onGenerateIdeas={handleGenerateIdeas}
-                  isLoadingIdeas={isLoadingIdeas}
-                  ideas={ideas}
-                  selectedIdea={selectedIdea}
-                  onSelectIdea={handleSelectIdea}
-                  error={error}
-                  canGenerate={canStartNewProject || selectedIdea != null || currentProjectId != null}
-                />
-              )}
-              {currentStep === 'proposal' && (
-                <ProposalStep
-                  selectedIdea={selectedIdea}
-                  proposal={proposal}
-                  isLoadingProposal={isLoadingProposal}
-                  isLoadingMoreFeatures={isLoadingMoreFeatures}
-                  editingStates={editingStates}
-                  onGenerateProposal={handleGenerateProposal}
-                  onAppNameChange={handleAppNameChange}
-                  onCoreFeatureChange={handleCoreFeatureChange}
-                  onAddCoreFeature={addCoreFeature}
-                  onRemoveCoreFeature={removeCoreFeature}
-                  onUiUxGuidelineChange={handleUiUxGuidelineChange}
-                  onAddUiUxGuideline={addUiUxGuideline}
-                  onRemoveUiUxGuideline={removeUiUxGuideline}
-                  onGenerateMoreFeatures={handleGenerateMoreFeatures}
-                  onToggleEditState={toggleEditState}
-                  currentProjectId={currentProjectId}
-                  onNavigateToStep={navigateToStep}
-                />
-              )}
-              {currentStep === 'marketAnalysis' && (
-                <MarketAnalysisStep
-                  proposal={proposal}
-                  selectedIdea={selectedIdea}
-                  marketAnalysis={marketAnalysis}
-                  isLoadingMarketAnalysis={isLoadingMarketAnalysis}
-                  onGenerateMarketAnalysis={handleGenerateMarketAnalysis}
-                  onNavigateToStep={navigateToStep}
-                />
-              )}
-              {currentStep === 'prioritization' && (
-                <PrioritizationStep
-                  proposal={proposal}
-                  selectedIdea={selectedIdea}
-                  prioritizedFeatures={prioritizedFeatures}
-                  isLoadingPrioritization={isLoadingPrioritization}
-                  onGenerateFeaturePrioritization={handleGenerateFeaturePrioritization}
-                  onRemovePrioritizedFeature={handleRemovePrioritizedFeature}
-                  onNavigateToStep={navigateToStep}
-                />
-              )}
-              {currentStep === 'pricingStrategy' && (
-                <PricingStrategyStep
+            {isCurrentStepPremiumAndLocked ? (
+                <PremiumFeatureMessage featureName={currentStepDetails?.title} />
+            ) : (
+              <>
+                {currentStep === 'ideas' && (
+                    <IdeaGenerationStep
+                    prompt={prompt}
+                    onPromptChange={handlePromptChange}
+                    onGenerateIdeas={handleGenerateIdeas}
+                    isLoadingIdeas={isLoadingIdeas}
+                    ideas={ideas}
+                    selectedIdea={selectedIdea}
+                    onSelectIdea={handleSelectIdea}
+                    error={error}
+                    canGenerate={canStartNewProject || selectedIdea != null || currentProjectId != null}
+                    />
+                )}
+                {currentStep === 'proposal' && (
+                    <ProposalStep
+                    selectedIdea={selectedIdea}
+                    proposal={proposal}
+                    isLoadingProposal={isLoadingProposal}
+                    isLoadingMoreFeatures={isLoadingMoreFeatures}
+                    editingStates={editingStates}
+                    onGenerateProposal={handleGenerateProposal}
+                    onAppNameChange={handleAppNameChange}
+                    onCoreFeatureChange={handleCoreFeatureChange}
+                    onAddCoreFeature={addCoreFeature}
+                    onRemoveCoreFeature={removeCoreFeature}
+                    onUiUxGuidelineChange={handleUiUxGuidelineChange}
+                    onAddUiUxGuideline={addUiUxGuideline}
+                    onRemoveUiUxGuideline={removeUiUxGuideline}
+                    onGenerateMoreFeatures={handleGenerateMoreFeatures}
+                    onToggleEditState={toggleEditState}
+                    currentProjectId={currentProjectId}
+                    onNavigateToStep={navigateToStep}
+                    />
+                )}
+                {currentStep === 'prioritization' && (
+                    <PrioritizationStep
+                    proposal={proposal}
+                    selectedIdea={selectedIdea}
+                    prioritizedFeatures={prioritizedFeatures}
+                    isLoadingPrioritization={isLoadingPrioritization}
+                    onGenerateFeaturePrioritization={handleGenerateFeaturePrioritization}
+                    onRemovePrioritizedFeature={handleRemovePrioritizedFeature}
+                    onNavigateToStep={navigateToStep}
+                    />
+                )}
+                {currentStep === 'marketAnalysis' && (
+                    <MarketAnalysisStep
                     proposal={proposal}
                     selectedIdea={selectedIdea}
                     marketAnalysis={marketAnalysis}
-                    pricingStrategy={pricingStrategy}
-                    isLoadingPricingStrategy={isLoadingPricingStrategy}
-                    onGeneratePricingStrategy={handleGeneratePricingStrategy}
+                    isLoadingMarketAnalysis={isLoadingMarketAnalysis}
+                    onGenerateMarketAnalysis={handleGenerateMarketAnalysis}
                     onNavigateToStep={navigateToStep}
-                />
-              )}
-              {currentStep === 'devPrompt' && (
-                <DeveloperPromptStep
-                    proposal={proposal}
-                    selectedIdea={selectedIdea}
-                    textToAppPrompt={textToAppPrompt}
-                    isLoadingTextToAppPrompt={isLoadingTextToAppPrompt}
-                    onGenerateTextToAppPrompt={handleGenerateTextToAppPrompt}
-                    onNavigateToStep={navigateToStep}
-                />
-              )}
-              {currentStep === 'save' && (
-                <SaveProjectStep
-                    selectedIdea={selectedIdea}
-                    proposal={proposal}
-                    currentProjectId={currentProjectId}
-                    onSaveToLibrary={handleSaveToLibrary}
-                    onNavigateToStep={navigateToStep}
-                />
-              )}
-
+                    />
+                )}
+                {currentStep === 'pricingStrategy' && (
+                    <PricingStrategyStep
+                        proposal={proposal}
+                        selectedIdea={selectedIdea}
+                        marketAnalysis={marketAnalysis}
+                        pricingStrategy={pricingStrategy}
+                        isLoadingPricingStrategy={isLoadingPricingStrategy}
+                        onGeneratePricingStrategy={handleGeneratePricingStrategy}
+                        onNavigateToStep={navigateToStep}
+                    />
+                )}
+                {currentStep === 'devPrompt' && (
+                    <DeveloperPromptStep
+                        proposal={proposal}
+                        selectedIdea={selectedIdea}
+                        textToAppPrompt={textToAppPrompt}
+                        isLoadingTextToAppPrompt={isLoadingTextToAppPrompt}
+                        onGenerateTextToAppPrompt={handleGenerateTextToAppPrompt}
+                        onNavigateToStep={navigateToStep}
+                    />
+                )}
+                {currentStep === 'save' && (
+                    <SaveProjectStep
+                        selectedIdea={selectedIdea}
+                        proposal={proposal}
+                        currentProjectId={currentProjectId}
+                        onSaveToLibrary={handleSaveToLibrary}
+                        onNavigateToStep={navigateToStep}
+                    />
+                )}
+              </>
+            )}
             </CardContent>
             <CardFooter className="border-t p-4 bg-muted/50 dark:bg-muted/20">
                 <div className="flex justify-end w-full">
@@ -291,5 +321,3 @@ export default function AppView({
     </div>
   );
 }
-
-    

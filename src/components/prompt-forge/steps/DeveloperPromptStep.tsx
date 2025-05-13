@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Wand2, Copy, BadgeHelp, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { AppStepId } from '../AppView';
+import type { AppStepId } from '../appWorkflowTypes'; // Updated import
 
 interface DeveloperPromptStepProps {
   proposal: ProposalOutput | null;
@@ -60,9 +60,13 @@ export default function DeveloperPromptStep({
       });
   };
 
-  if (!proposal || !selectedIdea) {
-    return <PrerequisiteMessage message="Please complete Steps 1 (Idea) and 2 (Proposal) first." onAction={() => onNavigateToStep(proposal ? 'proposal' : 'ideas')} buttonText={`Go to ${proposal ? 'Proposal' : 'Idea'} Step`} />;
+  if (!selectedIdea) {
+    return <PrerequisiteMessage message="Please complete Step 1 (Idea) first to enable AI Developer Prompt generation." onAction={() => onNavigateToStep('ideas')} buttonText="Go to Spark Idea Step" />;
   }
+  if (!proposal) {
+     return <PrerequisiteMessage message="Please complete Step 2 (Proposal) first to enable AI Developer Prompt generation." onAction={() => onNavigateToStep('proposal')} buttonText="Go to Craft Proposal Step" />;
+  }
+
 
   return (
     <>

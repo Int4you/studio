@@ -20,8 +20,8 @@ import { generatePricingStrategy } from '@/ai/flows/generate-pricing-strategy-fl
 import type { SavedProject } from '@/lib/libraryModels';
 import { useToast } from '@/hooks/use-toast';
 import type { AppStepId, EditingStates } from '@/components/prompt-forge/appWorkflowTypes';
-import { stepsConfig } from '@/components/prompt-forge/appWorkflowTypes'; // Updated import
-import { FREE_TIER_NAME } from '@/config/plans';
+import { stepsConfig } from '@/components/prompt-forge/appWorkflowTypes';
+import { FREE_TIER_NAME, PREMIUM_STEP_IDS } from '@/config/plans';
 
 interface UseAppWorkflowProps {
   initialProject: SavedProject | null;
@@ -81,6 +81,19 @@ export function useAppWorkflow({
     });
   }, []);
 
+  const isStepCompleted = useCallback((stepId: AppStepId): boolean => {
+    switch (stepId) {
+      case 'ideas': return selectedIdea != null || (ideas.length > 0 && !isLoadingIdeas);
+      case 'proposal': return proposal != null;
+      case 'prioritization': return prioritizedFeatures != null && (prioritizedFeatures.length > 0 || (proposal?.coreFeatures.length === 0 && !isLoadingPrioritization));
+      case 'marketAnalysis': return marketAnalysis != null;
+      case 'pricingStrategy': return pricingStrategy != null;
+      case 'devPrompt': return textToAppPrompt != null;
+      case 'save': return currentProjectId != null;
+      default: return false;
+    }
+  }, [selectedIdea, ideas.length, isLoadingIdeas, proposal, marketAnalysis, prioritizedFeatures, pricingStrategy, textToAppPrompt, currentProjectId, isLoadingPrioritization]);
+
   const resetAppCreationState = useCallback((clearPromptField = false) => {
     if (clearPromptField) setPrompt('');
     setIdeas([]);
@@ -117,13 +130,23 @@ export function useAppWorkflow({
       let resumeStep: AppStepId = 'ideas';
       if (initialProject.textToAppPrompt) resumeStep = 'save';
       else if (initialProject.pricingStrategy) resumeStep = 'devPrompt';
-      else if (initialProject.prioritizedFeatures && initialProject.prioritizedFeatures.length > 0) resumeStep = 'pricingStrategy';
-      else if (initialProject.marketAnalysis) resumeStep = 'prioritization';
-      else if (loadedProposal.coreFeatures && loadedProposal.coreFeatures.length > 0) resumeStep = 'marketAnalysis';
+      else if (initialProject.marketAnalysis) resumeStep = 'pricingStrategy';
+      else if (initialProject.prioritizedFeatures && initialProject.prioritizedFeatures.length > 0) resumeStep = 'marketAnalysis';
+      else if (loadedProposal.coreFeatures && loadedProposal.coreFeatures.length > 0) resumeStep = 'prioritization';
       else if (selectedIdea) resumeStep = 'proposal';
+      
+      // If the user is free and the target step is premium but not completed, start them at the last non-premium completed step
+      if (PREMIUM_STEP_IDS.includes(resumeStep) && currentUserPlan === FREE_TIER_NAME && !isStepCompleted(resumeStep)) {
+         const lastNonPremiumCompletedStep = stepsConfig
+            .slice()
+            .reverse()
+            .find(step => !PREMIUM_STEP_IDS.includes(step.id) && isStepCompleted(step.id));
+        resumeStep = lastNonPremiumCompletedStep ? lastNonPremiumCompletedStep.id : 'ideas';
+      }
       setCurrentStep(resumeStep);
+
     }
-  }, [initialProject, initializeEditingStates]);
+  }, [initialProject, initializeEditingStates, currentUserPlan, isStepCompleted]);
 
 
   const handlePromptChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
@@ -342,6 +365,10 @@ export function useAppWorkflow({
   };
   
   const handleGenerateMarketAnalysis = async () => {
+    if (currentUserPlan === FREE_TIER_NAME) {
+      setShowUpgradeModal(true);
+      return;
+    }
     if (!proposal || !selectedIdea) {
       toast({ title: "Cannot Analyze Market", description: "Idea (Step 1) and proposal (Step 2) are required.", variant: "destructive" }); return;
     }
@@ -386,6 +413,10 @@ export function useAppWorkflow({
   };
 
   const handleGeneratePricingStrategy = async () => {
+    if (currentUserPlan === FREE_TIER_NAME) {
+      setShowUpgradeModal(true);
+      return;
+    }
     if (!proposal || !selectedIdea) {
       toast({ title: "Cannot Generate Pricing Strategy", description: "Proposal (Step 2) and idea (Step 1) are required.", variant: "destructive" }); return;
     }
@@ -419,6 +450,10 @@ export function useAppWorkflow({
   };
   
   const handleGenerateTextToAppPrompt = async () => {
+    if (currentUserPlan === FREE_TIER_NAME) {
+      setShowUpgradeModal(true);
+      return;
+    }
     if (!proposal || !selectedIdea) {
       toast({ title: "Prerequisites Missing", description: "Idea (Step 1) and proposal (Step 2) are required.", variant: "destructive" }); return;
     }
@@ -494,25 +529,22 @@ export function useAppWorkflow({
     toast({ title: "Feature Removed", description: `"${featureTitle}" removed. Dependent data cleared.` });
   };
 
-  const isStepCompleted = (stepId: AppStepId): boolean => {
-    switch (stepId) {
-      case 'ideas': return selectedIdea != null || (ideas.length > 0 && !isLoadingIdeas);
-      case 'proposal': return proposal != null;
-      case 'marketAnalysis': return marketAnalysis != null;
-      case 'prioritization': return prioritizedFeatures != null && (prioritizedFeatures.length > 0 || (proposal?.coreFeatures.length === 0 && !isLoadingPrioritization));
-      case 'pricingStrategy': return pricingStrategy != null;
-      case 'devPrompt': return textToAppPrompt != null;
-      case 'save': return currentProjectId != null;
-      default: return false;
+  const navigateToStep = (stepId: AppStepId) => {
+    if (PREMIUM_STEP_IDS.includes(stepId) && currentUserPlan === FREE_TIER_NAME && !isStepCompleted(stepId)) {
+      setShowUpgradeModal(true);
+      return;
     }
+    setCurrentStep(stepId);
   };
-
-  const navigateToStep = (stepId: AppStepId) => setCurrentStep(stepId);
-
+  
   const handleNextStep = () => {
     const currentIndex = stepsConfig.findIndex(s => s.id === currentStep);
     if (currentIndex < stepsConfig.length - 1) {
       const nextStepId = stepsConfig[currentIndex + 1].id;
+       if (PREMIUM_STEP_IDS.includes(nextStepId) && currentUserPlan === FREE_TIER_NAME && !isStepCompleted(nextStepId)) {
+        setShowUpgradeModal(true);
+        return;
+      }
       setCurrentStep(nextStepId);
     }
   };
@@ -536,7 +568,7 @@ export function useAppWorkflow({
     error,
     currentProjectId,
     currentStep, setCurrentStep,
-    showUpgradeModal, setShowUpgradeModal, // Export modal state controls
+    showUpgradeModal, setShowUpgradeModal,
     editingStates, setEditingStates,
     handlePromptChange,
     handleGenerateIdeas,
@@ -563,5 +595,3 @@ export function useAppWorkflow({
     resetAppCreationState,
   };
 }
-
-    

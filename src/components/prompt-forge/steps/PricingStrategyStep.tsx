@@ -11,12 +11,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, Tag, DollarSign, Network, Target, TrendingUp, BadgeHelp, ArrowRight } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import type { AppStepId } from '../AppView';
+import type { AppStepId } from '../appWorkflowTypes'; // Updated import
 
 interface PricingStrategyStepProps {
   proposal: ProposalOutput | null;
   selectedIdea: Idea | null;
-  marketAnalysis: AnalyzeMarketOutput | null; // Needed as input for pricing strategy
+  marketAnalysis: AnalyzeMarketOutput | null;
   pricingStrategy: GeneratePricingStrategyOutput | null;
   isLoadingPricingStrategy: boolean;
   onGeneratePricingStrategy: () => Promise<void>;
@@ -54,15 +54,16 @@ export default function PricingStrategyStep({
   onNavigateToStep,
 }: PricingStrategyStepProps) {
 
-  if (!proposal || !selectedIdea || !marketAnalysis) {
-     let message = "Prerequisites missing for Pricing Strategy.";
-     let targetStep: AppStepId = 'ideas';
-     if (!selectedIdea) { message = "Please complete Step 1 (Idea) first."; targetStep = 'ideas';}
-     else if (!proposal) { message = "Please complete Step 2 (Proposal) first."; targetStep = 'proposal'; }
-     else if (!marketAnalysis) { message = "Please complete Step 3 (Market Analysis) first."; targetStep = 'marketAnalysis';}
-     const buttonText = `Go to ${targetStep === 'ideas' ? 'Spark Idea' : targetStep === 'proposal' ? 'Craft Proposal' : 'Market Analysis'} Step`;
-     return <PrerequisiteMessage message={message} onAction={() => onNavigateToStep(targetStep)} buttonText={buttonText} />;
+  if (!selectedIdea) {
+    return <PrerequisiteMessage message="Please complete Step 1 (Idea) first to enable Pricing Strategy." onAction={() => onNavigateToStep('ideas')} buttonText="Go to Spark Idea Step" />;
   }
+  if (!proposal) {
+    return <PrerequisiteMessage message="Please complete Step 2 (Proposal) first to enable Pricing Strategy." onAction={() => onNavigateToStep('proposal')} buttonText="Go to Craft Proposal Step" />;
+  }
+  if (!marketAnalysis) {
+    return <PrerequisiteMessage message="Please complete Step 4 (Market Analysis) first to enable Pricing Strategy." onAction={() => onNavigateToStep('marketAnalysis')} buttonText="Go to Market Analysis Step" />;
+  }
+
 
   return (
     <>
