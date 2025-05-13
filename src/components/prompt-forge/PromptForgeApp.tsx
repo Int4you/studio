@@ -32,7 +32,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, BarChart3, Search, Briefcase, BarChartHorizontalBig, Network, ShieldCheck, Users, ThumbsUp, ThumbsDown, DollarSign, Target, TrendingDown, Zap, Milestone, CalendarDays, ListOrdered, Route } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, BarChart3, Search, Briefcase, BarChartHorizontalBig, Network, ShieldCheck, Users, ThumbsUp, ThumbsDown, DollarSign, Target, TrendingDown, Zap, Milestone, CalendarDays, ListOrdered, Route, LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
 
@@ -78,11 +79,12 @@ interface EditingStates {
 }
 
 const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
+const AUTH_TOKEN_KEY = 'promptForgeAuthToken';
 
 const stepsConfig: { id: AppStep, title: string, icon: React.ElementType, description: string }[] = [
   { id: 'ideas', title: "Spark Idea", icon: Lightbulb, description: "Describe your app idea to get started." },
   { id: 'proposal', title: "Craft Proposal", icon: FileText, description: "Develop a detailed proposal with core features & UI/UX." },
-  { id: 'marketAnalysis', title: "Analyze Market", icon: BarChart3, description: "Understand market trends, competitors, and opportunities." },
+  { id: 'marketAnalysis', title: "Analyze Market", icon: Search, description: "Understand market trends, competitors, and opportunities." },
   { id: 'prioritization', title: "Prioritize Features", icon: TrendingUp, description: "Rank features by impact and effort for your MVP." },
   { id: 'mockups', title: "Visualize Mockups", icon: ImageIcon, description: "Generate mobile app mockups based on your proposal." },
   { id: 'devPrompt', title: "AI Developer Prompt", icon: Terminal, description: "Create a prompt for Text-to-App code generation." },
@@ -144,6 +146,7 @@ export default function PromptForgeApp() {
   
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   const [referenceImageFile, setReferenceImageFile] = useState<File | null>(null);
   const [referenceImageDataUri, setReferenceImageDataUri] = useState<string | null>(null);
@@ -155,6 +158,7 @@ export default function PromptForgeApp() {
   const [currentStep, setCurrentStep] = useState<AppStep>('ideas');
   const [selectedProjectForRoadmap, setSelectedProjectForRoadmap] = useState<SavedProject | null>(null);
 
+  const [authStatus, setAuthStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
 
 
   const [editingStates, setEditingStates] = useState<EditingStates>({
@@ -163,6 +167,25 @@ export default function PromptForgeApp() {
     uiUxGuidelines: [],
   });
 
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setSavedProjects(getProjectsFromLibrary());
+      const token = localStorage.getItem(AUTH_TOKEN_KEY);
+      if (token) {
+        setAuthStatus('authenticated');
+      } else {
+        setAuthStatus('unauthenticated');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (authStatus === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [authStatus, router]);
+  
 
   const initializeEditingStates = (currentProposal: Proposal | null) => {
     setEditingStates({
@@ -186,14 +209,6 @@ export default function PromptForgeApp() {
       }
     });
   };
-
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setSavedProjects(getProjectsFromLibrary());
-    }
-  }, []);
-  
 
   const resetAppState = (clearPromptField = false) => {
     if (clearPromptField) setPrompt('');
@@ -1125,6 +1140,33 @@ export default function PromptForgeApp() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    setAuthStatus('unauthenticated');
+    toast({ title: "Logged Out", description: "You have been successfully logged out." });
+    // The useEffect for authStatus will handle the redirect to /login
+  };
+
+  if (authStatus === 'loading') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        <p className="mt-6 text-xl text-muted-foreground">Loading Application...</p>
+      </div>
+    );
+  }
+
+  if (authStatus === 'unauthenticated') {
+     // Router push is handled by useEffect, this is a fallback or can show a message
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        <p className="mt-6 text-xl text-muted-foreground">Redirecting to login...</p>
+      </div>
+    );
+  }
+
+
   return (
     <React.Fragment>
     <TooltipProvider>
@@ -1136,19 +1178,24 @@ export default function PromptForgeApp() {
               <span className="bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text">PromptForge</span>
             </h1>
           </Link>
-          <Tabs value={currentView} onValueChange={handleTabChange} className="w-auto">
-            <TabsList className="bg-transparent p-0 border-none">
-              <TabsTrigger value="app" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium flex items-center gap-1.5">
-                <Wand2 className="h-4 w-4" /> App
-              </TabsTrigger>
-              <TabsTrigger value="roadmap" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium flex items-center gap-1.5">
-                <Milestone className="h-4 w-4" /> Roadmap Generator
-              </TabsTrigger>
-              <TabsTrigger value="library" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium flex items-center gap-1.5">
-                <LibraryIcon className="h-4 w-4" /> My Library ({savedProjects.length})
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex items-center gap-2">
+            <Tabs value={currentView} onValueChange={handleTabChange} className="w-auto">
+              <TabsList className="bg-transparent p-0 border-none">
+                <TabsTrigger value="app" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium flex items-center gap-1.5">
+                  <Wand2 className="h-4 w-4" /> App
+                </TabsTrigger>
+                <TabsTrigger value="roadmap" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium flex items-center gap-1.5">
+                  <Milestone className="h-4 w-4" /> Roadmap
+                </TabsTrigger>
+                <TabsTrigger value="library" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium flex items-center gap-1.5">
+                  <LibraryIcon className="h-4 w-4" /> My Library ({savedProjects.length})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Button variant="outline" size="sm" onClick={handleLogout} className="ml-2">
+              <LogOut className="mr-1.5 h-4 w-4" /> Logout
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -1570,7 +1617,7 @@ export default function PromptForgeApp() {
 
                                     <Card className="shadow-sm">
                                         <CardHeader className="pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
-                                            <CardTitle className="text-xl flex items-center gap-2"><Zap className="h-5 w-5 text-primary"/>Market Trends</CardTitle>
+                                            <CardTitle className="text-xl flex items-center gap-2"><TrendingUp className="h-5 w-5 text-primary"/>Market Trends</CardTitle>
                                         </CardHeader>
                                         <CardContent className="pt-4 space-y-4">
                                             {marketAnalysis.marketTrends.map((trend, idx) => (
@@ -2239,4 +2286,3 @@ export default function PromptForgeApp() {
     </React.Fragment>
   );
 }
-

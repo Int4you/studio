@@ -15,12 +15,26 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { LogIn, UserPlus, KeyRound, Mail as MailIcon, User, CheckCircle } from "lucide-react";
-import { useState, type FormEvent } from 'react';
+import { LogIn, UserPlus, KeyRound, Mail as MailIcon, User, CheckCircle, Loader2 } from "lucide-react";
+import { useState, type FormEvent, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+const AUTH_TOKEN_KEY = 'promptForgeAuthToken';
 
 export default function AuthForm() {
   const { toast } = useToast();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    // Check if user is already authenticated
+    if (localStorage.getItem(AUTH_TOKEN_KEY)) {
+      router.push('/dashboard');
+    } else {
+      setIsCheckingAuth(false);
+    }
+  }, [router]);
 
   const handleLoginSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -28,10 +42,12 @@ export default function AuthForm() {
     // Placeholder for login logic
     setTimeout(() => {
       toast({
-        title: "Login Attempted",
-        description: "Login functionality is not implemented in this demo.",
+        title: "Login Successful (Demo)",
+        description: "You are now logged in. Redirecting...",
       });
-      setIsLoading(false);
+      localStorage.setItem(AUTH_TOKEN_KEY, 'dummy-auth-token');
+      router.push('/dashboard');
+      // setIsLoading(false); // Not strictly necessary due to redirect
     }, 1000);
   };
 
@@ -41,13 +57,23 @@ export default function AuthForm() {
     // Placeholder for sign up logic
     setTimeout(() => {
       toast({
-        title: "Sign Up Attempted",
-        description: "Sign up functionality is not implemented in this demo.",
+        title: "Sign Up Successful (Demo)",
+        description: "Your account has been created. Redirecting...",
       });
-      setIsLoading(false);
+      localStorage.setItem(AUTH_TOKEN_KEY, 'dummy-auth-token');
+      router.push('/dashboard');
+      // setIsLoading(false); // Not strictly necessary due to redirect
     }, 1000);
   };
 
+  if (isCheckingAuth) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[300px]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">Checking authentication status...</p>
+      </div>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md shadow-2xl border-border/20 bg-card/90 backdrop-blur-sm">
@@ -94,6 +120,7 @@ export default function AuthForm() {
             </CardContent>
             <CardFooter className="flex flex-col gap-4 px-6 pb-6">
               <Button type="submit" className="w-full rounded-md shadow-md hover:shadow-lg transition-shadow text-base py-3" disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
               <p className="text-xs text-center text-muted-foreground">
@@ -147,6 +174,7 @@ export default function AuthForm() {
             </CardContent>
             <CardFooter className="flex flex-col gap-4 px-6 pb-6">
               <Button type="submit" className="w-full rounded-md shadow-md hover:shadow-lg transition-shadow text-base py-3" disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
                 {isLoading ? "Creating Account..." : "Sign Up"}
               </Button>
                <p className="text-xs text-center text-muted-foreground">
