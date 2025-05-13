@@ -33,11 +33,11 @@
     --input: 210 10% 96%; /* Off-White Input Background (Cool tint, slightly lighter) */
     --ring: 190 80% 45%; /* Modern Cyan/Teal for Focus Rings */
 
-    --chart-1: 190 70% 45%;
-    --chart-2: 190 60% 55%;
-    --chart-3: 190 50% 65%;
-    --chart-4: 210 10% 60%; /* Neutral gray from the theme */
-    --chart-5: 210 10% 70%; /* Neutral gray from the theme */
+    --chart-1: 130 70% 45%; /* Vibrant Green */
+    --chart-2: 130 60% 55%; /* Lighter Green */
+    --chart-3: 130 50% 65%; /* Even Lighter Green */
+    --chart-4: 130 40% 75%; /* Very Light Green */
+    --chart-5: 130 30% 85%; /* Extremely Light Green */
     --radius: 0.5rem;
 
     /* Sidebar variables - Light Theme */
@@ -81,11 +81,11 @@
     --input: 210 10% 18%; /* Dark Input Background (Cool tint) */
     --ring: 190 70% 55%; 
     
-    --chart-1: 190 70% 55%;
-    --chart-2: 190 60% 65%;
-    --chart-3: 190 50% 75%;
-    --chart-4: 210 10% 50%; 
-    --chart-5: 210 10% 40%;
+    --chart-1: 130 70% 50%; /* Vibrant Green (adjusted for dark mode) */
+    --chart-2: 130 60% 60%; /* Lighter Green (adjusted for dark mode) */
+    --chart-3: 130 50% 70%; /* Even Lighter Green (adjusted for dark mode) */
+    --chart-4: 130 40% 80%; /* Very Light Green (adjusted for dark mode) */
+    --chart-5: 130 35% 88%; /* Extremely Light Green (adjusted for dark mode) */
 
     /* Sidebar variables - Dark Theme */
     --sidebar-background: 210 15% 10%; 
