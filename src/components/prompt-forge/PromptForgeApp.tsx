@@ -32,7 +32,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, BarChart3, Search, Briefcase, BarChartHorizontalBig, Network, ShieldCheck, Users, ThumbsUp, ThumbsDown, DollarSign, Target, TrendingDown, Zap, Milestone, CalendarDays, ListOrdered, Route, LogOut } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, BarChart3, Search, Briefcase, BarChartHorizontalBig, Network, ShieldCheck, Users, ThumbsUp, ThumbsDown, DollarSign, Target, TrendingDown, Zap, Milestone, CalendarDays, ListOrdered, Route, LogOut, Award } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
@@ -68,7 +68,7 @@ interface UiUxGuideline {
 
 interface Proposal extends ProposalOutput {} 
 
-type CurrentView = 'app' | 'library' | 'roadmap';
+type CurrentView = 'app' | 'roadmap' | 'library';
 type AppStep = 'ideas' | 'proposal' | 'marketAnalysis' | 'prioritization' | 'mockups' | 'devPrompt' | 'save';
 
 
@@ -159,6 +159,7 @@ export default function PromptForgeApp() {
   const [selectedProjectForRoadmap, setSelectedProjectForRoadmap] = useState<SavedProject | null>(null);
 
   const [authStatus, setAuthStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
+  const [currentUserPlan, setCurrentUserPlan] = useState<string>('Free Explorer');
 
 
   const [editingStates, setEditingStates] = useState<EditingStates>({
@@ -174,6 +175,7 @@ export default function PromptForgeApp() {
       const token = localStorage.getItem(AUTH_TOKEN_KEY);
       if (token) {
         setAuthStatus('authenticated');
+        setCurrentUserPlan('Free Explorer'); // Default to Free plan on auth
       } else {
         setAuthStatus('unauthenticated');
       }
@@ -1178,7 +1180,7 @@ export default function PromptForgeApp() {
               <span className="bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text">PromptForge</span>
             </h1>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4"> {/* Increased gap for plan badge */}
             <Tabs value={currentView} onValueChange={handleTabChange} className="w-auto">
               <TabsList className="bg-transparent p-0 border-none">
                 <TabsTrigger value="app" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium flex items-center gap-1.5">
@@ -1192,6 +1194,21 @@ export default function PromptForgeApp() {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
+             <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5 border border-border/50 px-2.5 py-1 rounded-md bg-muted/30 dark:bg-muted/10 shadow-sm">
+                  {currentUserPlan === 'Free Explorer' ? <Zap className="h-4 w-4 text-primary" /> : <Award className="h-4 w-4 text-amber-500" />}
+                  <Badge variant="outline" className="text-xs border-none p-0 bg-transparent shadow-none">
+                      {currentUserPlan}
+                  </Badge>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Your current subscription plan.</p>
+                 {currentUserPlan === 'Free Explorer' && <p className="text-xs text-muted-foreground">Limited generations per month.</p>}
+                 {currentUserPlan === 'Premium Creator' && <p className="text-xs text-muted-foreground">Unlimited access and features.</p>}
+              </TooltipContent>
+            </Tooltip>
             <Button variant="outline" size="sm" onClick={handleLogout} className="ml-2">
               <LogOut className="mr-1.5 h-4 w-4" /> Logout
             </Button>
@@ -1617,7 +1634,7 @@ export default function PromptForgeApp() {
 
                                     <Card className="shadow-sm">
                                         <CardHeader className="pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
-                                            <CardTitle className="text-xl flex items-center gap-2"><TrendingUp className="h-5 w-5 text-primary"/>Market Trends</CardTitle>
+                                            <CardTitle className="text-xl flex items-center gap-2"><Zap className="h-5 w-5 text-primary"/>Market Trends</CardTitle>
                                         </CardHeader>
                                         <CardContent className="pt-4 space-y-4">
                                             {marketAnalysis.marketTrends.map((trend, idx) => (
