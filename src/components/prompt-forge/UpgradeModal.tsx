@@ -27,7 +27,7 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent className="max-w-3xl rounded-xl border border-border bg-card text-card-foreground shadow-2xl p-6 md:p-8">
+      <AlertDialogContent className="max-w-2xl rounded-xl border border-border bg-card text-card-foreground shadow-2xl p-6 md:p-8">
         <AlertDialogHeader className="items-center text-center pb-6 md:pb-8">
           <div className="p-3.5 rounded-full bg-primary/10 border-2 border-primary/20 shadow-lg mb-4">
             <Crown className="h-10 w-10 text-primary" />
