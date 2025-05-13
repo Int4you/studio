@@ -27,6 +27,7 @@ const LandingPageFooter = React.memo(() => {
               <li><Link href="/#features" className="hover:text-primary transition-colors">Features</Link></li>
               <li><Link href="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li> 
               <li><Link href="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
+              <li><Link href="/affiliate" className="hover:text-primary transition-colors">Affiliate Program</Link></li>
             </ul>
           </div>
           <div>
@@ -51,3 +52,4 @@ const LandingPageFooter = React.memo(() => {
 LandingPageFooter.displayName = 'LandingPageFooter';
 
 export default LandingPageFooter;
+
