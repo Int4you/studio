@@ -76,31 +76,23 @@ export default function HowItWorksContent() {
           
           {steps.map((step, index) => {
             const IconComponent = step.icon;
-            // Step 1 (index 0) is LEFT, Step 2 (index 1) is RIGHT, Step 3 (index 2) is LEFT
             const isLeftAligned = index % 2 === 0; 
             return (
-              <div key={index} className="relative mb-12 md:mb-20 flex items-center"
-                style={{ 
-                    // Offset to visually align the card's content box with the number circle more naturally
-                    marginTop: index > 0 ? (isLeftAligned ? '-2rem' : '-2rem') : '0' 
-                }}
-              >
+              <div key={index} className="relative mb-12 md:mb-20 flex items-center">
                 {/* Numbered circle for the path - larger and more styled */}
                 <div className={cn(
                   "absolute w-12 h-12 md:w-14 md:h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl md:text-2xl font-bold shadow-lg border-4 border-background z-10",
-                  "md:left-1/2 md:-translate-x-1/2 md:top-1/2 md:-translate-y-1/2", // Desktop positioning on the center line, centered on card
-                  "left-0 -translate-x-1 -mt-1 top-0" // Mobile positioning
+                  "md:left-1/2 md:-translate-x-1/2 md:top-1/2 md:-translate-y-1/2", 
+                  "left-0 -translate-x-1 -mt-1 top-0" 
                 )}>
                   {index + 1}
                 </div>
 
                 {/* Container for the Card */}
                 <div className={cn(
-                  "w-full md:w-[calc(50%-4rem)] group", // Card takes up half minus gap for path line and circle
-                  // If index is even (0, 2, ... => Step 1, 3, ...), it's on the LEFT
-                  // If index is odd (1, 3, ... => Step 2, 4, ...), it's on the RIGHT
+                  "w-full md:w-[calc(50%-4rem)] group", 
                   isLeftAligned ? "md:mr-auto md:pr-8" : "md:ml-auto md:pl-8", 
-                  "mt-8 ml-12 md:ml-0 md:mt-0" // Mobile: ml-12 to clear w-12 circle. Desktop: mt-0.
+                  "mt-8 ml-12 md:ml-0 md:mt-0" 
                 )}>
                   <Card className="overflow-hidden shadow-xl hover:shadow-primary/20 border border-border/30 rounded-xl transition-all duration-300 bg-card/80 backdrop-blur-sm transform group-hover:-translate-y-1 group-hover:shadow-2xl">
                     <CardHeader className="p-6">
