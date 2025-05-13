@@ -18,8 +18,10 @@ import Link from "next/link";
 import { LogIn, UserPlus, KeyRound, Mail as MailIcon, User, CheckCircle, Loader2 } from "lucide-react";
 import { useState, type FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { PREMIUM_CREATOR_NAME } from '@/config/plans'; // Import PREMIUM_CREATOR_NAME
 
 const AUTH_TOKEN_KEY = 'promptForgeAuthToken';
+const FREE_CREDITS_STORAGE_KEY = 'promptForgeFreeCreditsUsed';
 
 export default function AuthForm() {
   const { toast } = useToast();
@@ -46,7 +48,8 @@ export default function AuthForm() {
         description: "You are now logged in. Redirecting...",
       });
       localStorage.setItem(AUTH_TOKEN_KEY, 'dummy-auth-token'); // Simulate auth
-      localStorage.setItem('promptForgeUserPlan', 'Free Tier'); // Default to Free Tier
+      localStorage.setItem('promptForgeUserPlan', PREMIUM_CREATOR_NAME); // Set to Premium Creator
+      localStorage.removeItem(FREE_CREDITS_STORAGE_KEY); // Clear free credits as they are not relevant for premium
       router.push('/dashboard');
       // setIsLoading(false); // Not strictly necessary due to redirect
     }, 1000);
@@ -62,8 +65,8 @@ export default function AuthForm() {
         description: "Your account has been created. Redirecting...",
       });
       localStorage.setItem(AUTH_TOKEN_KEY, 'dummy-auth-token'); // Simulate auth
-      localStorage.setItem('promptForgeUserPlan', 'Free Tier'); // Default to Free Tier
-      localStorage.setItem('promptForgeFreeCreditsUsed', '0'); // Initialize credits
+      localStorage.setItem('promptForgeUserPlan', PREMIUM_CREATOR_NAME); // Set to Premium Creator
+      localStorage.removeItem(FREE_CREDITS_STORAGE_KEY); // Clear free credits as they are not relevant for premium
       router.push('/dashboard');
       // setIsLoading(false); // Not strictly necessary due to redirect
     }, 1000);
