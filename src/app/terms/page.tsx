@@ -1,5 +1,6 @@
 
 import LegalPageLayout from '@/components/layout/LegalPageLayout';
+import Link from 'next/link';
 
 export default function TermsPage() {
   return (
@@ -78,3 +79,4 @@ export default function TermsPage() {
     </LegalPageLayout>
   );
 }
+
