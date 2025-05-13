@@ -71,28 +71,30 @@ export default function HowItWorksContent() {
         </div>
 
         <div className="relative">
-          {/* Path line - thicker and more prominent */}
+          {/* Central line for desktop */}
           <div className="hidden md:block absolute top-0 bottom-0 left-1/2 w-1 bg-border/70 -translate-x-1/2"></div>
           
           {steps.map((step, index) => {
             const IconComponent = step.icon;
-            const isLeftAligned = index % 2 === 0; 
+            const isLeftAlignedOnDesktop = index % 2 === 0; 
             return (
               <div key={index} className="relative mb-12 md:mb-20 flex items-center">
-                {/* Numbered circle for the path - larger and more styled */}
+                {/* Numbered circle on the path */}
                 <div className={cn(
                   "absolute w-12 h-12 md:w-14 md:h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl md:text-2xl font-bold shadow-lg border-4 border-background z-10",
+                  // Desktop positioning: centered on the line, vertically centered with the card
                   "md:left-1/2 md:-translate-x-1/2 md:top-1/2 md:-translate-y-1/2", 
+                  // Mobile positioning: to the very left, aligned with where the card content starts
                   "left-0 -translate-x-1 -mt-1 top-0" 
                 )}>
                   {index + 1}
                 </div>
 
-                {/* Container for the Card */}
+                {/* Container for the Card (handles alignment and spacing) */}
                 <div className={cn(
-                  "w-full md:w-[calc(50%-4rem)] group", 
-                  isLeftAligned ? "md:mr-auto md:pr-8" : "md:ml-auto md:pl-8", 
-                  "mt-8 ml-12 md:ml-0 md:mt-0" 
+                  "w-full md:w-[calc(50%-4rem)] group", // 4rem gives space around the central 1rem line + circle + padding
+                  isLeftAlignedOnDesktop ? "md:mr-auto md:pr-8" : "md:ml-auto md:pl-8", // Desktop: alternating sides with padding from center
+                  "mt-8 ml-12 md:ml-0 md:mt-0" // Mobile: margin-left for number, no top margin on desktop as flex handles centering
                 )}>
                   <Card className="overflow-hidden shadow-xl hover:shadow-primary/20 border border-border/30 rounded-xl transition-all duration-300 bg-card/80 backdrop-blur-sm transform group-hover:-translate-y-1 group-hover:shadow-2xl">
                     <CardHeader className="p-6">
@@ -136,4 +138,3 @@ export default function HowItWorksContent() {
     </section>
   );
 }
-
