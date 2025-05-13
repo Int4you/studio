@@ -7,14 +7,13 @@ import type { SavedProject } from '@/lib/libraryModels';
 import { getProjectsFromLibrary, saveProjectToLibrary as saveProjectToLibraryService, deleteProjectFromLibrary as deleteProjectFromLibraryService, getProjectById as getProjectByIdService } from '@/lib/libraryService';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Cpu, Wand2, Library as LibraryIcon, Milestone, LogOut, Zap, Award } from 'lucide-react';
+import { Loader2, Cpu, Wand2, Library as LibraryIcon, Milestone, LogOut, Zap, Award, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CheckCircle2 } from 'lucide-react';
-import { Button } from '@/components/ui/button'; // Added import
+import { Button } from '@/components/ui/button'; 
 
 import RoadmapView from './RoadmapView';
 import LibraryView from './LibraryView';
@@ -236,3 +235,4 @@ export default function AppViewWrapper() {
     </TooltipProvider>
   );
 }
+
