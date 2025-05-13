@@ -119,7 +119,23 @@ Market Analysis Summary:
   {{/each}}
   {{/if}}
   {{#if marketAnalysisSummary.swotAnalysis}}
-  SWOT Insights: Opportunities: {{#if marketAnalysisSummary.swotAnalysis.opportunities}}{{join marketAnalysisSummary.swotAnalysis.opportunities ", "}}{{else}}N/A{{/if}}. Threats: {{#if marketAnalysisSummary.swotAnalysis.threats}}{{join marketAnalysisSummary.swotAnalysis.threats ", "}}{{else}}N/A{{/if}}.
+  SWOT Insights:
+  Opportunities:
+  {{#if marketAnalysisSummary.swotAnalysis.opportunities}}
+  {{#each marketAnalysisSummary.swotAnalysis.opportunities}}
+    - {{this}}
+  {{/each}}
+  {{else}}
+    N/A
+  {{/if}}
+  Threats:
+  {{#if marketAnalysisSummary.swotAnalysis.threats}}
+  {{#each marketAnalysisSummary.swotAnalysis.threats}}
+    - {{this}}
+  {{/each}}
+  {{else}}
+    N/A
+  {{/if}}
   {{/if}}
 {{else}}
 (No detailed market analysis summary provided. Rely on general market knowledge for similar apps.)
