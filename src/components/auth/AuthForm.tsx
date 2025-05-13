@@ -45,7 +45,8 @@ export default function AuthForm() {
         title: "Login Successful (Demo)",
         description: "You are now logged in. Redirecting...",
       });
-      localStorage.setItem(AUTH_TOKEN_KEY, 'dummy-auth-token');
+      localStorage.setItem(AUTH_TOKEN_KEY, 'dummy-auth-token'); // Simulate auth
+      localStorage.setItem('promptForgeUserPlan', 'Free Tier'); // Default to Free Tier
       router.push('/dashboard');
       // setIsLoading(false); // Not strictly necessary due to redirect
     }, 1000);
@@ -60,7 +61,9 @@ export default function AuthForm() {
         title: "Sign Up Successful (Demo)",
         description: "Your account has been created. Redirecting...",
       });
-      localStorage.setItem(AUTH_TOKEN_KEY, 'dummy-auth-token');
+      localStorage.setItem(AUTH_TOKEN_KEY, 'dummy-auth-token'); // Simulate auth
+      localStorage.setItem('promptForgeUserPlan', 'Free Tier'); // Default to Free Tier
+      localStorage.setItem('promptForgeFreeCreditsUsed', '0'); // Initialize credits
       router.push('/dashboard');
       // setIsLoading(false); // Not strictly necessary due to redirect
     }, 1000);
@@ -178,7 +181,7 @@ export default function AuthForm() {
                 {isLoading ? "Creating Account..." : "Sign Up"}
               </Button>
                <p className="text-xs text-center text-muted-foreground">
-                By signing up, you agree to our <Link href="#" className="underline hover:text-primary" onClick={(e) => e.preventDefault()}>Terms of Service</Link>.
+                By signing up, you agree to our <Link href="/terms" className="underline hover:text-primary">Terms of Service</Link> and <Link href="/privacy" className="underline hover:text-primary">Privacy Policy</Link>.
               </p>
             </CardFooter>
           </form>
@@ -187,3 +190,4 @@ export default function AuthForm() {
     </Card>
   );
 }
+
