@@ -330,6 +330,30 @@ export default function PromptForgeApp() {
       else if (!proposal) setCurrentStep('proposal');
       return;
     }
+
+    if (proposal.appName.trim() === '') {
+      toast({
+        title: "App Name Required",
+        description: "Please provide an application name in the proposal (Step 2).",
+        variant: "destructive",
+      });
+      setCurrentStep('proposal');
+      return;
+    }
+
+    const hasIncompleteFeatures = proposal.coreFeatures.some(
+      f => f.feature.trim() === '' || f.description.trim() === ''
+    );
+    if (hasIncompleteFeatures) {
+      toast({
+        title: "Incomplete Features",
+        description: "Please ensure all core features have both a title and a description before generating market analysis.",
+        variant: "destructive",
+      });
+      setCurrentStep('proposal');
+      return;
+    }
+
     setIsLoadingMarketAnalysis(true);
     setError(null);
     setMarketAnalysis(null);
@@ -343,18 +367,14 @@ export default function PromptForgeApp() {
       };
       const result: AnalyzeMarketOutput = await analyzeMarket(input);
       setMarketAnalysis(result);
-      if (!result) {
-         toast({
-          title: "Market Analysis Complete",
-          description: "AI analysis finished, but no specific market data was returned. Review your proposal details.",
-          variant: "default",
-        });
-       } else {
-        toast({
-          title: "Market Analysis Generated!",
-          description: "AI has analyzed the market for your application concept.",
-        });
-       }
+      // The flow itself throws an error if !result.output, so result here should always be an object.
+      // We trust Zod schemas to ensure the object structure.
+      // If the object is structurally valid but "empty" (e.g. empty arrays for trends/competitors),
+      // the UI should handle that gracefully.
+      toast({
+        title: "Market Analysis Generated!",
+        description: "AI has analyzed the market for your application concept.",
+      });
        // No auto-advance
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
@@ -371,7 +391,13 @@ export default function PromptForgeApp() {
 
 
   const handleAppNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setProposal(prev => prev ? { ...prev, appName: event.target.value } : null);
+    setProposal(prev => { 
+        if (!prev) return null;
+        // When app name changes, invalidate market analysis as it's a key input
+        setMarketAnalysis(null);
+        setTextToAppPrompt(null); // App name is also in dev prompt
+        return prev ? { ...prev, appName: event.target.value } : null
+    });
   };
 
   const handleCoreFeatureChange = (index: number, field: keyof CoreFeature, value: string) => {
@@ -379,10 +405,11 @@ export default function PromptForgeApp() {
       if (!prev) return null;
       const updatedFeatures = [...prev.coreFeatures];
       updatedFeatures[index] = { ...updatedFeatures[index], [field]: value };
-      if (field === 'feature' || field === 'description') { 
-          setPrioritizedFeatures(null); 
-          setTextToAppPrompt(null);
-      }
+      // Invalidate downstream data if critical fields change
+      setPrioritizedFeatures(null); 
+      setTextToAppPrompt(null);
+      setMarketAnalysis(null); 
+      setMockupImages(null); // Features influence mockups
       return { ...prev, coreFeatures: updatedFeatures };
     });
   };
@@ -399,19 +426,26 @@ export default function PromptForgeApp() {
     });
     setPrioritizedFeatures(null); 
     setTextToAppPrompt(null);
+    setMarketAnalysis(null); 
+    setMockupImages(null);
   };
 
   const removeCoreFeature = (index: number) => {
     setProposal(prevProposal => {
       if (!prevProposal) return null;
+      const originalLength = prevProposal.coreFeatures.length;
       const newProposal = { ...prevProposal, coreFeatures: prevProposal.coreFeatures.filter((_, i) => i !== index) };
+      
       setEditingStates(prevEditing => ({
         ...prevEditing,
         coreFeatures: prevEditing.coreFeatures.filter((_, i) => i !== index)
       }));
-      if (newProposal.coreFeatures.length !== prevProposal.coreFeatures.length) {
+
+      if (newProposal.coreFeatures.length !== originalLength) {
           setPrioritizedFeatures(null); 
           setTextToAppPrompt(null);
+          setMarketAnalysis(null); 
+          setMockupImages(null);
       }
       return newProposal;
     });
@@ -422,10 +456,9 @@ export default function PromptForgeApp() {
       if (!prev) return null;
       const updatedGuidelines = [...prev.uiUxGuidelines];
       updatedGuidelines[index] = { ...updatedGuidelines[index], [field]: value };
-      if (field === 'category' || field === 'guideline') { 
-          setMockupImages(null);
-          setTextToAppPrompt(null);
-      }
+      // Invalidate downstream data if critical fields change
+      setMockupImages(null);
+      setTextToAppPrompt(null);
       return { ...prev, uiUxGuidelines: updatedGuidelines };
     });
   };
@@ -447,12 +480,15 @@ export default function PromptForgeApp() {
   const removeUiUxGuideline = (index: number) => {
     setProposal(prevProposal => {
       if (!prevProposal) return null;
+      const originalLength = prevProposal.uiUxGuidelines.length;
       const newProposal = { ...prevProposal, uiUxGuidelines: prevProposal.uiUxGuidelines.filter((_, i) => i !== index) };
+
       setEditingStates(prevEditing => ({
         ...prevEditing,
         uiUxGuidelines: prevEditing.uiUxGuidelines.filter((_, i) => i !== index)
       }));
-      if (newProposal.uiUxGuidelines.length !== prevProposal.uiUxGuidelines.length) {
+
+      if (newProposal.uiUxGuidelines.length !== originalLength) {
         setMockupImages(null);
         setTextToAppPrompt(null);
       }
@@ -593,6 +629,11 @@ export default function PromptForgeApp() {
               title: "More Features Generated!",
               description: `${newFeatureCount} new feature ideas added.`,
             });
+            // Invalidate downstream data as features changed
+            setPrioritizedFeatures(null); 
+            setTextToAppPrompt(null);
+            setMarketAnalysis(null);
+            setMockupImages(null);
           } else {
              toast({
               title: "No New Features Added",
@@ -600,8 +641,6 @@ export default function PromptForgeApp() {
               variant: "default",
             });
           }
-          setPrioritizedFeatures(null); 
-          setTextToAppPrompt(null);
           return { ...prevProposal, coreFeatures: combinedFeatures };
         });
       } else {
@@ -684,7 +723,7 @@ export default function PromptForgeApp() {
       if (!prevProposal) return null;
       const coreFeatureIndexToRemove = prevProposal.coreFeatures.findIndex(cf => cf.feature === featureTitle);
       
-      if (coreFeatureIndexToRemove === -1) return prevProposal; // Feature not found in proposal (should not happen if synced)
+      if (coreFeatureIndexToRemove === -1) return prevProposal; 
 
       const updatedCoreFeatures = prevProposal.coreFeatures.filter(cf => cf.feature !== featureTitle);
       
@@ -697,14 +736,17 @@ export default function PromptForgeApp() {
         };
       });
       
+      // Invalidate other downstream data that depends on core features
+      setTextToAppPrompt(null); 
+      setMarketAnalysis(null);
+      setMockupImages(null);
+
       return { ...prevProposal, coreFeatures: updatedCoreFeatures };
     });
 
-    setTextToAppPrompt(null); // Reset dev prompt as features changed
-
     toast({
       title: "Feature Removed",
-      description: `"${featureTitle}" has been removed from the prioritization list and proposal.`,
+      description: `"${featureTitle}" has been removed from the prioritization list and proposal. Other dependent data like Market Analysis and Mockups have been cleared.`,
     });
   };
 
@@ -1835,10 +1877,10 @@ export default function PromptForgeApp() {
                                     Previous Step
                                 </Button>
                             )}
-                            {currentStep !== 'save' && ( // Always show Next button unless on the last step
+                            {currentStep !== 'save' && ( 
                                 <Button 
                                     onClick={handleNextStep}
-                                    disabled={!isStepCompleted(currentStep) && currentStep !== 'ideas' && currentStep !== 'proposal'} // Example: disable if current step incomplete, refine logic as needed
+                                    disabled={!isStepCompleted(currentStep) && currentStep !== 'ideas' && currentStep !== 'proposal'} 
                                     className="rounded-md shadow-md hover:shadow-lg transition-shadow"
                                 >
                                     Next: {stepsConfig[stepsConfig.findIndex(s => s.id === currentStep) + 1]?.title || 'Finish'} <ArrowRight className="ml-2 h-4 w-4" />
