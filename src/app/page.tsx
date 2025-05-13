@@ -24,9 +24,8 @@ export default function LandingPage() {
                 <Info className="mr-1.5 h-4 w-4" /> How It Works
               </Link>
             </Button>
-            {/* Assuming Login, Contact are sections on the landing page or placeholders */}
             <Button variant="ghost" asChild>
-              <Link href="#login" className="flex items-center text-sm"> {/* Placeholder link */}
+              <Link href="/login" className="flex items-center text-sm"> 
                 <LogIn className="mr-1.5 h-4 w-4" /> Login
               </Link>
             </Button>
@@ -36,7 +35,7 @@ export default function LandingPage() {
               </Link>
             </Button>
             <Button variant="ghost" asChild>
-              <Link href="#contact" className="flex items-center text-sm"> {/* Placeholder link */}
+              <Link href="/contact" className="flex items-center text-sm"> 
                 <Mail className="mr-1.5 h-4 w-4" /> Contact
               </Link>
             </Button>

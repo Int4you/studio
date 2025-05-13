@@ -24,7 +24,7 @@ export default function HowItWorksPage() {
               </Link>
             </Button>
             <Button variant="ghost" asChild>
-              <Link href="/#login" className="flex items-center text-sm"> {/* Points to landing page section */}
+              <Link href="/login" className="flex items-center text-sm"> 
                 <LogIn className="mr-1.5 h-4 w-4" /> Login
               </Link>
             </Button>
@@ -34,7 +34,7 @@ export default function HowItWorksPage() {
               </Link>
             </Button>
             <Button variant="ghost" asChild>
-              <Link href="/#contact" className="flex items-center text-sm"> {/* Points to landing page section */}
+              <Link href="/contact" className="flex items-center text-sm"> 
                 <Mail className="mr-1.5 h-4 w-4" /> Contact
               </Link>
             </Button>

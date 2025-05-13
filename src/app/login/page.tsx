@@ -1,12 +1,12 @@
 
-import PricingContent from '@/components/pricing/PricingContent';
+import AuthForm from '@/components/auth/AuthForm';
 import LandingPageFooter from '@/components/landing/LandingPageFooter';
 import CallToActionSection from '@/components/landing/CallToActionSection';
-import { Cpu, Home, LogIn, DollarSign, Mail, ArrowRight, Info } from 'lucide-react';
+import { Cpu, Info, LogIn, DollarSign, Mail, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
-export default function PricingPage() {
+export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -24,17 +24,17 @@ export default function PricingPage() {
               </Link>
             </Button>
             <Button variant="ghost" asChild>
-              <Link href="/login" className="flex items-center text-sm"> 
+              <Link href="/login" className="flex items-center text-sm">
                 <LogIn className="mr-1.5 h-4 w-4" /> Login
               </Link>
             </Button>
             <Button variant="ghost" asChild>
-              <Link href="/pricing" className="flex items-center text-sm">
+              <Link href="/pricing" className="flex items-center text-sm"> 
                 <DollarSign className="mr-1.5 h-4 w-4" /> Pricing
               </Link>
             </Button>
             <Button variant="ghost" asChild>
-              <Link href="/contact" className="flex items-center text-sm"> 
+              <Link href="/contact" className="flex items-center text-sm">
                 <Mail className="mr-1.5 h-4 w-4" /> Contact
               </Link>
             </Button>
@@ -52,10 +52,10 @@ export default function PricingPage() {
           </div>
         </div>
       </header>
-      <main className="flex-grow">
-        <PricingContent />
-        <CallToActionSection />
+      <main className="flex-grow flex items-center justify-center py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-background via-muted/20 to-background dark:from-background dark:via-muted/10 dark:to-background">
+        <AuthForm />
       </main>
+      <CallToActionSection />
       <LandingPageFooter />
     </div>
   );
