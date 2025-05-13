@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Lightbulb, Brain, FileText, ImageIcon, TerminalSquare, HardDriveUpload, ArrowRight, TrendingUp, Search, CheckCircle } from 'lucide-react'; 
+import { Lightbulb, Brain, FileText, /*ImageIcon,*/ TerminalSquare, HardDriveUpload, ArrowRight, TrendingUp, Search, CheckCircle, Tag, DollarSign } from 'lucide-react'; 
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -45,17 +45,25 @@ const steps = [
     imageAlt: "A visual chart or list ranking app features by priority scores",
     aiHint: "priority matrix",
   },
-  {
-    icon: ImageIcon,
-    title: '6. See It Come to Life: AI-Generated Mockups',
-    description: "Instantly visualize your app with multiple high-fidelity mobile mockups. Optionally provide a reference image to perfectly guide the visual style and aesthetic.",
-    imageSrc: "https://picsum.photos/seed/app-visualization/800/600",
-    imageAlt: "A gallery of diverse mobile app screen mockups",
-    aiHint: "mobile UI",
+  { // New Step for Pricing Strategy
+    icon: Tag, // Or DollarSign
+    title: '6. Define Value: AI-Driven Pricing Strategy',
+    description: "Receive AI-powered recommendations for optimal pricing models, tiers, and strategies, considering your app's value, market, and monetization goals.",
+    imageSrc: "https://picsum.photos/seed/pricing-models/800/600",
+    imageAlt: "Visual representation of different pricing tiers and models",
+    aiHint: "pricing strategy",
   },
+  // { // Removed Mockup Step
+  //   icon: ImageIcon,
+  //   title: '6. See It Come to Life: AI-Generated Mockups',
+  //   description: "Instantly visualize your app with multiple high-fidelity mobile mockups. Optionally provide a reference image to perfectly guide the visual style and aesthetic.",
+  //   imageSrc: "https://picsum.photos/seed/app-visualization/800/600",
+  //   imageAlt: "A gallery of diverse mobile app screen mockups",
+  //   aiHint: "mobile UI",
+  // },
   {
     icon: TerminalSquare,
-    title: '7. Accelerate Development: AI Developer Prompt',
+    title: '7. Accelerate Development: AI Developer Prompt', // Adjusted step number
     description: "Transform your detailed proposal into a powerful, structured prompt, specifically engineered for \"Text-to-App\" AI code generation tools, jumpstarting actual development.",
     imageSrc: "https://picsum.photos/seed/dev-prompt/800/600",
     imageAlt: "A code editor interface showing a well-structured prompt for AI code generation",
@@ -63,7 +71,7 @@ const steps = [
   },
   {
     icon: HardDriveUpload,
-    title: '8. Secure Your Progress: Save to Project Library',
+    title: '8. Secure Your Progress: Save to Project Library', // Adjusted step number
     description: "Keep all your innovative projects meticulously organized. Save ideas, proposals, analyses, mockups, and prompts to your personal library for easy access and iteration.",
     imageSrc: "https://picsum.photos/seed/project-vault/800/600",
     imageAlt: "A clean interface showing a list or grid of saved app projects",
@@ -84,7 +92,7 @@ export default function HowItWorksContent() {
             How <span className="text-primary">PromptForge</span> Transforms Your Ideas
           </h2>
           <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto">
-            Follow our AI-guided journey to seamlessly convert your initial spark into a well-defined, visually compelling, and developer-ready app concept.
+            Follow our AI-guided journey to seamlessly convert your initial spark into a well-defined, strategically priced, and developer-ready app concept.
           </p>
         </div>
 
@@ -145,3 +153,6 @@ export default function HowItWorksContent() {
   );
 }
 
+```
+  </change>
+  <change>

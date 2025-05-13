@@ -6,8 +6,8 @@ import type { GenerateApplicationIdeasOutput } from '@/ai/flows/generate-applica
 import { generateApplicationIdeas } from '@/ai/flows/generate-application-ideas';
 import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 import { generateDetailedProposal } from '@/ai/flows/generate-detailed-proposal';
-import type { GenerateMockupInput, GenerateMockupOutput } from '@/ai/flows/generate-mockup-flow';
-import { generateMockup } from '@/ai/flows/generate-mockup-flow';
+// import type { GenerateMockupInput, GenerateMockupOutput } from '@/ai/flows/generate-mockup-flow'; // Removed
+// import { generateMockup } from '@/ai/flows/generate-mockup-flow'; // Removed
 import type { GenerateTextToAppPromptInput, GenerateTextToAppPromptOutput } from '@/ai/flows/generate-text-to-app-prompt';
 import { generateTextToAppPrompt } from '@/ai/flows/generate-text-to-app-prompt';
 import type { GenerateMoreFeaturesInput, GenerateMoreFeaturesOutput } from '@/ai/flows/generate-more-features';
@@ -16,6 +16,8 @@ import type { GenerateFeaturePrioritizationInput, GenerateFeaturePrioritizationO
 import { generateFeaturePrioritization } from '@/ai/flows/generate-feature-prioritization';
 import type { AnalyzeMarketInput, AnalyzeMarketOutput } from '@/ai/flows/analyze-market-flow';
 import { analyzeMarket } from '@/ai/flows/analyze-market-flow';
+import type { GeneratePricingStrategyInput, GeneratePricingStrategyOutput } from '@/ai/flows/generate-pricing-strategy-flow'; // Added
+import { generatePricingStrategy } from '@/ai/flows/generate-pricing-strategy-flow'; // Added
 import type { GenerateRoadmapInput, GenerateRoadmapOutput } from '@/ai/flows/generate-roadmap-flow';
 import { generateRoadmap } from '@/ai/flows/generate-roadmap-flow';
 
@@ -32,7 +34,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, BarChart3, Search, Briefcase, BarChartHorizontalBig, Network, ShieldCheck, Users, ThumbsUp, ThumbsDown, DollarSign, Target, TrendingDown, Zap, Milestone, CalendarDays, ListOrdered, Route, LogOut, Award } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, /*Image as ImageIcon, UploadCloud,*/ RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, BarChart3, Search, Briefcase, BarChartHorizontalBig, Network, ShieldCheck, Users, ThumbsUp, ThumbsDown, DollarSign, Target, TrendingDown, Zap, Milestone, CalendarDays, ListOrdered, Route, LogOut, Award, Tag } from 'lucide-react'; // ImageIcon, UploadCloud removed, Tag added
 import { useRouter } from 'next/navigation';
 
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
@@ -69,7 +71,7 @@ interface UiUxGuideline {
 interface Proposal extends ProposalOutput {} 
 
 type CurrentView = 'app' | 'roadmap' | 'library';
-type AppStep = 'ideas' | 'proposal' | 'marketAnalysis' | 'prioritization' | 'mockups' | 'devPrompt' | 'save';
+type AppStep = 'ideas' | 'proposal' | 'marketAnalysis' | 'prioritization' | 'pricingStrategy' | 'devPrompt' | 'save'; // 'mockups' removed, 'pricingStrategy' added
 
 
 interface EditingStates {
@@ -86,7 +88,8 @@ const stepsConfig: { id: AppStep, title: string, icon: React.ElementType, descri
   { id: 'proposal', title: "Craft Proposal", icon: FileText, description: "Develop a detailed proposal with core features & UI/UX." },
   { id: 'marketAnalysis', title: "Analyze Market", icon: Search, description: "Understand market trends, competitors, and opportunities." },
   { id: 'prioritization', title: "Prioritize Features", icon: TrendingUp, description: "Rank features by impact and effort for your MVP." },
-  { id: 'mockups', title: "Visualize Mockups", icon: ImageIcon, description: "Generate mobile app mockups based on your proposal." },
+  { id: 'pricingStrategy', title: "Pricing Strategy", icon: Tag, description: "Get AI recommendations for pricing models and tiers." }, // New step
+  // { id: 'mockups', title: "Visualize Mockups", icon: ImageIcon, description: "Generate mobile app mockups based on your proposal." }, // Removed
   { id: 'devPrompt', title: "AI Developer Prompt", icon: Terminal, description: "Create a prompt for Text-to-App code generation." },
   { id: 'save', title: "Save Project", icon: Save, description: "Save your complete project to the library." },
 ];
@@ -129,28 +132,30 @@ export default function PromptForgeApp() {
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [marketAnalysis, setMarketAnalysis] = useState<AnalyzeMarketOutput | null>(null);
-  const [mockupImages, setMockupImages] = useState<string[] | null>(null);
+  // const [mockupImages, setMockupImages] = useState<string[] | null>(null); // Removed
   const [textToAppPrompt, setTextToAppPrompt] = useState<string | null>(null);
   const [prioritizedFeatures, setPrioritizedFeatures] = useState<PrioritizedFeature[] | null>(null);
+  const [pricingStrategy, setPricingStrategy] = useState<GeneratePricingStrategyOutput | null>(null); // Added
   const [generatedRoadmap, setGeneratedRoadmap] = useState<GenerateRoadmapOutput | null>(null);
 
 
   const [isLoadingIdeas, setIsLoadingIdeas] = useState<boolean>(false);
   const [isLoadingProposal, setIsLoadingProposal] = useState<boolean>(false);
   const [isLoadingMarketAnalysis, setIsLoadingMarketAnalysis] = useState<boolean>(false);
-  const [isLoadingMockup, setIsLoadingMockup] = useState<boolean>(false);
+  // const [isLoadingMockup, setIsLoadingMockup] = useState<boolean>(false); // Removed
   const [isLoadingTextToAppPrompt, setIsLoadingTextToAppPrompt] = useState<boolean>(false);
   const [isLoadingMoreFeatures, setIsLoadingMoreFeatures] = useState<boolean>(false);
   const [isLoadingPrioritization, setIsLoadingPrioritization] = useState<boolean>(false);
+  const [isLoadingPricingStrategy, setIsLoadingPricingStrategy] = useState<boolean>(false); // Added
   const [isLoadingRoadmap, setIsLoadingRoadmap] = useState<boolean>(false);
   
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
-  const [referenceImageFile, setReferenceImageFile] = useState<File | null>(null);
-  const [referenceImageDataUri, setReferenceImageDataUri] = useState<string | null>(null);
-  const [referenceImageInputKey, setReferenceImageInputKey] = useState<string>(`ref-img-${Date.now()}`);
+  // const [referenceImageFile, setReferenceImageFile] = useState<File | null>(null); // Removed
+  // const [referenceImageDataUri, setReferenceImageDataUri] = useState<string | null>(null); // Removed
+  // const [referenceImageInputKey, setReferenceImageInputKey] = useState<string>(`ref-img-${Date.now()}`); // Removed
 
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
@@ -219,11 +224,12 @@ export default function PromptForgeApp() {
     setProposal(null);
     setMarketAnalysis(null);
     setPrioritizedFeatures(null);
-    setMockupImages(null);
+    setPricingStrategy(null); // Added
+    // setMockupImages(null); // Removed
     setTextToAppPrompt(null);
     setGeneratedRoadmap(null);
     setSelectedProjectForRoadmap(null);
-    resetReferenceImage();
+    // resetReferenceImage(); // Removed
     setCurrentProjectId(null);
     setError(null);
     initializeEditingStates(null);
@@ -234,26 +240,26 @@ export default function PromptForgeApp() {
     setPrompt(event.target.value);
   };
 
-  const handleReferenceImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setReferenceImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setReferenceImageDataUri(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setReferenceImageFile(null);
-      setReferenceImageDataUri(null);
-    }
-  };
+  // const handleReferenceImageChange = (event: ChangeEvent<HTMLInputElement>) => { // Removed
+  //   const file = event.target.files?.[0];
+  //   if (file) {
+  //     setReferenceImageFile(file);
+  //     const reader = new FileReader();
+  //     reader.onloadend = () => {
+  //       setReferenceImageDataUri(reader.result as string);
+  //     };
+  //     reader.readAsDataURL(file);
+  //   } else {
+  //     setReferenceImageFile(null);
+  //     setReferenceImageDataUri(null);
+  //   }
+  // };
 
-  const resetReferenceImage = () => {
-    setReferenceImageFile(null);
-    setReferenceImageDataUri(null);
-    setReferenceImageInputKey(`ref-img-${Date.now()}`);
-  };
+  // const resetReferenceImage = () => { // Removed
+  //   setReferenceImageFile(null);
+  //   setReferenceImageDataUri(null);
+  //   setReferenceImageInputKey(`ref-img-${Date.now()}`);
+  // };
 
   const handleGenerateIdeas = async (event?: FormEvent) => {
     event?.preventDefault();
@@ -268,7 +274,8 @@ export default function PromptForgeApp() {
     setProposal(null);
     setMarketAnalysis(null);
     setPrioritizedFeatures(null);
-    setMockupImages(null);
+    setPricingStrategy(null); // Added
+    // setMockupImages(null); // Removed
     setTextToAppPrompt(null);
     setGeneratedRoadmap(null);
     setSelectedProjectForRoadmap(null);
@@ -307,7 +314,8 @@ export default function PromptForgeApp() {
         setProposal(null);
         setMarketAnalysis(null);
         setPrioritizedFeatures(null);
-        setMockupImages(null);
+        setPricingStrategy(null); // Added
+        // setMockupImages(null); // Removed
         setTextToAppPrompt(null);
         setGeneratedRoadmap(null);
         initializeEditingStates(null);
@@ -327,7 +335,8 @@ export default function PromptForgeApp() {
     setProposal(null); 
     setMarketAnalysis(null);
     setPrioritizedFeatures(null);
-    setMockupImages(null);
+    setPricingStrategy(null); // Added
+    // setMockupImages(null); // Removed
     setTextToAppPrompt(null);
     setGeneratedRoadmap(null);
     initializeEditingStates(null);
@@ -389,6 +398,7 @@ export default function PromptForgeApp() {
     setIsLoadingMarketAnalysis(true);
     setError(null);
     setMarketAnalysis(null);
+    setPricingStrategy(null); // Market analysis might influence pricing
 
     try {
       const input: AnalyzeMarketInput = {
@@ -422,6 +432,8 @@ export default function PromptForgeApp() {
     setProposal(prev => { 
         if (!prev) return null;
         setMarketAnalysis(null);
+        setPricingStrategy(null); // Added
+        // setMockupImages(null); // Removed
         setTextToAppPrompt(null); 
         setGeneratedRoadmap(null);
         return prev ? { ...prev, appName: event.target.value } : null
@@ -434,9 +446,10 @@ export default function PromptForgeApp() {
       const updatedFeatures = [...prev.coreFeatures];
       updatedFeatures[index] = { ...updatedFeatures[index], [field]: value };
       setPrioritizedFeatures(null); 
+      setPricingStrategy(null); // Added
       setTextToAppPrompt(null);
       setMarketAnalysis(null); 
-      setMockupImages(null);
+      // setMockupImages(null); // Removed
       setGeneratedRoadmap(null);
       return { ...prev, coreFeatures: updatedFeatures };
     });
@@ -453,9 +466,10 @@ export default function PromptForgeApp() {
       return newProposal;
     });
     setPrioritizedFeatures(null); 
+    setPricingStrategy(null); // Added
     setTextToAppPrompt(null);
     setMarketAnalysis(null); 
-    setMockupImages(null);
+    // setMockupImages(null); // Removed
     setGeneratedRoadmap(null);
   };
 
@@ -472,9 +486,10 @@ export default function PromptForgeApp() {
 
       if (newProposal.coreFeatures.length !== originalLength) {
           setPrioritizedFeatures(null); 
+          setPricingStrategy(null); // Added
           setTextToAppPrompt(null);
           setMarketAnalysis(null); 
-          setMockupImages(null);
+          // setMockupImages(null); // Removed
           setGeneratedRoadmap(null);
       }
       return newProposal;
@@ -486,7 +501,8 @@ export default function PromptForgeApp() {
       if (!prev) return null;
       const updatedGuidelines = [...prev.uiUxGuidelines];
       updatedGuidelines[index] = { ...updatedGuidelines[index], [field]: value };
-      setMockupImages(null);
+      // setMockupImages(null); // Removed
+      setPricingStrategy(null); // Added
       setTextToAppPrompt(null);
       setGeneratedRoadmap(null);
       return { ...prev, uiUxGuidelines: updatedGuidelines };
@@ -503,7 +519,8 @@ export default function PromptForgeApp() {
       }));
       return newProposal;
     });
-    setMockupImages(null);
+    // setMockupImages(null); // Removed
+    setPricingStrategy(null); // Added
     setTextToAppPrompt(null);
     setGeneratedRoadmap(null);
   };
@@ -520,7 +537,8 @@ export default function PromptForgeApp() {
       }));
 
       if (newProposal.uiUxGuidelines.length !== originalLength) {
-        setMockupImages(null);
+        // setMockupImages(null); // Removed
+        setPricingStrategy(null); // Added
         setTextToAppPrompt(null);
         setGeneratedRoadmap(null);
       }
@@ -528,55 +546,7 @@ export default function PromptForgeApp() {
     });
   };
 
-  const handleGenerateMockup = async (append: boolean = false) => {
-    if (!proposal) {
-      toast({ title: "Proposal Needed", description: "A proposal (Step 2) must be generated first.", variant: "destructive" });
-      setCurrentStep('proposal');
-      return;
-    }
-    setIsLoadingMockup(true);
-    setError(null);
-    if (!append) {
-      setMockupImages(null); 
-    }
-
-    try {
-      const input: GenerateMockupInput = {
-        appName: proposal.appName,
-        coreFeatures: proposal.coreFeatures,
-        uiUxGuidelines: proposal.uiUxGuidelines,
-        ...(referenceImageDataUri && { referenceImageDataUri: referenceImageDataUri }),
-      };
-      const result: GenerateMockupOutput = await generateMockup(input);
-      
-      const newImageUrls = result.mockupImageUrls || [];
-
-      if (append) {
-        setMockupImages(prev => [...(prev || []), ...newImageUrls]);
-      } else {
-        setMockupImages(newImageUrls);
-      }
-
-       if (newImageUrls.length === 0 && !append) { 
-        toast({
-          title: "No Mockups Generated",
-          description: "The AI didn't return any mockups. You might want to try again, adjust the proposal, or add/change the reference image.",
-          variant: "default",
-        });
-      }
-    } catch (err) {
-      console.error('Error generating mockup:', err);
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      setError(`Failed to generate mockup: ${errorMessage}`);
-      toast({
-        title: "Error Generating Mockup",
-        description: `An error occurred while generating the mockup: ${errorMessage}`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingMockup(false);
-    }
-  };
+  // handleGenerateMockup and related logic removed
 
   const handleGenerateTextToAppPrompt = async () => {
     if (!proposal || !selectedIdea) {
@@ -662,9 +632,10 @@ export default function PromptForgeApp() {
               description: `${newFeatureCount} new feature ideas added.`,
             });
             setPrioritizedFeatures(null); 
+            setPricingStrategy(null); // Added
             setTextToAppPrompt(null);
             setMarketAnalysis(null);
-            setMockupImages(null);
+            // setMockupImages(null); // Removed
             setGeneratedRoadmap(null);
           } else {
              toast({
@@ -710,6 +681,7 @@ export default function PromptForgeApp() {
     setIsLoadingPrioritization(true);
     setError(null);
     setPrioritizedFeatures(null);
+    setPricingStrategy(null); // Prioritization might affect pricing
     setGeneratedRoadmap(null); // Prioritization changes affect roadmap
 
     try {
@@ -746,6 +718,68 @@ export default function PromptForgeApp() {
     }
   };
 
+  const handleGeneratePricingStrategy = async () => {
+    if (!proposal || !selectedIdea) {
+      toast({
+        title: "Cannot Generate Pricing Strategy",
+        description: "A proposal (Step 2) and selected idea (Step 1) are required.",
+        variant: "destructive",
+      });
+      if (!selectedIdea) setCurrentStep('ideas');
+      else if (!proposal) setCurrentStep('proposal');
+      return;
+    }
+    setIsLoadingPricingStrategy(true);
+    setError(null);
+    setPricingStrategy(null);
+
+    try {
+      const input: GeneratePricingStrategyInput = {
+        appName: proposal.appName,
+        appDescription: selectedIdea.description,
+        coreFeatures: proposal.coreFeatures,
+        targetAudience: prompt, // Or a dedicated field if you add one
+        marketAnalysisSummary: marketAnalysis ? { // Map relevant parts of marketAnalysis
+            marketOverview: marketAnalysis.marketOverview,
+            potentialCompetitors: marketAnalysis.potentialCompetitors.map(c => ({
+                name: c.name,
+                primaryOffering: c.primaryOffering,
+                estimatedRevenuePotential: c.estimatedRevenuePotential,
+            })),
+            marketSizeAndGrowth: marketAnalysis.marketSizeAndGrowth ? {
+                estimation: marketAnalysis.marketSizeAndGrowth.estimation,
+                potential: marketAnalysis.marketSizeAndGrowth.potential,
+                marketSaturation: marketAnalysis.marketSizeAndGrowth.marketSaturation,
+            } : undefined,
+            swotAnalysis: marketAnalysis.swotAnalysis ? {
+                opportunities: marketAnalysis.swotAnalysis.opportunities,
+                threats: marketAnalysis.swotAnalysis.threats,
+            } : undefined,
+            competitiveLandscapeSummary: marketAnalysis.competitiveLandscapeSummary,
+        } : null,
+        monetizationGoals: "Balanced growth and revenue", // Example, could be a user input
+        uniqueSellingPoints: proposal.coreFeatures.filter(f => f.feature.toLowerCase().includes("unique") || f.description.toLowerCase().includes("unique")).map(f => f.feature) // Basic extraction
+      };
+      const result: GeneratePricingStrategyOutput = await generatePricingStrategy(input);
+      setPricingStrategy(result);
+      toast({
+        title: "Pricing Strategy Generated!",
+        description: "AI has provided pricing recommendations.",
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(`Failed to generate pricing strategy: ${errorMessage}`);
+      toast({
+        title: "Error Generating Pricing Strategy",
+        description: `An error occurred: ${errorMessage}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPricingStrategy(false);
+    }
+  };
+
+
   const handleRemovePrioritizedFeature = (featureTitle: string) => {
     setPrioritizedFeatures(prev => {
       const updatedFeatures = prev ? prev.filter(f => f.feature !== featureTitle) : null;
@@ -771,7 +805,8 @@ export default function PromptForgeApp() {
       
       setTextToAppPrompt(null); 
       setMarketAnalysis(null);
-      setMockupImages(null);
+      setPricingStrategy(null); // Added
+      // setMockupImages(null); // Removed
       setGeneratedRoadmap(null);
 
       return { ...prevProposal, coreFeatures: updatedCoreFeatures };
@@ -779,7 +814,7 @@ export default function PromptForgeApp() {
 
     toast({
       title: "Feature Removed",
-      description: `"${featureTitle}" has been removed from the prioritization list and proposal. Other dependent data like Market Analysis, Mockups, and Roadmap have been cleared.`,
+      description: `"${featureTitle}" has been removed from the prioritization list and proposal. Other dependent data like Market Analysis, Pricing Strategy, Mockups, and Roadmap have been cleared.`,
     });
   };
 
@@ -867,9 +902,10 @@ export default function PromptForgeApp() {
       uiUxGuidelines: proposal.uiUxGuidelines,
       marketAnalysis: marketAnalysis || undefined,
       prioritizedFeatures: prioritizedFeatures || undefined,
-      mockupImageUrls: mockupImages || undefined,
+      pricingStrategy: pricingStrategy || undefined, // Added
+      // mockupImageUrls: mockupImages || undefined, // Removed
       textToAppPrompt: textToAppPrompt || undefined,
-      referenceImageDataUri: referenceImageDataUri || undefined,
+      // referenceImageDataUri: referenceImageDataUri || undefined, // Removed
       savedAt: new Date().toISOString(),
       originalPrompt: prompt, 
     };
@@ -899,20 +935,22 @@ export default function PromptForgeApp() {
       initializeEditingStates(loadedProposal);
       setMarketAnalysis(project.marketAnalysis || null);
       setPrioritizedFeatures(project.prioritizedFeatures || null);
-      setMockupImages(project.mockupImageUrls || null);
+      setPricingStrategy(project.pricingStrategy || null); // Added
+      // setMockupImages(project.mockupImageUrls || null); // Removed
       setTextToAppPrompt(project.textToAppPrompt || null);
-      setReferenceImageDataUri(project.referenceImageDataUri || null);
-      if (project.referenceImageDataUri) {
-        setReferenceImageFile(null); 
-      } else {
-        resetReferenceImage();
-      }
+      // setReferenceImageDataUri(project.referenceImageDataUri || null); // Removed
+      // if (project.referenceImageDataUri) { // Removed
+      //   setReferenceImageFile(null); 
+      // } else {
+      //   resetReferenceImage();
+      // }
       setCurrentProjectId(project.id);
       
       let resumeStep: AppStep = 'ideas';
       if (project.textToAppPrompt) resumeStep = 'save';
-      else if (project.mockupImageUrls && project.mockupImageUrls.length > 0) resumeStep = 'devPrompt';
-      else if (project.prioritizedFeatures && project.prioritizedFeatures.length > 0) resumeStep = 'mockups';
+      else if (project.pricingStrategy) resumeStep = 'devPrompt'; // Updated order
+      // else if (project.mockupImageUrls && project.mockupImageUrls.length > 0) resumeStep = 'devPrompt'; // Removed
+      else if (project.prioritizedFeatures && project.prioritizedFeatures.length > 0) resumeStep = 'pricingStrategy'; // Updated order
       else if (project.marketAnalysis) resumeStep = 'prioritization';
       else if (loadedProposal.coreFeatures && loadedProposal.coreFeatures.length > 0) resumeStep = 'marketAnalysis';
       else if (selectedIdea) resumeStep = 'proposal';
@@ -1013,7 +1051,8 @@ export default function PromptForgeApp() {
       case 'proposal': return proposal != null;
       case 'marketAnalysis': return marketAnalysis != null;
       case 'prioritization': return prioritizedFeatures != null && prioritizedFeatures.length > 0;
-      case 'mockups': return mockupImages != null && mockupImages.length > 0;
+      case 'pricingStrategy': return pricingStrategy != null; // Added
+      // case 'mockups': return mockupImages != null && mockupImages.length > 0; // Removed
       case 'devPrompt': return textToAppPrompt != null;
       case 'save': return currentProjectId != null;
       default: return false;
@@ -1853,94 +1892,111 @@ export default function PromptForgeApp() {
                             </>
                         )}
 
-                        {/* Step 5: Mockup Generation */}
-                        {currentStep === 'mockups' && (
+                        {/* Step 5: Pricing Strategy (New) */}
+                        {currentStep === 'pricingStrategy' && (
                             <>
-                            {!proposal && renderPrerequisiteMessage("Please generate a proposal in Step 2 first.", () => setCurrentStep('proposal'), "Go to Proposal Step")}
+                            {(!proposal || !selectedIdea || !marketAnalysis) && renderPrerequisiteMessage("Please complete Idea, Proposal, and Market Analysis steps first.", () => setCurrentStep( !selectedIdea ? 'ideas' : !proposal ? 'proposal' : 'marketAnalysis'), `Go to ${!selectedIdea ? 'Idea' : !proposal ? 'Proposal' : 'Market Analysis'} Step`)}
                             
-                            {proposal && (
-                                <>
-                                <Card className="shadow-sm rounded-lg border">
-                                    <CardHeader className="px-4 pt-3 pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
-                                        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                                            <UploadCloud className="text-primary h-5 w-5" /> Style Reference (Optional)
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="px-4 py-4">
-                                        <Label htmlFor="reference-image" className="text-xs font-medium text-muted-foreground">
-                                            Upload an image to guide the mockup&apos;s visual style.
-                                        </Label>
-                                        <Input
-                                            id="reference-image"
-                                            key={referenceImageInputKey}
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleReferenceImageChange}
-                                            className="mt-1 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 rounded-md shadow-sm h-10"
-                                        />
-                                        {referenceImageDataUri && (
-                                            <div className="mt-3 p-2 border rounded-md bg-muted/20 dark:bg-muted/10 shadow-sm">
-                                                <p className="text-xs text-muted-foreground mb-1">
-                                                    {referenceImageFile ? `Selected: ${referenceImageFile.name}` : 'Current reference image:'}
-                                                </p>
-                                                <img 
-                                                    src={referenceImageDataUri} 
-                                                    alt="Reference preview" 
-                                                    className="h-20 w-auto rounded border shadow-sm"
-                                                    data-ai-hint="style reference"
-                                                />
-                                            </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                                <div className="pt-2 flex flex-wrap gap-3">
-                                    <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup} className="rounded-md shadow-md hover:shadow-lg transition-shadow text-sm">
-                                        {isLoadingMockup && (!mockupImages || mockupImages.length === 0) ? (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        ) : (
-                                        <ImageIcon className="mr-2 h-4 w-4" />
-                                        )}
-                                        Generate Mockup Screens
-                                    </Button>
-                                </div>
-                                </>
+                            {proposal && selectedIdea && marketAnalysis && !pricingStrategy && !isLoadingPricingStrategy && (
+                                <Button onClick={handleGeneratePricingStrategy} disabled={isLoadingPricingStrategy} className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow">
+                                {isLoadingPricingStrategy ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Tag className="mr-2 h-4 w-4" />
+                                )}
+                                Generate Pricing Strategy (AI)
+                                </Button>
                             )}
-                            {isLoadingMockup && (!mockupImages || mockupImages.length === 0) && (
+                            {isLoadingPricingStrategy && (
                                 <div className="flex justify-center items-center py-8">
                                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                                    <p className="ml-4 text-muted-foreground">Generating mockup screens...</p>
+                                    <p className="ml-4 text-muted-foreground">Generating pricing strategy...</p>
                                 </div>
                             )}
-                            {mockupImages && mockupImages.length > 0 && (
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {mockupImages.map((imageUrl, index) => (
-                                        <div key={index} className="bg-background p-3 rounded-lg border shadow-lg hover:shadow-xl transition-shadow">
-                                            <img 
-                                            src={imageUrl} 
-                                            alt={`Generated mobile app mockup screen ${index + 1}`} 
-                                            className="rounded-md border w-full h-auto object-contain aspect-[9/19]" 
-                                            data-ai-hint="mobile mockup"
-                                            />
-                                        </div>
+                            {pricingStrategy && (
+                                <div className="space-y-6">
+                                     <Card className="shadow-sm">
+                                        <CardHeader className="pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
+                                            <CardTitle className="text-xl flex items-center gap-2"><DollarSign className="h-5 w-5 text-primary"/>Overall Strategy Summary</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="pt-4"><p className="text-sm text-muted-foreground">{pricingStrategy.overallStrategySummary}</p></CardContent>
+                                    </Card>
+
+                                    <Accordion type="multiple" defaultValue={['model-0']} className="w-full space-y-3">
+                                        {pricingStrategy.recommendedPricingModels.map((model, modelIdx) => (
+                                            <AccordionItem key={modelIdx} value={`model-${modelIdx}`} className="border rounded-lg overflow-hidden shadow-md">
+                                                <AccordionTrigger className="p-4 bg-muted/20 dark:bg-muted/10 hover:bg-muted/30 dark:hover:bg-muted/20 hover:no-underline text-lg rounded-t-md data-[state=closed]:rounded-b-md transition-colors">
+                                                    <div className="flex items-center justify-between w-full">
+                                                        <span className="font-semibold text-foreground">{model.modelName}</span>
+                                                        <Badge variant={model.suitabilityScore >= 4 ? "default" : model.suitabilityScore >=3 ? "secondary" : "outline"}>
+                                                            Suitability: {model.suitabilityScore}/5
+                                                        </Badge>
+                                                    </div>
+                                                </AccordionTrigger>
+                                                <AccordionContent className="p-4 text-sm space-y-3 border-t bg-background">
+                                                    <p className="text-xs text-primary/90 italic">{model.suitabilityReasoning}</p>
+                                                    <p className="text-muted-foreground">{model.description}</p>
+                                                    
+                                                    <div>
+                                                        <h6 className="font-medium text-sm mb-1 text-green-600 dark:text-green-500">Pros:</h6>
+                                                        <ul className="list-disc list-inside text-xs text-muted-foreground space-y-0.5 pl-4">
+                                                            {model.pros.map((pro, i) => <li key={i}>{pro}</li>)}
+                                                        </ul>
+                                                    </div>
+                                                    <div>
+                                                        <h6 className="font-medium text-sm mb-1 text-red-600 dark:text-red-500">Cons:</h6>
+                                                        <ul className="list-disc list-inside text-xs text-muted-foreground space-y-0.5 pl-4">
+                                                            {model.cons.map((con, i) => <li key={i}>{con}</li>)}
+                                                        </ul>
+                                                    </div>
+
+                                                    <h6 className="font-medium text-md pt-2 border-t mt-3 text-foreground">Suggested Tiers:</h6>
+                                                    <div className="space-y-3">
+                                                        {model.suggestedTiers.map((tier, tierIdx) => (
+                                                            <Card key={tierIdx} className="p-3 bg-muted/10 dark:bg-muted/5 border shadow-xs">
+                                                                <div className="flex justify-between items-center mb-1">
+                                                                    <h6 className="font-semibold text-sm text-primary">{tier.tierName}</h6>
+                                                                    <Badge variant="secondary" size="sm" className="text-xs">{tier.price}</Badge>
+                                                                </div>
+                                                                {tier.targetUser && <p className="text-xs text-muted-foreground mb-1">Target: {tier.targetUser}</p>}
+                                                                <p className="text-xs font-medium mb-0.5">Features:</p>
+                                                                <ul className="list-disc list-inside text-xs text-muted-foreground space-y-0.5 pl-3 mb-1.5">
+                                                                    {tier.featuresIncluded.map((feat, i) => <li key={i}>{feat}</li>)}
+                                                                </ul>
+                                                                <p className="text-xs text-muted-foreground/80 italic">Justification: {tier.justification}</p>
+                                                            </Card>
+                                                        ))}
+                                                    </div>
+                                                </AccordionContent>
+                                            </AccordionItem>
                                         ))}
-                                        {isLoadingMockup && mockupImages.length > 0 && ( 
-                                        <div className="bg-background p-3 rounded-lg border shadow-lg flex justify-center items-center aspect-[9/19]">
-                                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                        </div>
-                                        )}
-                                    </div>
-                                    {!isLoadingMockup && ( 
-                                        <div className="border-t pt-6 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-start">
-                                            <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-sm">
-                                                <RefreshCw className="mr-2 h-4 w-4" />
-                                                Generate New Set
-                                            </Button>
-                                            <Button onClick={() => handleGenerateMockup(true)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-sm" variant="outline">
-                                                <Plus className="mr-2 h-4 w-4" />
-                                                Add More Mockups
-                                            </Button>
-                                        </div>
+                                    </Accordion>
+
+                                    {pricingStrategy.competitorPricingInsights && (
+                                        <Card className="shadow-sm">
+                                            <CardHeader className="pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
+                                                <CardTitle className="text-lg flex items-center gap-2"><Network className="h-4 w-4 text-primary"/>Competitor Pricing Insights</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="pt-4"><p className="text-sm text-muted-foreground">{pricingStrategy.competitorPricingInsights}</p></CardContent>
+                                        </Card>
+                                    )}
+                                    <Card className="shadow-sm">
+                                        <CardHeader className="pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
+                                            <CardTitle className="text-lg flex items-center gap-2"><Target className="h-4 w-4 text-primary"/>Value Proposition Focus</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="pt-4"><p className="text-sm text-muted-foreground">{pricingStrategy.valuePropositionFocus}</p></CardContent>
+                                    </Card>
+                                    {pricingStrategy.dynamicPricingSuggestions && pricingStrategy.dynamicPricingSuggestions.length > 0 && (
+                                        <Card className="shadow-sm">
+                                            <CardHeader className="pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
+                                                <CardTitle className="text-lg flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary"/>Dynamic Pricing Suggestions</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="pt-4">
+                                                <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 pl-2">
+                                                {pricingStrategy.dynamicPricingSuggestions.map((sugg, idx) => <li key={idx}>{sugg}</li>)}
+                                                </ul>
+                                            </CardContent>
+                                        </Card>
                                     )}
                                 </div>
                             )}
@@ -2079,19 +2135,10 @@ export default function PromptForgeApp() {
                         </CardHeader>
                         <CardContent className="py-3 px-6 flex-grow space-y-3">
                            
-                            {project.mockupImageUrls && project.mockupImageUrls.length > 0 && (
-                                <div className="relative aspect-[16/10] w-full rounded-md overflow-hidden border shadow-inner bg-muted/20">
-                                     <img src={project.mockupImageUrls[0]} alt="Mockup preview" className="absolute inset-0 w-full h-full object-cover" data-ai-hint="mockup app"/>
-                                     {project.mockupImageUrls.length > 1 && (
-                                         <Badge variant="secondary" className="absolute top-2 right-2 text-xs shadow-sm">+{project.mockupImageUrls.length-1} more</Badge>
-                                     )}
-                                </div>
-                            )}
-                             {(!project.mockupImageUrls || project.mockupImageUrls.length === 0) && (
-                                <div className="relative aspect-[16/10] w-full rounded-md overflow-hidden border shadow-inner bg-muted/20 flex items-center justify-center">
-                                     <ImageIcon className="h-12 w-12 text-muted-foreground/30" />
-                                </div>
-                            )}
+                            {/* Removed mockup preview */}
+                            <div className="relative aspect-[16/10] w-full rounded-md overflow-hidden border shadow-inner bg-muted/20 flex items-center justify-center">
+                                 <Cpu className="h-12 w-12 text-muted-foreground/30" />
+                            </div>
 
                             <div className="flex flex-wrap gap-1.5 items-center">
                                 {project.marketAnalysis && (
@@ -2112,6 +2159,16 @@ export default function PromptForgeApp() {
                                       </Badge>
                                     </TooltipTrigger>
                                     <TooltipContent><p>Features are prioritized.</p></TooltipContent>
+                                  </Tooltip>
+                                )}
+                                {project.pricingStrategy && ( // Added check for pricing strategy
+                                   <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="outline" size="sm" className="cursor-default bg-green-500/10 text-green-700 border-green-500/30 dark:bg-green-500/15 dark:text-green-400 dark:border-green-500/40">
+                                        <Tag className="h-3 w-3 mr-1" /> Pricing
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Pricing strategy available.</p></TooltipContent>
                                   </Tooltip>
                                 )}
                                  {project.textToAppPrompt && (

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Lightbulb, FileText, Image as ImageIcon, TerminalSquare, TrendingUp, BarChart3, Sparkles, Cpu, Bot, Search } from 'lucide-react'; 
+import { Lightbulb, FileText, Search, TerminalSquare, TrendingUp, Tag, Sparkles } from 'lucide-react'; 
 
 const features = [
   {
@@ -36,9 +36,9 @@ const features = [
     textColor: 'text-purple-500',
   },
   {
-    icon: <ImageIcon className="h-10 w-10 text-primary" />,
-    title: 'Rapid Visual Mockups',
-    description: 'Instantly visualize your app with multiple high-fidelity mobile mockups, with style referencing.',
+    icon: <Tag className="h-10 w-10 text-primary" />,
+    title: 'AI Pricing Strategy',
+    description: 'Receive AI-driven recommendations for optimal pricing models and tiers based on your app and market.',
     bgColor: 'bg-pink-500/10 dark:bg-pink-500/5',
     borderColor: 'border-pink-500/30',
     textColor: 'text-pink-500',

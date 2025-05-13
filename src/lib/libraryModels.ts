@@ -1,4 +1,5 @@
 import type { AnalyzeMarketOutput } from "@/ai/flows/analyze-market-flow";
+import type { GeneratePricingStrategyOutput } from "@/ai/flows/generate-pricing-strategy-flow";
 
 export interface CoreFeatureData {
   feature: string;
@@ -28,11 +29,9 @@ export interface SavedProject {
   uiUxGuidelines: UiUxGuidelineData[];
   marketAnalysis?: AnalyzeMarketOutput; 
   prioritizedFeatures?: PrioritizedFeatureData[];
-  mockupImageUrls?: string[];
+  pricingStrategy?: GeneratePricingStrategyOutput; // Added
   textToAppPrompt?: string;
-  referenceImageDataUri?: string | null;
+  // mockupImageUrls and referenceImageDataUri removed
   savedAt: string; // ISO date string
-  originalPrompt?: string; // Added to store the initial prompt for idea generation
+  originalPrompt?: string; 
 }
-
-```
