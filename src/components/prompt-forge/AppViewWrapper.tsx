@@ -7,7 +7,7 @@ import type { SavedProject } from '@/lib/libraryModels';
 import { getProjectsFromLibrary, saveProjectToLibrary as saveProjectToLibraryService, deleteProjectFromLibrary as deleteProjectFromLibraryService, getProjectById as getProjectByIdService } from '@/lib/libraryService';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Cpu, Wand2, Library as LibraryIcon, Milestone, LogOut, Zap, Award, CheckCircle2 } from 'lucide-react';
+import { Loader2, Cpu, Wand2, Library as LibraryIcon, Milestone, LogOut, Zap, Crown, CheckCircle2 } from 'lucide-react'; // Added Crown
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -43,7 +43,7 @@ export default function AppViewWrapper() {
         setAuthStatus('authenticated');
         // In a real app, plan would be fetched from backend
         // For demo, assuming all authenticated users start on Free Tier unless manually changed/mocked
-        setCurrentUserPlan(FREE_TIER_NAME); 
+        setCurrentUserPlan(localStorage.getItem('promptForgeUserPlan') || FREE_TIER_NAME); 
         const storedCredits = localStorage.getItem(FREE_CREDITS_STORAGE_KEY);
         if (storedCredits) {
           setCreditsUsed(parseInt(storedCredits, 10));
@@ -67,8 +67,7 @@ export default function AppViewWrapper() {
 
   const handleLogout = () => {
     localStorage.removeItem(AUTH_TOKEN_KEY);
-    // Optionally, clear credits used if it's tied to login session for demo
-    // localStorage.removeItem(FREE_CREDITS_STORAGE_KEY); 
+    localStorage.removeItem('promptForgeUserPlan'); // Also clear mocked plan
     setAuthStatus('unauthenticated');
     toast({ title: "Logged Out", description: "You have been successfully logged out." });
   };
@@ -157,7 +156,7 @@ export default function AppViewWrapper() {
      );
   }
 
-  const planDetailsToDisplay = currentUserPlan === FREE_TIER_NAME ? freePlanUIDetails : premiumPlanUIDetails;
+  const isPremium = currentUserPlan === PREMIUM_CREATOR_NAME;
   const creditsLeft = MAX_FREE_CREDITS - creditsUsed;
 
   return (
@@ -190,8 +189,8 @@ export default function AppViewWrapper() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="flex items-center gap-1.5 border-border/50 px-2.5 py-1 rounded-md bg-muted/30 dark:bg-muted/10 shadow-sm cursor-pointer h-9">
-                      {currentUserPlan === FREE_TIER_NAME ? <Zap className="h-4 w-4 text-primary" /> : <Award className="h-4 w-4 text-amber-500" />}
+                    <Button variant="outline" size="sm" className="flex items-center gap-1.5 border-border/50 px-2.5 py-1 rounded-md bg-muted/30 hover:bg-muted/50 dark:bg-muted/10 dark:hover:bg-muted/20 shadow-sm cursor-pointer h-9">
+                      {isPremium ? <Crown className="h-4 w-4 text-amber-500" /> : <Zap className="h-4 w-4 text-primary" />}
                       <span className="text-xs font-medium">{currentUserPlan}</span>
                     </Button>
                   </PopoverTrigger>
@@ -200,21 +199,48 @@ export default function AppViewWrapper() {
                   <p>Click to see plan details.</p>
                 </TooltipContent>
               </Tooltip>
-              <PopoverContent className="w-72 p-4 shadow-xl rounded-lg border-border/30">
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-md text-foreground">{planDetailsToDisplay.name}</h4>
-                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    {planDetailsToDisplay.features.map((feature, index) => (
-                      <li key={index} className="flex items-start">
-                        <CheckCircle2 className="h-4 w-4 text-green-500 mr-2 mt-0.5 shrink-0" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  {currentUserPlan === FREE_TIER_NAME && (
-                    <Button asChild size="sm" className="w-full mt-3">
-                      <Link href="/pricing">Upgrade to Premium</Link>
-                    </Button>
+              <PopoverContent className="w-80 p-0 shadow-xl rounded-lg border-border/30 bg-card overflow-hidden">
+                <div className="p-4 bg-muted/20 dark:bg-muted/10 border-b">
+                  <h4 className="font-semibold text-md text-foreground text-center">Your Current Plan</h4>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div className={`p-3 rounded-md border ${isPremium ? 'border-amber-500/50 bg-amber-500/10' : 'border-border/30 bg-muted/30'}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      {isPremium ? <Crown className="h-5 w-5 text-amber-500" /> : <Zap className="h-5 w-5 text-primary" />}
+                      <h5 className={`font-bold ${isPremium ? 'text-amber-600 dark:text-amber-400' : 'text-primary'}`}>{isPremium ? PREMIUM_CREATOR_NAME : FREE_TIER_NAME}</h5>
+                    </div>
+                    <ul className="space-y-1.5 text-xs text-muted-foreground pl-1">
+                      {(isPremium ? premiumPlanUIDetails.features : freePlanUIDetails.features).map((feature, index) => (
+                        <li key={index} className="flex items-start">
+                          <CheckCircle2 className={`h-3.5 w-3.5 mr-1.5 mt-0.5 shrink-0 ${isPremium ? 'text-amber-500' : 'text-green-500'}`} />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {!isPremium && (
+                    <div className="pt-3 border-t mt-3">
+                       <div className="p-3 rounded-md border border-primary/30 bg-primary/5 dark:bg-primary/10 mb-3">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Crown className="h-5 w-5 text-primary" />
+                            <h5 className="font-bold text-primary">{PREMIUM_CREATOR_NAME}</h5>
+                          </div>
+                           <p className="text-xs text-primary/80 mb-2">{premiumPlanUIDetails.description}</p>
+                          <ul className="space-y-1.5 text-xs text-muted-foreground pl-1">
+                            {premiumPlanUIDetails.features.slice(0,3).map((feature, index) => ( // Show a few premium features
+                              <li key={index} className="flex items-start">
+                                <CheckCircle2 className="h-3.5 w-3.5 text-primary mr-1.5 mt-0.5 shrink-0" />
+                                <span>{feature}</span>
+                              </li>
+                            ))}
+                             <li className="flex items-start"><CheckCircle2 className="h-3.5 w-3.5 text-primary mr-1.5 mt-0.5 shrink-0" /><span>And more...</span></li>
+                          </ul>
+                       </div>
+                      <Button asChild size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-shadow">
+                        <Link href="/pricing">Upgrade to Premium ({premiumPlanUIDetails.price}{premiumPlanUIDetails.frequency})</Link>
+                      </Button>
+                    </div>
                   )}
                 </div>
               </PopoverContent>
