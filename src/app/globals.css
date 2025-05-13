@@ -4,98 +4,98 @@
 
 @layer base {
   :root {
-    /* Black & White Theme with Teal Accent - Light Mode */
-    --background: 0 0% 100%; /* White */
-    --foreground: 0 0% 10%;    /* Near Black */
+    /* Modern Cool Gray & Cyan/Teal Theme - Light Mode */
+    --background: 210 20% 98%; /* Very Light Cool Gray */
+    --foreground: 210 10% 23%; /* Dark Cool Gray */
 
     --card: 0 0% 100%; /* White */
-    --card-foreground: 0 0% 10%; /* Near Black */
+    --card-foreground: 210 10% 23%; /* Dark Cool Gray */
 
     --popover: 0 0% 100%; /* White */
-    --popover-foreground: 0 0% 10%; /* Near Black */
+    --popover-foreground: 210 10% 23%; /* Dark Cool Gray */
 
-    --primary: 180 100% 25.1%; /* Teal #008080 */
-    --primary-foreground: 0 0% 98%; /* Almost White for contrast on Teal */
+    --primary: 190 80% 45%; /* Modern Cyan/Teal */
+    --primary-foreground: 210 20% 98%; /* Very Light Cool Gray for contrast on primary */
 
-    --secondary: 0 0% 97%; /* Very Light Gray */
-    --secondary-foreground: 0 0% 15%; /* Dark Gray */
+    --secondary: 210 15% 94%; /* Light Cool Gray */
+    --secondary-foreground: 210 10% 30%; /* Medium-Dark Cool Gray */
 
-    --muted: 0 0% 94%; /* Light Gray */
-    --muted-foreground: 0 0% 40%; /* Medium Gray */
+    --muted: 210 15% 90%; /* Slightly darker Light Cool Gray */
+    --muted-foreground: 210 10% 45%; /* Medium Cool Gray */
 
-    --accent: 180 100% 30%; /* Slightly darker Teal for active/hover */
-    --accent-foreground: 0 0% 98%; /* Almost White on Accent */
+    --accent: 190 75% 50%; /* Slightly brighter Modern Cyan/Teal for active/hover */
+    --accent-foreground: 210 20% 98%; /* Very Light Cool Gray on Accent */
 
     --destructive: 0 84% 60%; /* Standard Red */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 90%; /* Light Gray Border */
-    --input: 0 0% 98%; /* Off-White Input Background */
-    --ring: 180 100% 25.1%; /* Teal for Focus Rings */
+    --border: 210 10% 85%; /* Cool Gray Border */
+    --input: 210 10% 96%; /* Off-White Input Background (Cool tint, slightly lighter) */
+    --ring: 190 80% 45%; /* Modern Cyan/Teal for Focus Rings */
 
-    --chart-1: 180 70% 45%;
-    --chart-2: 180 60% 55%;
-    --chart-3: 180 50% 65%;
-    --chart-4: 0 0% 50%; 
-    --chart-5: 0 0% 60%;
+    --chart-1: 190 70% 45%;
+    --chart-2: 190 60% 55%;
+    --chart-3: 190 50% 65%;
+    --chart-4: 210 10% 60%; /* Neutral gray from the theme */
+    --chart-5: 210 10% 70%; /* Neutral gray from the theme */
     --radius: 0.5rem;
 
-    /* Sidebar variables - Light Theme (Black & White + Teal) */
-    --sidebar-background: 0 0% 98%; /* Very Light Gray / Off-white */
-    --sidebar-foreground: 0 0% 10%; /* Near Black */
-    --sidebar-primary: 180 100% 25.1%; /* Teal */
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 180 80% 85%; /* Light Teal for accents */
-    --sidebar-accent-foreground: 180 100% 20%; /* Darker Teal for text */
-    --sidebar-border: 0 0% 88%; /* Light Gray Border */
-    --sidebar-ring: 180 100% 25.1%;
+    /* Sidebar variables - Light Theme */
+    --sidebar-background: 210 20% 96%; 
+    --sidebar-foreground: 210 10% 23%; 
+    --sidebar-primary: 190 80% 45%; 
+    --sidebar-primary-foreground: 210 20% 98%;
+    --sidebar-accent: 190 75% 90%; 
+    --sidebar-accent-foreground: 190 80% 35%; 
+    --sidebar-border: 210 10% 80%; 
+    --sidebar-ring: 190 80% 45%;
   }
 
   .dark {
-    /* Black & White Theme with Teal Accent - Dark Mode */
-    --background: 0 0% 8%;    /* Very Dark Gray / Near Black */
-    --foreground: 0 0% 95%; /* Light Gray / Off-White */
+    /* Modern Cool Gray & Cyan/Teal Theme - Dark Mode */
+    --background: 210 15% 12%; /* Dark Cool Slate */
+    --foreground: 210 10% 85%; /* Light Cool Gray */
 
-    --card: 0 0% 12%; /* Darker card background */
-    --card-foreground: 0 0% 95%; 
+    --card: 210 15% 16%; /* Slightly Lighter Dark Cool Slate */
+    --card-foreground: 210 10% 85%; 
 
-    --popover: 0 0% 10%; 
-    --popover-foreground: 0 0% 95%;
+    --popover: 210 15% 14%; 
+    --popover-foreground: 210 10% 85%;
 
-    --primary: 180 100% 35%; /* Brighter Teal for dark mode */
-    --primary-foreground: 0 0% 10%; /* Dark text on bright Teal */
+    --primary: 190 70% 55%; /* Brighter Modern Cyan/Teal for dark mode */
+    --primary-foreground: 210 10% 15%; /* Dark text on bright primary */
 
-    --secondary: 0 0% 15%; /* Dark Gray */
-    --secondary-foreground: 0 0% 90%; /* Light Gray */
+    --secondary: 210 10% 25%; /* Darker Cool Gray */
+    --secondary-foreground: 210 10% 75%; /* Lighter Cool Gray */
 
-    --muted: 0 0% 18%; 
-    --muted-foreground: 0 0% 65%; 
+    --muted: 210 10% 20%; 
+    --muted-foreground: 210 10% 60%; 
 
-    --accent: 180 100% 40%; /* Even brighter Teal for accents */
-    --accent-foreground: 0 0% 8%; 
+    --accent: 190 65% 60%; /* Even brighter Modern Cyan/Teal for accents */
+    --accent-foreground: 210 10% 10%; 
 
     --destructive: 0 70% 55%; 
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 20%; /* Dark Gray Border */
-    --input: 0 0% 14%; /* Dark Input Background */
-    --ring: 180 100% 35%; 
+    --border: 210 10% 30%; /* Dark Cool Gray Border */
+    --input: 210 10% 18%; /* Dark Input Background (Cool tint) */
+    --ring: 190 70% 55%; 
     
-    --chart-1: 180 90% 50%;
-    --chart-2: 180 80% 60%;
-    --chart-3: 180 70% 70%;
-    --chart-4: 0 0% 70%; 
-    --chart-5: 0 0% 80%;
+    --chart-1: 190 70% 55%;
+    --chart-2: 190 60% 65%;
+    --chart-3: 190 50% 75%;
+    --chart-4: 210 10% 50%; 
+    --chart-5: 210 10% 40%;
 
-    /* Sidebar variables - Dark Theme (Black & White + Teal) */
-    --sidebar-background: 0 0% 10%; /* Dark Gray */
-    --sidebar-foreground: 0 0% 92%; /* Light Gray */
-    --sidebar-primary: 180 100% 35%; /* Brighter Teal */
-    --sidebar-primary-foreground: 0 0% 10%;
-    --sidebar-accent: 180 100% 30%; /* Darker accent base */
-    --sidebar-accent-foreground: 0 0% 95%; /* Light text on accent */
-    --sidebar-border: 0 0% 25%; /* Dark Gray Border */
-    --sidebar-ring: 180 100% 35%;
+    /* Sidebar variables - Dark Theme */
+    --sidebar-background: 210 15% 10%; 
+    --sidebar-foreground: 210 10% 85%; 
+    --sidebar-primary: 190 70% 55%; 
+    --sidebar-primary-foreground: 210 10% 15%;
+    --sidebar-accent: 190 70% 25%; 
+    --sidebar-accent-foreground: 210 10% 90%; 
+    --sidebar-border: 210 10% 25%; 
+    --sidebar-ring: 190 70% 55%;
   }
 }
 
@@ -108,7 +108,7 @@
   }
   body {
     @apply bg-background text-foreground flex flex-col; /* Use flex-col for sticky footer */
-    font-family: sans-serif; /* Default sans-serif font */
+    /* font-family set by next/font in layout.tsx */
   }
   /* Ensure headings and other text elements inherit correctly */
   h1, h2, h3, h4, h5, h6 {

@@ -1038,7 +1038,7 @@ export default function PromptForgeApp() {
   return (
     <React.Fragment>
     <TooltipProvider>
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-3">
             <Cpu className="h-8 w-8 text-primary" />
@@ -1058,7 +1058,7 @@ export default function PromptForgeApp() {
       <main className="container mx-auto p-4 md:p-8 max-w-5xl mt-4">
         {currentView === 'app' && (
           <>
-            <div className="text-center space-y-3 mb-10 p-6 bg-card border border-border/40 rounded-xl shadow-lg">
+            <div className="text-center space-y-3 mb-10 p-6 bg-card border rounded-xl shadow-lg">
               <Wand2 className="h-10 w-10 text-primary mx-auto" />
               <h2 className="text-3xl font-bold tracking-tight text-foreground">
                 Let&apos;s Forge Your Next App
@@ -1073,11 +1073,11 @@ export default function PromptForgeApp() {
             
             <Accordion type="multiple" value={openAccordionSections} onValueChange={setOpenAccordionSections} className="w-full space-y-6">
               {/* Step 1: Idea Generation */}
-              <AccordionItem value="step-1-ideas" id="step-1-ideas">
-                <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+              <AccordionItem value="step-1-ideas" id="step-1-ideas" className="bg-card border rounded-lg shadow-md overflow-hidden">
+                <AccordionTrigger className="hover:no-underline p-4 w-full data-[state=open]:border-b data-[state=open]:border-border/50">
                     {renderStepIndicator('ideas', 1, "Spark Your Idea", Lightbulb)}
                 </AccordionTrigger>
-                <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md">
+                <AccordionContent className="p-6">
                   <form onSubmit={handleGenerateIdeas} className="space-y-4">
                     <Label htmlFor="idea-prompt" className="text-sm font-medium">Describe your application idea:</Label>
                     <Textarea
@@ -1148,11 +1148,11 @@ export default function PromptForgeApp() {
               </AccordionItem>
 
               {/* Step 2: Detailed Proposal */}
-              <AccordionItem value="step-2-proposal" id="step-2-proposal">
-                <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+              <AccordionItem value="step-2-proposal" id="step-2-proposal" className="bg-card border rounded-lg shadow-md overflow-hidden">
+                <AccordionTrigger className="hover:no-underline p-4 w-full data-[state=open]:border-b data-[state=open]:border-border/50">
                     {renderStepIndicator('proposal', 2, "Craft Proposal", FileText)}
                 </AccordionTrigger>
-                <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
+                <AccordionContent className="p-6 space-y-6">
                     {!selectedIdea && renderPrerequisiteMessage("Please select an idea from Step 1 to generate a proposal.", 'ideas')}
                     
                     {selectedIdea && !proposal && !isLoadingProposal && (
@@ -1174,7 +1174,7 @@ export default function PromptForgeApp() {
                             Selected Idea: <span className="font-semibold text-foreground">{selectedIdea?.title || "N/A"}</span>
                             {currentProjectId && <span className="text-xs text-muted-foreground ml-2">(Loaded from Library)</span>}
                         </CardDescription>
-                        <Card className="shadow-sm rounded-lg border border-border/30">
+                        <Card className="shadow-sm rounded-lg border">
                           <CardHeader className="flex flex-row items-center justify-between pb-3 px-4 pt-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
                             <CardTitle className="text-lg font-semibold">Application Name</CardTitle>
                             {!editingStates.appName ? (
@@ -1202,7 +1202,7 @@ export default function PromptForgeApp() {
                           </CardContent>
                         </Card>
                         
-                        <Card className="shadow-sm rounded-lg border border-border/30">
+                        <Card className="shadow-sm rounded-lg border">
                           <CardHeader className="px-4 pt-3 pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
                             <div className="flex items-center justify-between">
                               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
@@ -1215,7 +1215,7 @@ export default function PromptForgeApp() {
                           </CardHeader>
                           <CardContent className="space-y-3 px-4 py-4">
                             {proposal.coreFeatures.map((feature, index) => (
-                              <Card key={index} className="bg-card p-3 rounded-md shadow-none border border-border/50">
+                              <Card key={index} className="bg-background p-3 rounded-md shadow-none border">
                                 <div className="flex justify-between items-start gap-2">
                                   {editingStates.coreFeatures[index] ? (
                                     <div className="flex-grow space-y-2">
@@ -1271,7 +1271,7 @@ export default function PromptForgeApp() {
                               <p className="text-xs text-muted-foreground text-center py-2">No core features added yet.</p>
                             )}
                           </CardContent>
-                           <CardFooter className="border-t border-border/30 pt-4 p-4 bg-muted/20 dark:bg-muted/10 rounded-b-lg">
+                           <CardFooter className="border-t pt-4 p-4 bg-muted/20 dark:bg-muted/10 rounded-b-lg">
                              <Button 
                                 onClick={handleGenerateMoreFeatures} 
                                 variant="outline" 
@@ -1289,7 +1289,7 @@ export default function PromptForgeApp() {
                            </CardFooter>
                         </Card>
 
-                        <Card className="shadow-sm rounded-lg border border-border/30">
+                        <Card className="shadow-sm rounded-lg border">
                            <CardHeader className="px-4 pt-3 pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
                             <div className="flex items-center justify-between">
                               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
@@ -1302,7 +1302,7 @@ export default function PromptForgeApp() {
                           </CardHeader>
                           <CardContent className="space-y-3 px-4 py-4">
                             {proposal.uiUxGuidelines.map((guideline, index) => (
-                              <Card key={index} className="bg-card p-3 rounded-md shadow-none border border-border/50">
+                              <Card key={index} className="bg-background p-3 rounded-md shadow-none border">
                                 <div className="flex justify-between items-start gap-2">
                                   {editingStates.uiUxGuidelines[index] ? (
                                     <div className="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1380,11 +1380,11 @@ export default function PromptForgeApp() {
               </AccordionItem>
 
               {/* Step 3: Market Analysis */}
-              <AccordionItem value="step-3-market-analysis" id="step-3-market-analysis">
-                  <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+              <AccordionItem value="step-3-market-analysis" id="step-3-market-analysis" className="bg-card border rounded-lg shadow-md overflow-hidden">
+                  <AccordionTrigger className="hover:no-underline p-4 w-full data-[state=open]:border-b data-[state=open]:border-border/50">
                       {renderStepIndicator('marketAnalysis', 3, "Analyze Market", BarChart3)}
                   </AccordionTrigger>
-                  <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
+                  <AccordionContent className="p-6 space-y-6">
                       {(!proposal || !selectedIdea) && renderPrerequisiteMessage("Please complete Steps 1 (Idea) and 2 (Proposal) first.", proposal ? 'proposal' : 'ideas')}
                       
                       {proposal && selectedIdea && !marketAnalysis && !isLoadingMarketAnalysis && (
@@ -1464,7 +1464,7 @@ export default function PromptForgeApp() {
                                   </CardHeader>
                                   <CardContent className="pt-4 space-y-4">
                                       {marketAnalysis.marketTrends.map((trend, idx) => (
-                                          <div key={idx} className="p-3 bg-card dark:bg-muted/20 rounded-md border border-border/50 shadow-sm">
+                                          <div key={idx} className="p-3 bg-background dark:bg-muted/20 rounded-md border shadow-sm">
                                               <h5 className="font-semibold text-md mb-1.5 text-foreground/90">{trend.trend}</h5>
                                               <p className="text-xs text-muted-foreground mb-2.5">{trend.description}</p>
                                               <div className="space-y-2">
@@ -1499,16 +1499,16 @@ export default function PromptForgeApp() {
                                           </ResponsiveContainer>
                                        </ChartContainer>
                                       {marketAnalysis.potentialCompetitors.map((competitor, idx) => (
-                                          <Accordion key={idx} type="single" collapsible className="w-full border border-border/40 rounded-md overflow-hidden shadow-sm">
+                                          <Accordion key={idx} type="single" collapsible className="w-full border rounded-md overflow-hidden shadow-sm">
                                             <AccordionItem value={`competitor-${idx}`} className="border-b-0">
-                                                <AccordionTrigger className="p-3 bg-card dark:bg-muted/20 hover:no-underline hover:bg-muted/30 dark:hover:bg-muted/30 text-md rounded-t-md data-[state=closed]:rounded-b-md">
+                                                <AccordionTrigger className="p-3 bg-background dark:bg-muted/20 hover:no-underline hover:bg-muted/30 dark:hover:bg-muted/30 text-md rounded-t-md data-[state=closed]:rounded-b-md">
                                                     <span className="font-semibold">{competitor.name}</span>
                                                 </AccordionTrigger>
-                                                <AccordionContent className="p-4 text-sm space-y-2 bg-card border-t border-border/40">
+                                                <AccordionContent className="p-4 text-sm space-y-2 bg-background border-t">
                                                     <p><strong>Primary Offering:</strong> <span className="text-muted-foreground">{competitor.primaryOffering}</span></p>
                                                     <div><strong>Strengths:</strong> <ul className="list-disc list-inside text-muted-foreground text-xs ml-4">{competitor.strengths.map((s,i) => <li key={i}>{s}</li>)}</ul></div>
                                                     <div><strong>Weaknesses:</strong> <ul className="list-disc list-inside text-muted-foreground text-xs ml-4">{competitor.weaknesses.map((w,i) => <li key={i}>{w}</li>)}</ul></div>
-                                                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/30">
+                                                    <div className="flex items-center gap-2 mt-2 pt-2 border-t">
                                                       <strong>Est. Revenue Potential:</strong> 
                                                       <Badge variant={getRevenuePotentialBadgeVariant(competitor.estimatedRevenuePotential)} className="shadow-sm">
                                                         <DollarSign className="h-3 w-3 mr-1"/>{competitor.estimatedRevenuePotential}
@@ -1605,11 +1605,11 @@ export default function PromptForgeApp() {
                 </AccordionItem>
 
               {/* Step 4: Feature Prioritization */}
-               <AccordionItem value="step-4-prioritization" id="step-4-prioritization">
-                    <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+               <AccordionItem value="step-4-prioritization" id="step-4-prioritization" className="bg-card border rounded-lg shadow-md overflow-hidden">
+                    <AccordionTrigger className="hover:no-underline p-4 w-full data-[state=open]:border-b data-[state=open]:border-border/50">
                         {renderStepIndicator('prioritization', 4, "Prioritize Features", TrendingUp)}
                     </AccordionTrigger>
-                    <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
+                    <AccordionContent className="p-6 space-y-6">
                         {(!proposal || !selectedIdea || (proposal && proposal.coreFeatures.length === 0)) && 
                          renderPrerequisiteMessage("Please ensure Step 1 (Idea) is complete and Step 2 (Proposal) has core features before prioritizing.", proposal && proposal.coreFeatures.length === 0 ? 'proposal' : 'ideas')}
                         
@@ -1636,7 +1636,7 @@ export default function PromptForgeApp() {
                         {prioritizedFeatures && prioritizedFeatures.length > 0 && (
                             <div className="space-y-4">
                                 {prioritizedFeatures.map((pFeature, index) => (
-                                <Card key={index} className="bg-muted/20 dark:bg-muted/10 p-4 rounded-lg shadow-sm border border-border/40">
+                                <Card key={index} className="bg-muted/20 dark:bg-muted/10 p-4 rounded-lg shadow-sm border">
                                     <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-2">
                                     <h4 className="text-lg font-semibold text-foreground">{pFeature.feature}</h4>
                                     <Badge variant={getPriorityBadgeVariant(pFeature.priorityScore)} className="text-sm">
@@ -1686,16 +1686,16 @@ export default function PromptForgeApp() {
                 </AccordionItem>
 
               {/* Step 5: Mockup Generation */}
-              <AccordionItem value="step-5-mockups" id="step-5-mockups">
-                    <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+              <AccordionItem value="step-5-mockups" id="step-5-mockups" className="bg-card border rounded-lg shadow-md overflow-hidden">
+                    <AccordionTrigger className="hover:no-underline p-4 w-full data-[state=open]:border-b data-[state=open]:border-border/50">
                          {renderStepIndicator('mockups', 5, "Visualize Mockups", ImageIcon)}
                     </AccordionTrigger>
-                    <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
+                    <AccordionContent className="p-6 space-y-6">
                         {!proposal && renderPrerequisiteMessage("Please generate a proposal in Step 2 first.", 'proposal')}
                         
                         {proposal && (
                             <>
-                            <Card className="shadow-sm rounded-lg border border-border/30">
+                            <Card className="shadow-sm rounded-lg border">
                                 <CardHeader className="px-4 pt-3 pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
                                     <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                                         <UploadCloud className="text-primary h-5 w-5" /> Style Reference (Optional)
@@ -1750,23 +1750,23 @@ export default function PromptForgeApp() {
                              <div className="space-y-4">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {mockupImages.map((imageUrl, index) => (
-                                    <div key={index} className="bg-card p-3 rounded-lg border border-border/30 shadow-lg hover:shadow-xl transition-shadow">
+                                    <div key={index} className="bg-background p-3 rounded-lg border shadow-lg hover:shadow-xl transition-shadow">
                                         <img 
                                         src={imageUrl} 
                                         alt={`Generated mobile app mockup screen ${index + 1}`} 
-                                        className="rounded-md border border-border/50 w-full h-auto object-contain aspect-[9/19]" 
+                                        className="rounded-md border w-full h-auto object-contain aspect-[9/19]" 
                                         data-ai-hint="mobile mockup"
                                         />
                                     </div>
                                     ))}
                                     {isLoadingMockup && mockupImages.length > 0 && ( 
-                                    <div className="bg-card p-3 rounded-lg border border-border/30 shadow-lg flex justify-center items-center aspect-[9/19]">
+                                    <div className="bg-background p-3 rounded-lg border shadow-lg flex justify-center items-center aspect-[9/19]">
                                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                     </div>
                                     )}
                                 </div>
                                  {!isLoadingMockup && ( 
-                                    <div className="border-t border-border/30 pt-6 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-start">
+                                    <div className="border-t pt-6 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-start">
                                         <Button onClick={() => handleGenerateMockup(false)} disabled={isLoadingMockup || !proposal} className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-sm">
                                             <RefreshCw className="mr-2 h-4 w-4" />
                                             Generate New Set
@@ -1793,11 +1793,11 @@ export default function PromptForgeApp() {
                 </AccordionItem>
 
               {/* Step 6: AI Developer Prompt */}
-               <AccordionItem value="step-6-devprompt" id="step-6-devprompt">
-                    <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+               <AccordionItem value="step-6-devprompt" id="step-6-devprompt" className="bg-card border rounded-lg shadow-md overflow-hidden">
+                    <AccordionTrigger className="hover:no-underline p-4 w-full data-[state=open]:border-b data-[state=open]:border-border/50">
                         {renderStepIndicator('devPrompt', 6, "Create Developer Prompt", Terminal)}
                     </AccordionTrigger>
-                    <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md space-y-6">
+                    <AccordionContent className="p-6 space-y-6">
                         {(!proposal || !selectedIdea) && renderPrerequisiteMessage("Please complete Steps 1 (Idea) and 2 (Proposal) first.", proposal ? 'proposal' : 'ideas')}
                         
                         {proposal && selectedIdea && !textToAppPrompt && !isLoadingTextToAppPrompt && (
@@ -1855,11 +1855,11 @@ export default function PromptForgeApp() {
                 </AccordionItem>
 
               {/* Step 7: Save to Library */}
-               <AccordionItem value="step-7-save" id="step-7-save">
-                    <AccordionTrigger className="hover:no-underline p-4 bg-card rounded-t-xl border border-border/40 shadow-md data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+               <AccordionItem value="step-7-save" id="step-7-save" className="bg-card border rounded-lg shadow-md overflow-hidden">
+                    <AccordionTrigger className="hover:no-underline p-4 w-full data-[state=open]:border-b data-[state=open]:border-border/50">
                        {renderStepIndicator('save', 7, "Save Your Project", Save)}
                     </AccordionTrigger>
-                    <AccordionContent className="p-6 border border-t-0 border-border/40 rounded-b-xl bg-card shadow-md">
+                    <AccordionContent className="p-6">
                         {(!selectedIdea || !proposal) && renderPrerequisiteMessage("An idea (Step 1) and a proposal (Step 2) are needed to save.", proposal ? 'proposal' : 'ideas')}
                         
                         {selectedIdea && proposal && (
@@ -1880,7 +1880,7 @@ export default function PromptForgeApp() {
 
         {currentView === 'library' && (
           <section id="library-view-content" className="space-y-6">
-            <Card className="shadow-lg border-border/50 rounded-xl overflow-hidden">
+            <Card className="shadow-lg border rounded-xl overflow-hidden">
               <CardHeader className="bg-muted/30 dark:bg-muted/10">
                 <CardTitle className="flex items-center gap-2 text-2xl">
                   <LibraryIcon className="text-primary h-6 w-6" />
@@ -1894,7 +1894,7 @@ export default function PromptForgeApp() {
                 ) : (
                   <div className="space-y-4">
                     {savedProjects.map((project) => (
-                      <Card key={project.id} className={`border rounded-lg shadow-sm hover:shadow-md transition-shadow ${currentProjectId === project.id ? 'ring-2 ring-primary border-primary' : 'border-border/50'}`}>
+                      <Card key={project.id} className={`border rounded-lg shadow-sm hover:shadow-md transition-shadow ${currentProjectId === project.id ? 'ring-2 ring-primary border-primary' : ''}`}>
                         <CardHeader className="pb-3">
                           <CardTitle className="text-xl">{project.appName}</CardTitle>
                           <CardDescription className="text-xs text-muted-foreground">
@@ -1966,3 +1966,4 @@ export default function PromptForgeApp() {
     </React.Fragment>
   );
 }
+
