@@ -88,17 +88,17 @@ Roadmap Generation Guidelines:
 2.  **MVP Phases (2-4 Phases)**:
     *   Divide the MVP development into 2 to 4 logical, sequential phases.
     *   For each phase, provide:
-        *   `phaseNumber`: A chronological number (1, 2, etc.).
-        *   `phaseTitle`: A concise, descriptive title (e.g., "Phase 1: Core Functionality & User Onboarding").
-        *   `phaseGoal`: The primary objective of this phase.
-        *   `estimatedDuration`: An estimated timeframe (e.g., "3-5 Weeks", "1 Sprint (2 Weeks)").
-        *   `featuresInPhase`: List of features to be implemented. For each feature:
-            *   `featureName`: The name of the feature.
-            *   `featureDescription`: A brief description of what part of the feature is built in this phase.
-            *   `justificationForPhase`: Why this feature (or part of it) belongs in this phase.
-        *   `keyDeliverables`: Tangible outputs or milestones for this phase (e.g., "Working user login", "Ability to create basic profiles").
+        *   \\\`phaseNumber\\\`: A chronological number (1, 2, etc.).
+        *   \\\`phaseTitle\\\`: A concise, descriptive title (e.g., "Phase 1: Core Functionality & User Onboarding").
+        *   \\\`phaseGoal\\\`: The primary objective of this phase.
+        *   \\\`estimatedDuration\\\`: An estimated timeframe (e.g., "3-5 Weeks", "1 Sprint (2 Weeks)").
+        *   \\\`featuresInPhase\\\`: List of features to be implemented. For each feature:
+            *   \\\`featureName\\\`: The name of the feature.
+            *   \\\`featureDescription\\\`: A brief description of what part of the feature is built in this phase.
+            *   \\\`justificationForPhase\\\`: Why this feature (or part of it) belongs in this phase.
+        *   \\\`keyDeliverables\\\`: Tangible outputs or milestones for this phase (e.g., "Working user login", "Ability to create basic profiles").
 3.  **Feature Phasing Logic**:
-    *   If `priorityScore`, `estimatedImpact`, and `estimatedEffort` are provided for features, use these heavily to guide phasing. High-priority (high score), high-impact, and low-to-medium effort features should generally come earlier.
+    *   If \\\`priorityScore\\\`, \\\`estimatedImpact\\\`, and \\\`estimatedEffort\\\` are provided for features, use these heavily to guide phasing. High-priority (high score), high-impact, and low-to-medium effort features should generally come earlier.
     *   If prioritization details are sparse or absent for some features, use your expert judgment based on the feature descriptions, app description, and typical MVP principles to sequence them logically. Focus on delivering core value and enabling user feedback loops early.
     *   Ensure features build upon each other where logical dependencies exist.
 4.  **Overall MVP Timeline**: Estimate the total time to complete all MVP phases.
@@ -126,3 +126,4 @@ const generateRoadmapFlow = ai.defineFlow(
     return output;
   }
 );
+
