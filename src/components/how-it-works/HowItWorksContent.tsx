@@ -37,7 +37,7 @@ const steps = [
     description: "Receive AI-powered recommendations for optimal pricing models, tiers, and strategies, considering your app's value, market, and monetization goals.",
   },
   {
-    icon: Milestone, // Changed from TerminalSquare for Roadmap visualization as it was next
+    icon: Milestone, 
     title: 'Plan Your Build: MVP Roadmap Generation',
     description: "Automatically generate an MVP roadmap, including feature prioritization, effort estimation, and clear objectives based on your saved project.",
   },
@@ -76,7 +76,7 @@ export default function HowItWorksContent() {
           
           {steps.map((step, index) => {
             const IconComponent = step.icon;
-            const isEven = index % 2 === 0;
+            const isEven = index % 2 === 0; // Step 1 (index 0) is even, Step 2 (index 1) is odd
             return (
               <div key={index} className="relative mb-12 md:mb-16">
                 {/* Numbered circle for the path */}
@@ -91,7 +91,9 @@ export default function HowItWorksContent() {
                 {/* Container for the Card */}
                 <div className={cn(
                   "w-full md:w-[calc(50%-3rem)]", // Card takes up half minus gap for path line
-                  isEven ? "md:ml-[calc(50%+3rem)]" : "md:mr-[calc(50%+3rem)] md:text-left", 
+                  // If index is even (0, 2, ... => Step 1, 3, ...), it's on the LEFT
+                  // If index is odd (1, 3, ... => Step 2, 4, ...), it's on the RIGHT
+                  isEven ? "md:mr-[calc(50%+3rem)] md:text-left" : "md:ml-[calc(50%+3rem)]", 
                   "mt-8 ml-10 md:ml-0 md:mt-0" // Mobile: ml-10 (2.5rem) to clear w-10 circle. Desktop: mt-0.
                 )}>
                   <Card className="overflow-hidden shadow-xl hover:shadow-primary/10 border border-border/20 rounded-xl transition-all duration-300 group bg-card">
