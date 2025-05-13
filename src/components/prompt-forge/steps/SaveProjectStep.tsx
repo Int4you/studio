@@ -7,7 +7,7 @@ import type { ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Save, BadgeHelp, ArrowRight } from 'lucide-react';
-import type { AppStepId } from '../AppView';
+import type { AppStepId } from '../appWorkflowTypes';
 
 interface SaveProjectStepProps {
   selectedIdea: Idea | null;
@@ -46,8 +46,12 @@ export default function SaveProjectStep({
   onNavigateToStep,
 }: SaveProjectStepProps) {
 
-  if (!selectedIdea || !proposal) {
-    return <PrerequisiteMessage message="An idea (Step 1) and a proposal (Step 2) are needed to save." onAction={() => onNavigateToStep(proposal ? 'proposal' : 'ideas')} buttonText={`Go to ${proposal ? 'Proposal' : 'Idea'} Step`} />;
+  if (!selectedIdea || !proposal || !proposal.appName || proposal.appName.trim() === "") {
+    return <PrerequisiteMessage 
+              message="An idea (from Step 1) and an application name (in Step 2) are required to save your project." 
+              onAction={() => onNavigateToStep(selectedIdea && proposal ? 'proposal' : 'ideas')} 
+              buttonText={`Go to ${selectedIdea && proposal ? 'Craft Proposal' : 'Spark Idea'} Step`} 
+            />;
   }
 
   return (
@@ -61,3 +65,5 @@ export default function SaveProjectStep({
     </>
   );
 }
+
+    

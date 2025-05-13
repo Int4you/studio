@@ -101,6 +101,8 @@ export default function AppView({
 
   const currentStepDetails = stepsConfig.find(s => s.id === currentStep);
   const canStartNewProject = !(currentUserPlan === FREE_TIER_NAME && creditsUsed >= MAX_FREE_CREDITS);
+  const canSaveProject = selectedIdea && proposal?.appName && proposal.appName.trim() !== '';
+
 
   const isCurrentStepPremiumAndLocked = 
     PREMIUM_STEP_IDS.includes(currentStep) &&
@@ -125,6 +127,12 @@ export default function AppView({
           {stepsConfig.map((step) => {
             const isPremium = PREMIUM_STEP_IDS.includes(step.id);
             const isLockedForFreeUser = isPremium && currentUserPlan === FREE_TIER_NAME && !isStepCompleted(step.id);
+            
+            let navButtonDisabled = isLockedForFreeUser;
+            if (step.id === 'save' && !canSaveProject && currentStep !== 'save') {
+                navButtonDisabled = true;
+            }
+
 
             return (
               <Button
@@ -133,10 +141,25 @@ export default function AppView({
                 className={cn(
                     "w-full justify-start text-left px-3 py-2 h-auto flex items-center",
                     currentStep === step.id && "shadow-md",
-                    isLockedForFreeUser && "opacity-70 cursor-not-allowed hover:bg-transparent"
+                    navButtonDisabled && currentStep !== step.id && "opacity-70 cursor-not-allowed hover:bg-transparent"
                 )}
-                onClick={() => navigateToStep(step.id)}
-                title={isLockedForFreeUser ? `${step.title} is a Premium feature.` : step.description}
+                onClick={() => {
+                    if (step.id === 'save' && !canSaveProject) {
+                         toast({
+                            title: "Cannot Navigate to Save",
+                            description: "An idea (Step 1) and an application name (Step 2) are required before saving.",
+                            variant: "destructive",
+                          });
+                        return;
+                    }
+                    navigateToStep(step.id)
+                }}
+                disabled={navButtonDisabled && currentStep !== step.id}
+                title={
+                    isLockedForFreeUser ? `${step.title} is a Premium feature.` :
+                    step.id === 'save' && !canSaveProject ? "Idea and App Name required to save." :
+                    step.description
+                }
               >
                 <step.icon className={cn("mr-3 h-5 w-5 shrink-0", currentStep === step.id ? "text-primary-foreground" : "text-primary")} />
                 <div className="flex-grow min-w-0"> 
@@ -165,17 +188,34 @@ export default function AppView({
           </Button>
           <select 
               value={currentStep} 
-              onChange={(e) => navigateToStep(e.target.value as AppStepId)}
+              onChange={(e) => {
+                const targetStepId = e.target.value as AppStepId;
+                if (targetStepId === 'save' && !canSaveProject) {
+                     toast({
+                        title: "Cannot Navigate to Save",
+                        description: "An idea (Step 1) and an application name (Step 2) are required before saving.",
+                        variant: "destructive",
+                      });
+                    return;
+                }
+                navigateToStep(targetStepId);
+              }}
               className="w-full p-3 border border-input rounded-md bg-background text-foreground shadow-sm"
           >
               {stepsConfig.map(step => {
                 const isPremium = PREMIUM_STEP_IDS.includes(step.id);
                 const isLockedForFreeUser = isPremium && currentUserPlan === FREE_TIER_NAME && !isStepCompleted(step.id);
+                let optionDisabled = isLockedForFreeUser;
+                if (step.id === 'save' && !canSaveProject) {
+                    optionDisabled = true;
+                }
+
                 return (
-                  <option key={step.id} value={step.id} disabled={isLockedForFreeUser}>
+                  <option key={step.id} value={step.id} disabled={optionDisabled}>
                       {step.title} 
                       {isStepCompleted(step.id) ? ' ✔' : ''}
                       {isPremium ? ' (Premium)' : ''}
+                      {optionDisabled && step.id === 'save' ? ' (Idea/App Name needed)' : ''}
                   </option>
                 );
               })}
@@ -306,6 +346,15 @@ export default function AppView({
                         <Button 
                             onClick={handleNextStep}
                             className="rounded-md shadow-md hover:shadow-lg transition-shadow"
+                            disabled={
+                                // Disable "Next" if the current step isn't "completed" enough to move on
+                                (currentStep === 'ideas' && !selectedIdea) ||
+                                (currentStep === 'proposal' && (!proposal || !proposal.appName.trim())) ||
+                                (currentStep === 'prioritization' && !prioritizedFeatures) ||
+                                (currentStep === 'marketAnalysis' && !marketAnalysis) ||
+                                (currentStep === 'pricingStrategy' && !pricingStrategy) ||
+                                (currentStep === 'devPrompt' && !textToAppPrompt)
+                            }
                         >
                             Next: {stepsConfig[stepsConfig.findIndex(s => s.id === currentStep) + 1]?.title || 'Finish'} <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
@@ -322,3 +371,4 @@ export default function AppView({
   );
 }
 
+    

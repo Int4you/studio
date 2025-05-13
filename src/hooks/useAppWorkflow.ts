@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, type ChangeEvent, type FormEvent, useCallback } from 'react';
@@ -78,7 +79,7 @@ export function useAppWorkflow({
       coreFeatures: currentProposal ? new Array(currentProposal.coreFeatures.length).fill(false) : [],
       uiUxGuidelines: currentProposal ? new Array(currentProposal.uiUxGuidelines.length).fill(false) : [],
     });
-  }, []); // Empty dependency array makes it stable
+  }, []); 
 
   // Effect to load data from initialProject
   useEffect(() => {
@@ -91,7 +92,7 @@ export function useAppWorkflow({
         uiUxGuidelines: initialProject.uiUxGuidelines
       };
       setProposal(loadedProposalData);
-      initializeEditingStates(loadedProposalData); // Call stable function
+      initializeEditingStates(loadedProposalData); 
       setMarketAnalysis(initialProject.marketAnalysis || null);
       setPrioritizedFeatures(initialProject.prioritizedFeatures || null);
       setPricingStrategy(initialProject.pricingStrategy || null);
@@ -103,12 +104,12 @@ export function useAppWorkflow({
   const isStepCompleted = useCallback((stepId: AppStepId): boolean => {
     switch (stepId) {
       case 'ideas': return selectedIdea != null || (ideas.length > 0 && !isLoadingIdeas);
-      case 'proposal': return proposal != null;
+      case 'proposal': return proposal != null && proposal.appName.trim() !== '';
       case 'prioritization': return prioritizedFeatures != null && (prioritizedFeatures.length > 0 || (proposal?.coreFeatures.length === 0 && !isLoadingPrioritization));
       case 'marketAnalysis': return marketAnalysis != null;
       case 'pricingStrategy': return pricingStrategy != null;
       case 'devPrompt': return textToAppPrompt != null;
-      case 'save': return currentProjectId != null;
+      case 'save': return currentProjectId != null; // "Save" step is complete if a project ID exists (meaning it has been saved at least once)
       default: return false;
     }
   }, [selectedIdea, ideas.length, isLoadingIdeas, proposal, marketAnalysis, prioritizedFeatures, pricingStrategy, textToAppPrompt, currentProjectId, isLoadingPrioritization]);
@@ -482,16 +483,22 @@ export function useAppWorkflow({
   };
 
   const handleSaveToLibrary = () => {
-    if (!selectedIdea || !proposal) {
-      toast({ title: "Cannot Save Project", description: "Idea (Step 1) and proposal (Step 2) required.", variant: "destructive" }); return;
+    if (!selectedIdea || !proposal || !proposal.appName || proposal.appName.trim() === "") {
+      toast({
+        title: "Cannot Save Project",
+        description: "An idea (from Step 1) and an application name (in Step 2) are required to save your project.",
+        variant: "destructive",
+      });
+      return;
     }
+
     const projectToSave: SavedProject = {
       id: currentProjectId || `proj-${Date.now()}`,
       appName: proposal.appName,
       ideaTitle: selectedIdea.title,
       ideaDescription: selectedIdea.description,
-      coreFeatures: proposal.coreFeatures,
-      uiUxGuidelines: proposal.uiUxGuidelines,
+      coreFeatures: proposal.coreFeatures || [],
+      uiUxGuidelines: proposal.uiUxGuidelines || [],
       marketAnalysis: marketAnalysis || undefined,
       prioritizedFeatures: prioritizedFeatures || undefined,
       pricingStrategy: pricingStrategy || undefined,
@@ -499,11 +506,15 @@ export function useAppWorkflow({
       savedAt: new Date().toISOString(),
       originalPrompt: prompt,
     };
+
     const success = onProjectSave(projectToSave, currentUserPlan);
     if (success) {
       setCurrentProjectId(projectToSave.id);
+      // Toast is handled by AppViewWrapper to show "Project Saved" or "Project Updated"
     }
+    // If not successful, onProjectSave in AppViewWrapper already shows a toast.
   };
+
 
   const toggleEditState = (section: keyof EditingStates, indexOrValue: number | boolean, value?: boolean) => {
     setEditingStates(prev => {
@@ -604,3 +615,5 @@ export function useAppWorkflow({
     resetAppCreationState,
   };
 }
+
+    
