@@ -49,7 +49,7 @@ const steps = [
   {
     icon: HardDriveUpload,
     title: 'Secure Your Progress: Save to Project Library',
-    description: "Keep all your innovative projects meticulously organized. Save ideas, proposals, analyses, mockups, and prompts to your personal library for easy access and iteration.",
+    description: "Keep all your innovative projects meticulously organized. Save ideas, proposals, analyses, pricing strategies, and prompts to your personal library for easy access and iteration.",
   },
 ];
 
@@ -71,36 +71,42 @@ export default function HowItWorksContent() {
         </div>
 
         <div className="relative">
-          {/* Path line */}
-          <div className="hidden md:block absolute top-0 bottom-0 left-1/2 w-px bg-border/60 -translate-x-1/2"></div>
+          {/* Path line - thicker and more prominent */}
+          <div className="hidden md:block absolute top-0 bottom-0 left-1/2 w-1 bg-border/70 -translate-x-1/2"></div>
           
           {steps.map((step, index) => {
             const IconComponent = step.icon;
-            const isEven = index % 2 === 0; // Step 1 (index 0) is even, Step 2 (index 1) is odd
+            // Step 1 (index 0) is LEFT, Step 2 (index 1) is RIGHT, Step 3 (index 2) is LEFT
+            const isLeftAligned = index % 2 === 0; 
             return (
-              <div key={index} className="relative mb-12 md:mb-16">
-                {/* Numbered circle for the path */}
+              <div key={index} className="relative mb-12 md:mb-20 flex items-center"
+                style={{ 
+                    // Offset to visually align the card's content box with the number circle more naturally
+                    marginTop: index > 0 ? (isLeftAligned ? '-2rem' : '-2rem') : '0' 
+                }}
+              >
+                {/* Numbered circle for the path - larger and more styled */}
                 <div className={cn(
-                  "absolute top-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-lg md:text-xl font-bold shadow-lg border-2 md:border-4 border-background z-10",
-                  "md:left-1/2 md:-translate-x-1/2 md:-mt-1", // Desktop positioning on the center line
-                  "left-0 -translate-x-3.5 -mt-1" // Mobile positioning (adjust for w-10 and border-2)
+                  "absolute w-12 h-12 md:w-14 md:h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl md:text-2xl font-bold shadow-lg border-4 border-background z-10",
+                  "md:left-1/2 md:-translate-x-1/2 md:top-1/2 md:-translate-y-1/2", // Desktop positioning on the center line, centered on card
+                  "left-0 -translate-x-1 -mt-1 top-0" // Mobile positioning
                 )}>
                   {index + 1}
                 </div>
 
                 {/* Container for the Card */}
                 <div className={cn(
-                  "w-full md:w-[calc(50%-3rem)]", // Card takes up half minus gap for path line
+                  "w-full md:w-[calc(50%-4rem)] group", // Card takes up half minus gap for path line and circle
                   // If index is even (0, 2, ... => Step 1, 3, ...), it's on the LEFT
                   // If index is odd (1, 3, ... => Step 2, 4, ...), it's on the RIGHT
-                  isEven ? "md:mr-[calc(50%+3rem)] md:text-left" : "md:ml-[calc(50%+3rem)]", 
-                  "mt-8 ml-10 md:ml-0 md:mt-0" // Mobile: ml-10 (2.5rem) to clear w-10 circle. Desktop: mt-0.
+                  isLeftAligned ? "md:mr-auto md:pr-8" : "md:ml-auto md:pl-8", 
+                  "mt-8 ml-12 md:ml-0 md:mt-0" // Mobile: ml-12 to clear w-12 circle. Desktop: mt-0.
                 )}>
-                  <Card className="overflow-hidden shadow-xl hover:shadow-primary/10 border border-border/20 rounded-xl transition-all duration-300 group bg-card">
+                  <Card className="overflow-hidden shadow-xl hover:shadow-primary/20 border border-border/30 rounded-xl transition-all duration-300 bg-card/80 backdrop-blur-sm transform group-hover:-translate-y-1 group-hover:shadow-2xl">
                     <CardHeader className="p-6">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center mb-3">
-                        <div className="p-3 sm:p-4 rounded-full bg-primary/10 border border-primary/20 mr-0 sm:mr-4 mb-3 sm:mb-0 group-hover:bg-primary/15 transition-colors shadow-md self-start flex-shrink-0">
-                          <IconComponent className="h-8 w-8 sm:h-10 sm:w-10 text-primary group-hover:scale-105 transition-transform" />
+                        <div className="p-3 sm:p-4 rounded-full bg-primary/10 border border-primary/20 mr-0 sm:mr-4 mb-3 sm:mb-0 group-hover:bg-primary/20 transition-colors shadow-lg self-start flex-shrink-0">
+                          <IconComponent className="h-8 w-8 sm:h-10 sm:w-10 text-primary group-hover:scale-110 transition-transform" />
                         </div>
                         <CardTitle className="text-xl md:text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
                           {step.title}
@@ -108,7 +114,7 @@ export default function HowItWorksContent() {
                       </div>
                     </CardHeader>
                     <CardContent className="p-6 pt-0">
-                      <CardDescription className="text-base text-muted-foreground leading-relaxed">
+                      <CardDescription className="text-base text-muted-foreground leading-relaxed group-hover:text-foreground/90 transition-colors">
                         {step.description}
                       </CardDescription>
                     </CardContent>
