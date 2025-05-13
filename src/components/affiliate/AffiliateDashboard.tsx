@@ -1,13 +1,12 @@
-
 "use client";
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input'; // Corrected import
-import { Label } from '@/components/ui/label';
-import { Copy, BarChart2, Users, MousePointerClick, DollarSign, ExternalLink, Loader2, ShieldAlert } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label'; // Kept for consistency, though not used in this version
+import { Copy, BarChart2, Users, MousePointerClick, DollarSign, ExternalLink, Loader2, ShieldAlert, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
@@ -23,22 +22,35 @@ interface AffiliateDetails {
   registeredAt: string;
 }
 
+interface AffiliateStats {
+  clicks: number;
+  signups: number;
+  conversionRate: string;
+  earningsMonth: string;
+  earningsTotal: string;
+}
+
 interface StatCardProps {
   title: string;
   value: string | number;
   icon: React.ReactNode;
   description?: string;
+  isLoading?: boolean;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon, description }) => (
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon, description, isLoading }) => (
   <Card className="shadow-sm border-border/20">
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
       {icon}
     </CardHeader>
     <CardContent>
-      <div className="text-2xl font-bold text-foreground">{value}</div>
-      {description && <p className="text-xs text-muted-foreground pt-1">{description}</p>}
+      {isLoading ? (
+        <Loader2 className="h-6 w-6 animate-spin text-primary my-1" />
+      ) : (
+        <div className="text-2xl font-bold text-foreground">{value}</div>
+      )}
+      {description && !isLoading && <p className="text-xs text-muted-foreground pt-1">{description}</p>}
     </CardContent>
   </Card>
 );
@@ -47,14 +59,17 @@ export default function AffiliateDashboard() {
   const router = useRouter();
   const { toast } = useToast();
   const [affiliateDetails, setAffiliateDetails] = useState<AffiliateDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // For initial affiliate details check
+  const [isStatsLoading, setIsStatsLoading] = useState(true); // For stats loading
   const [referralLink, setReferralLink] = useState('');
+  const [stats, setStats] = useState<AffiliateStats | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem(AUTH_TOKEN_KEY);
       if (!token) {
         router.push('/login');
+        setIsLoading(false);
         return;
       }
 
@@ -63,12 +78,49 @@ export default function AffiliateDashboard() {
         const parsedDetails = JSON.parse(detailsString) as AffiliateDetails;
         setAffiliateDetails(parsedDetails);
         setReferralLink(`https://promptforge.example.com/?ref=${parsedDetails.id}`);
+        setIsLoading(false); // Affiliate details loaded
+
+        // Simulate fetching/loading stats
+        setIsStatsLoading(true);
+        setTimeout(() => { 
+          const statsStorageKey = `promptForgeAffiliateStats_${parsedDetails.id}`;
+          let loadedStats: AffiliateStats | null = null;
+          const storedStatsString = localStorage.getItem(statsStorageKey);
+
+          if (storedStatsString) {
+            try {
+              loadedStats = JSON.parse(storedStatsString);
+            } catch (e) {
+              console.error("Failed to parse stored affiliate stats:", e);
+              localStorage.removeItem(statsStorageKey);
+            }
+          }
+
+          if (loadedStats) {
+            setStats(loadedStats);
+          } else {
+            const baseClicks = Math.floor(Math.random() * 700) + Math.abs(parsedDetails.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % 300); 
+            const baseSignups = Math.floor(baseClicks * ( (Math.random() * 0.04) + 0.015) ); // 1.5-5.5% conversion
+
+            const newStatsData: AffiliateStats = {
+              clicks: baseClicks + Math.floor(Math.random() * 150),
+              signups: baseSignups + Math.floor(Math.random() * (baseSignups * 0.15)),
+              conversionRate: '', 
+              earningsMonth: `$${( (baseSignups + Math.floor(Math.random() * (baseSignups * 0.15))) * ((Math.random() * 0.8) + 0.3) * 4.99 * 0.2).toFixed(2)}`,
+              earningsTotal: `$${( (baseSignups + Math.floor(Math.random() * (baseSignups * 0.15))) * ((Math.random() * 2.5) + 0.8) * 4.99 * 0.2 + (Math.abs(parsedDetails.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % 100))).toFixed(2)}`,
+            };
+            newStatsData.conversionRate = newStatsData.clicks > 0 ? ((newStatsData.signups / newStatsData.clicks) * 100).toFixed(2) + '%' : '0.00%';
+            setStats(newStatsData);
+            localStorage.setItem(statsStorageKey, JSON.stringify(newStatsData));
+          }
+          setIsStatsLoading(false);
+        }, 700); 
+
       } else {
-        // Not an affiliate, redirect to registration or affiliate info page
         router.push('/affiliate');
+        setIsLoading(false);
         return;
       }
-      setIsLoading(false);
     }
   }, [router]);
 
@@ -87,7 +139,6 @@ export default function AffiliateDashboard() {
   }
 
   if (!affiliateDetails) {
-    // This case should ideally be handled by the redirect, but as a fallback:
      return (
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <Card className="max-w-md mx-auto text-center shadow-lg border-destructive/50 bg-destructive/10">
@@ -105,15 +156,6 @@ export default function AffiliateDashboard() {
       </div>
     );
   }
-
-  // Simulated stats
-  const stats = {
-    clicks: Math.floor(Math.random() * 1000) + 50,
-    signups: Math.floor(Math.random() * 50) + 5,
-    conversionRate: (( (Math.floor(Math.random() * 50) + 5) / (Math.floor(Math.random() * 1000) + 50)) * 100).toFixed(2) + '%',
-    earningsMonth: `$${(Math.random() * 200).toFixed(2)}`,
-    earningsTotal: `$${(Math.random() * 1000 + 200).toFixed(2)}`,
-  };
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -142,15 +184,25 @@ export default function AffiliateDashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
-        <StatCard title="Clicks" value={stats.clicks} icon={<MousePointerClick className="h-5 w-5 text-green-500" />} description="Total clicks on your referral link." />
-        <StatCard title="Sign-ups" value={stats.signups} icon={<Users className="h-5 w-5 text-blue-500" />} description="Users who signed up via your link." />
-        <StatCard title="Conversion Rate" value={stats.conversionRate} icon={<BarChart2 className="h-5 w-5 text-purple-500" />} description="Percentage of clicks that resulted in sign-ups."/>
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold text-foreground mb-4 flex items-center">
+            <Activity className="mr-2 h-6 w-6 text-primary"/> Performance Overview
+        </h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <StatCard title="Clicks" value={stats?.clicks ?? '...'} icon={<MousePointerClick className="h-5 w-5 text-green-500" />} description="Total clicks on your referral link." isLoading={isStatsLoading} />
+            <StatCard title="Sign-ups" value={stats?.signups ?? '...'} icon={<Users className="h-5 w-5 text-blue-500" />} description="Users who signed up via your link." isLoading={isStatsLoading} />
+            <StatCard title="Conversion Rate" value={stats?.conversionRate ?? '...'} icon={<BarChart2 className="h-5 w-5 text-purple-500" />} description="Clicks to sign-ups." isLoading={isStatsLoading}/>
+        </div>
       </div>
       
-      <div className="grid gap-6 md:grid-cols-2 mb-8">
-         <StatCard title="Earnings This Month" value={stats.earningsMonth} icon={<DollarSign className="h-5 w-5 text-primary" />} description="Commissions earned in the current cycle."/>
-        <StatCard title="Total Earnings" value={stats.earningsTotal} icon={<DollarSign className="h-5 w-5 text-primary" />} description="All-time commissions earned."/>
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold text-foreground mb-4 flex items-center">
+            <DollarSign className="mr-2 h-6 w-6 text-primary"/> Earnings
+        </h2>
+        <div className="grid gap-6 md:grid-cols-2">
+            <StatCard title="Earnings This Month" value={stats?.earningsMonth ?? '...'} icon={<DollarSign className="h-5 w-5 text-primary" />} description="Commissions earned this cycle." isLoading={isStatsLoading}/>
+            <StatCard title="Total Earnings" value={stats?.earningsTotal ?? '...'} icon={<DollarSign className="h-5 w-5 text-primary" />} description="All-time commissions earned." isLoading={isStatsLoading}/>
+        </div>
       </div>
 
       <Card className="shadow-md border-border/30">
@@ -160,20 +212,11 @@ export default function AffiliateDashboard() {
         <CardContent>
           <p className="text-sm text-muted-foreground">
             Payouts are processed via PayPal on the 15th of each month for balances over $50.
-            Please ensure your PayPal email is up-to-date in your (simulated) settings.
+            (This is a simulation, no real payouts will occur).
             More details on payout schedules and methods can be found in our Affiliate Agreement.
           </p>
-          {/* In a real app, there would be a link to update payment details or view payout history */}
         </CardContent>
       </Card>
-      
-      {/* Placeholder for future sections like "Marketing Materials" or "Detailed Reports" */}
-      {/*
-      <Card className="mt-8">
-        <CardHeader><CardTitle>Marketing Resources</CardTitle></CardHeader>
-        <CardContent><p className="text-sm text-muted-foreground">Find banners, logos, and swipe copy here. (Coming Soon)</p></CardContent>
-      </Card>
-      */}
     </div>
   );
 }
