@@ -1,3 +1,4 @@
+
 import HeroSection from '@/components/landing/HeroSection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
 import CallToActionSection from '@/components/landing/CallToActionSection';
@@ -23,14 +24,14 @@ export default function LandingPage() {
                 <Info className="mr-1.5 h-4 w-4" /> How It Works
               </Link>
             </Button>
-            {/* Assuming Login, Pricing, Contact are sections on the landing page or placeholders */}
+            {/* Assuming Login, Contact are sections on the landing page or placeholders */}
             <Button variant="ghost" asChild>
               <Link href="#login" className="flex items-center text-sm"> {/* Placeholder link */}
                 <LogIn className="mr-1.5 h-4 w-4" /> Login
               </Link>
             </Button>
             <Button variant="ghost" asChild>
-              <Link href="#pricing" className="flex items-center text-sm"> {/* Placeholder link */}
+              <Link href="/pricing" className="flex items-center text-sm"> 
                 <DollarSign className="mr-1.5 h-4 w-4" /> Pricing
               </Link>
             </Button>

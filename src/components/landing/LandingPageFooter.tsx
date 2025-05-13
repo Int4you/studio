@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Twitter, Github, Linkedin, Cpu } from 'lucide-react';
 
@@ -22,7 +23,7 @@ export default function LandingPageFooter() {
             <ul className="space-y-2 text-sm">
               <li><Link href="/#features" className="hover:text-primary transition-colors">Features</Link></li>
               <li><Link href="/how-it-works" className="hover:text-primary transition-colors">How It Works</Link></li>
-              <li><Link href="/#pricing" className="hover:text-primary transition-colors">Pricing</Link></li> {/* Placeholder */}
+              <li><Link href="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li> 
               <li><Link href="/#contact" className="hover:text-primary transition-colors">Contact</Link></li> {/* Placeholder */}
             </ul>
           </div>

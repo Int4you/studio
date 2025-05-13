@@ -1,12 +1,12 @@
 
-import HowItWorksContent from '@/components/how-it-works/HowItWorksContent';
+import PricingContent from '@/components/pricing/PricingContent';
 import LandingPageFooter from '@/components/landing/LandingPageFooter';
 import CallToActionSection from '@/components/landing/CallToActionSection';
-import { Cpu, Info, LogIn, DollarSign, Mail, ArrowRight } from 'lucide-react';
+import { Cpu, Home, LogIn, DollarSign, Mail, ArrowRight, Info } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
-export default function HowItWorksPage() {
+export default function PricingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -24,17 +24,17 @@ export default function HowItWorksPage() {
               </Link>
             </Button>
             <Button variant="ghost" asChild>
-              <Link href="/#login" className="flex items-center text-sm"> {/* Points to landing page section */}
+              <Link href="/#login" className="flex items-center text-sm"> {/* Points to landing page section or future login page */}
                 <LogIn className="mr-1.5 h-4 w-4" /> Login
               </Link>
             </Button>
             <Button variant="ghost" asChild>
-              <Link href="/pricing" className="flex items-center text-sm"> 
+              <Link href="/pricing" className="flex items-center text-sm">
                 <DollarSign className="mr-1.5 h-4 w-4" /> Pricing
               </Link>
             </Button>
             <Button variant="ghost" asChild>
-              <Link href="/#contact" className="flex items-center text-sm"> {/* Points to landing page section */}
+              <Link href="/#contact" className="flex items-center text-sm"> {/* Points to landing page section or future contact page */}
                 <Mail className="mr-1.5 h-4 w-4" /> Contact
               </Link>
             </Button>
@@ -53,7 +53,7 @@ export default function HowItWorksPage() {
         </div>
       </header>
       <main className="flex-grow">
-        <HowItWorksContent />
+        <PricingContent />
         <CallToActionSection />
       </main>
       <LandingPageFooter />
