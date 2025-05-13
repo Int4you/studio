@@ -164,28 +164,34 @@ export default function AppViewWrapper() {
               </TabsList>
             </Tabs>
             <Popover>
-              <PopoverTrigger asChild>
-                <Tooltip>
-                  <TooltipTrigger asChild>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="flex items-center gap-1.5 border border-border/50 px-2.5 py-1 rounded-md bg-muted/30 dark:bg-muted/10 shadow-sm cursor-pointer">
                       {currentUserPlan === 'Free Explorer' ? <Zap className="h-4 w-4 text-primary" /> : <Award className="h-4 w-4 text-amber-500" />}
                       <Badge variant="outline" className="text-xs border-none p-0 bg-transparent shadow-none">
                           {currentUserPlan}
                       </Badge>
                     </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Click to see plan details.</p>
-                    {currentUserPlan === 'Free Explorer' && <p className="text-xs text-muted-foreground">Limited generations per month.</p>}
-                    {currentUserPlan === 'Premium Creator' && <p className="text-xs text-muted-foreground">Unlimited access and features.</p>}
-                  </TooltipContent>
-                </Tooltip>
-              </PopoverTrigger>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Click to see plan details.</p>
+                  {currentUserPlan === 'Free Explorer' && <p className="text-xs text-muted-foreground">Limited generations per month.</p>}
+                  {currentUserPlan === 'Premium Creator' && <p className="text-xs text-muted-foreground">Unlimited access and features.</p>}
+                </TooltipContent>
+              </Tooltip>
               <PopoverContent className="w-72 p-4 shadow-xl rounded-lg border-border/30">
                 <div className="space-y-3">
-                  <h4 className="font-semibold text-md text-foreground">{freePlanDetails.name}</h4>
+                  <h4 className="font-semibold text-md text-foreground">{currentUserPlan === 'Free Explorer' ? freePlanDetails.name : 'Premium Creator'}</h4>
                    <ul className="space-y-2 text-sm text-muted-foreground">
-                    {freePlanDetails.features.map((feature, index) => (
+                    {(currentUserPlan === 'Free Explorer' ? freePlanDetails.features : [
+                        'Unlimited Project Generations',
+                        'Access to all core AI features',
+                        'Priority support',
+                        'Save unlimited projects in library',
+                        'Early access to new features',
+                    ]).map((feature, index) => (
                       <li key={index} className="flex items-start">
                         <CheckCircle2 className="h-4 w-4 text-green-500 mr-2 mt-0.5 shrink-0" />
                         <span>{feature}</span>
