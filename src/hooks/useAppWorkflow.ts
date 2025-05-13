@@ -386,7 +386,18 @@ export function useAppWorkflow({
     if (proposal.coreFeatures.some(f => f.feature.trim() === '' || f.description.trim() === '')) { toast({ title: "Incomplete Features", description: "Ensure all features have title and description.", variant: "destructive" }); return; }
     setIsLoadingMarketAnalysis(true); setError(null); setMarketAnalysis(null); setPricingStrategy(null);
     try {
-      const input: AnalyzeMarketInput = { appName: proposal.appName, appDescription: selectedIdea.title + ": " + selectedIdea.description, coreFeatures: proposal.coreFeatures, targetAudience: prompt };
+      // Extract potential USPs from core features if not explicitly provided (example logic)
+      const potentialUSPs = proposal.coreFeatures
+        .filter(f => f.description.toLowerCase().includes("unique") || f.description.toLowerCase().includes("innovative") || f.feature.toLowerCase().includes("ai"))
+        .map(f => f.feature);
+      
+      const input: AnalyzeMarketInput = { 
+        appName: proposal.appName, 
+        appDescription: selectedIdea.title + ": " + selectedIdea.description, 
+        coreFeatures: proposal.coreFeatures, 
+        targetAudience: prompt,
+        uniqueSellingPointsInput: potentialUSPs.length > 0 ? potentialUSPs : undefined // Pass USPs to the flow
+      };
       const result = await analyzeMarket(input);
       setMarketAnalysis(result);
       toast({ title: "Market Analysis Generated!", description: "AI analyzed the market for your concept." });
@@ -432,6 +443,10 @@ export function useAppWorkflow({
     }
     setIsLoadingPricingStrategy(true); setError(null); setPricingStrategy(null);
     try {
+      const potentialUSPs = proposal.coreFeatures
+        .filter(f => f.description.toLowerCase().includes("unique") || f.description.toLowerCase().includes("innovative") || f.feature.toLowerCase().includes("ai"))
+        .map(f => f.feature);
+
       const input: GeneratePricingStrategyInput = {
         appName: proposal.appName,
         appDescription: selectedIdea.description,
@@ -445,7 +460,7 @@ export function useAppWorkflow({
           competitiveLandscapeSummary: marketAnalysis.competitiveLandscapeSummary,
         } : null,
         monetizationGoals: "Balanced growth and revenue",
-        uniqueSellingPoints: proposal.coreFeatures.filter(f => f.feature.toLowerCase().includes("unique") || f.description.toLowerCase().includes("unique")).map(f => f.feature)
+        uniqueSellingPoints: potentialUSPs.length > 0 ? potentialUSPs : undefined,
       };
       const result = await generatePricingStrategy(input);
       setPricingStrategy(result);
@@ -617,3 +632,4 @@ export function useAppWorkflow({
 }
 
     
+```

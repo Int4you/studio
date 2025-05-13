@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Analyzes the market and competitive landscape for a given application concept.
@@ -20,6 +21,7 @@ const AnalyzeMarketInputSchema = z.object({
   appDescription: z.string().describe('A detailed description of the application and its purpose.'),
   coreFeatures: z.array(CoreFeatureSchema).describe('The list of core features of the application.'),
   targetAudience: z.string().optional().describe('A description of the target audience for the application.'),
+  uniqueSellingPointsInput: z.array(z.string()).optional().describe('Optional: List of unique selling points provided by the user for their app concept.'),
 });
 export type AnalyzeMarketInput = z.infer<typeof AnalyzeMarketInputSchema>;
 
@@ -29,6 +31,8 @@ const TrendSchema = z.object({
   relevanceToApp: z.enum(["High", "Medium", "Low"]).describe('How relevant this trend is to the proposed application.'),
   potentialImpactMagnitude: z.enum(["Significant Positive", "Moderate Positive", "Neutral", "Moderate Negative", "Significant Negative"])
     .describe('The potential magnitude and direction of impact this trend could have on the app.'),
+  actionableInsight: z.string().describe('A specific, actionable insight or recommendation for the app based on this trend.'),
+  exampleImpactOnApp: z.string().describe('A concrete example of how this trend might specifically affect the user\'s app (e.g., feature adjustment, marketing angle).'),
 });
 
 const CompetitorSchema = z.object({
@@ -39,13 +43,15 @@ const CompetitorSchema = z.object({
   estimatedRevenuePotential: z.enum(["Low", "Medium", "High", "Very High", "Uncertain"])
     .describe('A qualitative estimation of the general revenue potential tier for an app like this in the market, not a specific financial figure.'),
   revenuePotentialReasoning: z.string().describe('Brief reasoning for the estimated revenue potential tier, considering monetization strategies typical for such apps (e.g., subscriptions, ads, freemium).'),
+  keyDifferentiatorsForUserApp: z.array(z.string()).describe('List 2-3 key ways the user\'s app can differentiate itself from THIS competitor.'),
+  uniqueSellingPointsCompared: z.string().describe('A direct comparison highlighting how the user\'s app\'s USPs (if provided) stack up or could be positioned against this competitor. If no user USPs provided, focus on general differentiation points from app concept.'),
 });
 
 const SwotAnalysisSchema = z.object({
-  strengths: z.array(z.string()).describe('List 2-3 most impactful internal strengths.'),
-  weaknesses: z.array(z.string()).describe('List 2-3 most impactful internal weaknesses.'),
-  opportunities: z.array(z.string()).describe('List 2-3 most impactful external market opportunities.'),
-  threats: z.array(z.string()).describe('List 2-3 most impactful external market threats.'),
+  strengths: z.array(z.string()).describe('List 2-3 most impactful internal strengths for the user\'s app concept.'),
+  weaknesses: z.array(z.string()).describe('List 2-3 most impactful internal weaknesses for the user\'s app concept.'),
+  opportunities: z.array(z.string()).describe('List 2-3 most impactful external market opportunities for the user\'s app concept.'),
+  threats: z.array(z.string()).describe('List 2-3 most impactful external market threats for the user\'s app concept.'),
 });
 
 const MarketSizeAndGrowthSchema = z.object({
@@ -53,16 +59,22 @@ const MarketSizeAndGrowthSchema = z.object({
     potential: z.string().describe('Brief assessment of growth potential for an app like this.'),
     marketSaturation: z.enum(["Low", "Medium", "High"]).describe('The level of saturation in the current market.'),
     growthRateOutlook: z.enum(["Slow", "Moderate", "Rapid"]).describe('The anticipated growth rate for this market segment.'),
+    keyMarketDrivers: z.array(z.string()).describe('List 2-3 key factors driving growth or change in this market.'),
+    potentialMarketChallenges: z.array(z.string()).describe('List 2-3 potential challenges or barriers to entry in this market for a new app.'),
+    customerAcquisitionChannels: z.array(z.string()).min(1).max(3).describe('Suggest 1-3 common and effective customer acquisition channels for apps in this market/niche.'),
+    monetizationOpportunities: z.array(z.string()).min(1).max(3).describe('Suggest 1-3 viable monetization strategies or opportunities common in this market segment.'),
 });
 
 const AnalyzeMarketOutputSchema = z.object({
   marketOverview: z.string().describe("A brief overview of the current market state relevant to the app."),
-  marketTrends: z.array(TrendSchema).describe('Key current market trends (provide 2-3 distinct trends), including their relevance and potential impact magnitude.'),
-  potentialCompetitors: z.array(CompetitorSchema).describe('List of 2-3 key potential competitors, including their estimated revenue potential tier and reasoning.'),
-  marketSizeAndGrowth: MarketSizeAndGrowthSchema.describe('Assessment of market size, growth potential, saturation, and outlook.'),
-  swotAnalysis: SwotAnalysisSchema.describe('SWOT analysis, focusing on the 2-3 most impactful items for each category.'),
+  marketTrends: z.array(TrendSchema).min(2).max(3).describe('Key current market trends (provide 2-3 distinct trends), including their relevance, potential impact magnitude, actionable insight, and example impact.'),
+  potentialCompetitors: z.array(CompetitorSchema).min(2).max(3).describe('List of 2-3 key potential competitors, including their estimated revenue potential tier, reasoning, and differentiation points for the user\'s app.'),
+  marketSizeAndGrowth: MarketSizeAndGrowthSchema.describe('Assessment of market size, growth potential, saturation, outlook, key drivers, challenges, acquisition channels, and monetization opportunities.'),
+  swotAnalysis: SwotAnalysisSchema.describe('SWOT analysis for the user\'s app concept, focusing on the 2-3 most impactful items for each category.'),
   competitiveLandscapeSummary: z.string().describe('A concluding summary of the competitive landscape and the app\'s potential positioning.'),
-  strategicRecommendations: z.array(z.string()).describe('2-3 actionable strategic recommendations based on the analysis.'),
+  strategicRecommendations: z.array(z.string()).min(2).max(3).describe('2-3 actionable strategic recommendations based on the analysis for the user\'s app to succeed.'),
+  keySuccessFactors: z.array(z.string()).min(2).max(3).describe('Identify 2-3 critical success factors for a new app entering this market.'),
+  potentialPitfalls: z.array(z.string()).min(1).max(3).describe('Highlight 1-3 common pitfalls or mistakes to avoid when launching an app in this space.'),
 });
 export type AnalyzeMarketOutput = z.infer<typeof AnalyzeMarketOutputSchema>;
 
@@ -87,32 +99,48 @@ Application Details:
 {{#each coreFeatures}}
   - {{this.feature}}: {{this.description}}
 {{/each}}
+{{#if uniqueSellingPointsInput}}
+- User-Provided Unique Selling Points for their App:
+{{#each uniqueSellingPointsInput}}
+  - {{this}}
+{{/each}}
+{{/if}}
 
-Based on these details, provide the following analysis. Ensure each section is well-defined and provides actionable insights.
+Based on these details, provide the following analysis. Ensure each section is well-defined and provides actionable insights for the user's app.
 
 1.  **Market Overview**: Briefly summarize the current state of the market relevant to this application.
-2.  **Market Trends**: Identify and describe 2-3 key current market trends. For each trend, provide:
+2.  **Market Trends (2-3 trends)**: Identify and describe key current market trends. For each trend:
     *   Trend title.
-    *   Brief description.
-    *   Relevance to this app (High, Medium, Low).
-    *   Potential impact magnitude on this app (Significant Positive, Moderate Positive, Neutral, Moderate Negative, Significant Negative).
-3.  **Potential Competitors**: Identify 2-3 key potential competitors. For each, provide:
+    *   Brief description of the trend.
+    *   Relevance to {{{appName}}} (High, Medium, Low).
+    *   Potential impact magnitude on {{{appName}}} (Significant Positive, Moderate Positive, Neutral, Moderate Negative, Significant Negative).
+    *   Actionable insight for {{{appName}}} based on this trend.
+    *   A concrete example of how this trend might specifically affect {{{appName}}} (e.g., feature adjustment, marketing angle).
+3.  **Potential Competitors (2-3 competitors)**: Identify key potential competitors. For each:
     *   Competitor name.
-    *   Their primary offering relevant to the app concept.
+    *   Their primary offering relevant to {{{appName}}}.
     *   2-3 key strengths.
     *   2-3 key weaknesses.
-    *   Estimated revenue potential tier for apps of this nature in the market (Low, Medium, High, Very High, Uncertain). This is a qualitative assessment of the general market viability, not a financial forecast for THIS specific app or competitor.
-    *   Brief reasoning for this revenue potential tier (e.g., based on typical monetization strategies like subscriptions, ads, freemium models common in similar successful apps).
+    *   Estimated revenue potential tier for apps of this nature in the market (Low, Medium, High, Very High, Uncertain). This is a qualitative assessment of general market viability.
+    *   Brief reasoning for this revenue potential tier (e.g., based on typical monetization strategies).
+    *   2-3 key ways {{{appName}}} can differentiate itself from THIS competitor.
+    *   A direct comparison highlighting how {{{appName}}}'s USPs (if provided by user) stack up or could be positioned against this competitor. If no user USPs provided, focus on general differentiation from app concept.
 4.  **Market Size and Growth**:
     *   Qualitative estimation of the market size (e.g., Niche, Emerging, Growing, Large, Mature, Saturated).
-    *   Brief assessment of growth potential for an application of this nature.
+    *   Brief assessment of growth potential for {{{appName}}}.
     *   Market saturation level (Low, Medium, High).
     *   Anticipated growth rate outlook for this market segment (Slow, Moderate, Rapid).
-5.  **SWOT Analysis**: Conduct a SWOT analysis for the application concept. For each category (Strengths, Weaknesses, Opportunities, Threats), list the 2-3 *most impactful* and distinct points.
-6.  **Competitive Landscape Summary**: Write a concise summary of the competitive landscape.
-7.  **Strategic Recommendations**: Based on your analysis, provide 2-3 actionable strategic recommendations for the application to succeed.
+    *   2-3 key factors driving growth or change in this market.
+    *   2-3 potential challenges or barriers to entry in this market for {{{appName}}}.
+    *   1-3 common and effective customer acquisition channels for apps in this market/niche.
+    *   1-3 viable monetization strategies or opportunities common in this market segment for apps like {{{appName}}}.
+5.  **SWOT Analysis (for {{{appName}}})**: Conduct a SWOT analysis for {{{appName}}}. For each category (Strengths, Weaknesses, Opportunities, Threats), list the 2-3 *most impactful* and distinct points.
+6.  **Key Success Factors (2-3 factors)**: Identify critical success factors for a new app like {{{appName}}} entering this market.
+7.  **Potential Pitfalls (1-3 pitfalls)**: Highlight common pitfalls or mistakes to avoid when launching {{{appName}}} in this space.
+8.  **Competitive Landscape Summary**: Write a concise summary of the competitive landscape and {{{appName}}}'s potential positioning.
+9.  **Strategic Recommendations (2-3 recommendations)**: Based on your analysis, provide actionable strategic recommendations for {{{appName}}} to succeed.
 
-Strive for insightful, distinct, and relevant information in each section. Avoid generic statements. Ensure all requested structured fields (enums, scores) are populated correctly.
+Strive for insightful, distinct, and relevant information in each section. Avoid generic statements. Ensure all requested structured fields (enums, arrays, counts) are populated correctly.
 `,
 });
 
