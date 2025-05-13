@@ -1141,11 +1141,11 @@ export default function PromptForgeApp() {
               <TabsTrigger value="app" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium flex items-center gap-1.5">
                 <Wand2 className="h-4 w-4" /> App
               </TabsTrigger>
-              <TabsTrigger value="library" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium flex items-center gap-1.5">
-                <LibraryIcon className="h-4 w-4" /> My Library ({savedProjects.length})
-              </TabsTrigger>
               <TabsTrigger value="roadmap" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium flex items-center gap-1.5">
                 <Milestone className="h-4 w-4" /> Roadmap Generator
+              </TabsTrigger>
+              <TabsTrigger value="library" className="data-[state=active]:bg-muted data-[state=active]:shadow-none px-3 py-1.5 text-sm font-medium flex items-center gap-1.5">
+                <LibraryIcon className="h-4 w-4" /> My Library ({savedProjects.length})
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -2239,3 +2239,4 @@ export default function PromptForgeApp() {
     </React.Fragment>
   );
 }
+
