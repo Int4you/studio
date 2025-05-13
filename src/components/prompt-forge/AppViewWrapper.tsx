@@ -14,8 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button'; 
-import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
-
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"; // Keep this for UpgradeModal
+import { CardHeader, CardTitle } from '@/components/ui/card'; // Added for Popover content
 
 import RoadmapView from './RoadmapView';
 import LibraryView from './LibraryView';
@@ -32,7 +32,7 @@ export default function AppViewWrapper() {
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [currentView, setCurrentView] = useState<CurrentView>('app');
   const [authStatus, setAuthStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
-  const [currentUserPlan, setCurrentUserPlan] = useState<string>(PREMIUM_CREATOR_NAME); // Default to premium as per request
+  const [currentUserPlan, setCurrentUserPlan] = useState<string>(PREMIUM_CREATOR_NAME); 
   const [creditsUsed, setCreditsUsed] = useState<number>(0);
   
   const [projectToLoadInApp, setProjectToLoadInApp] = useState<SavedProject | null>(null);
@@ -43,16 +43,24 @@ export default function AppViewWrapper() {
       const token = localStorage.getItem(AUTH_TOKEN_KEY);
       if (token) {
         setAuthStatus('authenticated');
-        // Force upgrade to premium for this session if a token exists
-        localStorage.setItem('promptForgeUserPlan', PREMIUM_CREATOR_NAME);
-        setCurrentUserPlan(PREMIUM_CREATOR_NAME); // Update state directly
-
-        // For premium, credits are unlimited, so clear any old free tier credit count
-        localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
-        setCreditsUsed(0); // Reset credits used state as it's not relevant for premium
+        
+        const storedPlan = localStorage.getItem('promptForgeUserPlan');
+        if (storedPlan === PREMIUM_CREATOR_NAME) {
+            setCurrentUserPlan(PREMIUM_CREATOR_NAME);
+            localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
+            setCreditsUsed(0);
+        } else {
+            // Default to Free Tier if no premium plan is stored or if it's an old value
+            setCurrentUserPlan(FREE_TIER_NAME);
+            const storedCredits = parseInt(localStorage.getItem(FREE_CREDITS_STORAGE_KEY) || '0', 10);
+            setCreditsUsed(storedCredits);
+        }
 
       } else {
         setAuthStatus('unauthenticated');
+         // If unauthenticated, reset to Free Tier defaults for UI consistency before redirect
+        setCurrentUserPlan(FREE_TIER_NAME);
+        setCreditsUsed(0);
       }
     }
   }, []);
@@ -71,7 +79,7 @@ export default function AppViewWrapper() {
   const handleLogout = () => {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem('promptForgeUserPlan');
-    localStorage.removeItem(FREE_CREDITS_STORAGE_KEY); // Clear credits on logout
+    localStorage.removeItem(FREE_CREDITS_STORAGE_KEY); 
     setAuthStatus('unauthenticated');
     toast({ title: "Logged Out", description: "You have been successfully logged out." });
   };
@@ -109,7 +117,6 @@ export default function AppViewWrapper() {
   };
 
   const saveProjectToLibrary = (project: SavedProject): boolean => {
-    // With premium, library limit check is effectively bypassed
     const success = saveProjectToLibraryService(project, currentUserPlan);
     if (success) {
         const updatedProjects = getProjectsFromLibrary();
@@ -122,10 +129,9 @@ export default function AppViewWrapper() {
             description: `${project.appName} has been ${projectToLoadInApp?.id === project.id ? 'updated in' : 'saved to'} your library.`,
         });
     } else {
-         // This case should ideally not be hit if plan is premium, but kept for robustness
          toast({
-            title: "Error Saving Project",
-            description: `Could not save the project. Please try again.`,
+            title: "Library Full (Free Tier)",
+            description: `Your library can hold ${MAX_FREE_TIER_PROJECTS_IN_LIBRARY} project(s) on the Free Tier. Please upgrade or delete an existing project.`,
             variant: "destructive",
         });
     }
@@ -133,8 +139,6 @@ export default function AppViewWrapper() {
   };
 
   const incrementCreditUsed = () => {
-    // This function is now mostly for the Free Tier. 
-    // Premium tier has unlimited credits, so this won't restrict them.
     if (currentUserPlan === FREE_TIER_NAME) {
       setCreditsUsed(prev => {
         const newCount = prev + 1;
@@ -165,8 +169,7 @@ export default function AppViewWrapper() {
   }
 
   const isPremium = currentUserPlan === PREMIUM_CREATOR_NAME;
-  // For premium, creditsLeft is effectively infinite or not applicable.
-  // The UI for creditsLeft will be hidden for premium users.
+
 
   return (
     <TooltipProvider>
@@ -209,14 +212,14 @@ export default function AppViewWrapper() {
                 </TooltipContent>
               </Tooltip>
               <PopoverContent className="w-80 p-0 shadow-xl rounded-xl border-border/30 bg-card overflow-hidden max-w-xs sm:max-w-sm">
-                <AlertDialogHeader className="items-center text-center p-4 border-b bg-muted/20 dark:bg-muted/10">
+                <CardHeader className="items-center text-center p-4 border-b bg-muted/20 dark:bg-muted/10">
                   <div className="p-2.5 rounded-full bg-primary/10 border border-primary/20 shadow-sm mb-1.5 inline-block">
                      {isPremium ? <Crown className="h-7 w-7 text-amber-500 fill-amber-500" /> : <Zap className="h-7 w-7 text-primary" />}
                   </div>
-                  <AlertDialogTitle className="text-xl font-bold text-foreground">
+                  <CardTitle className="text-xl font-bold text-foreground">
                     Your Current Plan
-                  </AlertDialogTitle>
-                </AlertDialogHeader>
+                  </CardTitle>
+                </CardHeader>
                 
                 <div className="p-4 space-y-3">
                   <div className={`p-4 rounded-lg border ${isPremium ? 'border-amber-400/80 bg-amber-50/70 dark:bg-amber-900/25' : 'border-border/30 bg-muted/30 dark:bg-muted/20'} shadow-md`}>
@@ -262,12 +265,7 @@ export default function AppViewWrapper() {
                     </TooltipContent>
                 </Tooltip>
             )}
-             {/* Placeholder for Settings/Account button if needed later */}
-            {/* <Button variant="ghost" size="icon" className="ml-1 h-9 w-9 text-muted-foreground hover:text-foreground">
-              <Settings className="h-4 w-4" />
-              <span className="sr-only">Settings</span>
-            </Button> */}
-
+            
             <Button variant="ghost" size="icon" onClick={handleLogout} className="ml-1 h-9 w-9 text-muted-foreground hover:text-destructive">
               <LogOut className="h-4 w-4" />
               <span className="sr-only">Logout</span>
