@@ -23,6 +23,7 @@ import { useAppWorkflow } from '@/hooks/useAppWorkflow';
 import type { AppStepId } from './appWorkflowTypes';
 import { stepsConfig } from './appWorkflowTypes';
 import { FREE_TIER_NAME, MAX_FREE_CREDITS, PREMIUM_STEP_IDS } from '@/config/plans';
+import { useToast } from '@/hooks/use-toast';
 
 
 interface AppViewProps {
@@ -44,6 +45,7 @@ export default function AppView({
     maxFreeCredits,
     onCreditUsed 
 }: AppViewProps) {
+  const { toast } = useToast();
   const {
     prompt,
     ideas,
@@ -162,10 +164,10 @@ export default function AppView({
                 }
               >
                 <step.icon className={cn("mr-3 h-5 w-5 shrink-0", currentStep === step.id ? "text-primary-foreground" : "text-primary")} />
-                <div className="flex-grow min-w-0"> 
+                <div className="flex-grow min-w-0 flex items-center"> 
                   <span className="font-medium block">{step.title}</span>
                   {isStepCompleted(step.id) && currentStep !== step.id && (
-                      <CheckCircle2 className="ml-2 inline-block h-4 w-4 text-green-500" />
+                      <CheckCircle2 className="ml-2 inline-block h-4 w-4 text-green-500 shrink-0" />
                   )}
                 </div>
                 {isPremium && <Crown className="ml-auto h-3.5 w-3.5 text-amber-500 fill-amber-500 flex-shrink-0" />}
