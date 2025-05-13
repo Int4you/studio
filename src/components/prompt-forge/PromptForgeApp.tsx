@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, BarChart3, Search, Briefcase, BarChartHorizontalBig, Network, ShieldCheck, Users, ThumbsUp, ThumbsDown, DollarSign, Target, TrendingDown } from 'lucide-react';
+import { Loader2, Lightbulb, Wand2, FileText, ListChecks, Palette, Cpu, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon, UploadCloud, RefreshCw, Plus, Terminal, Copy, PlusCircle, Pencil, Save, Library as LibraryIcon, Trash2, FolderOpen, Check, Bot, TrendingUp, BadgeHelp, Info, ArrowRight, BarChart3, Search, Briefcase, BarChartHorizontalBig, Network, ShieldCheck, Users, ThumbsUp, ThumbsDown, DollarSign, Target, TrendingDown, Zap } from 'lucide-react';
 import type { GenerateApplicationIdeasInput } from '@/ai/flows/generate-application-ideas';
 import type { GenerateDetailedProposalInput, GenerateDetailedProposalOutput as ProposalOutput } from '@/ai/flows/generate-detailed-proposal';
 import { format } from 'date-fns';
@@ -940,26 +940,32 @@ export default function PromptForgeApp() {
   };
 
   const isStepAccessible = (stepId: AppStep): boolean => {
-    const currentStepIndex = stepsConfig.findIndex(s => s.id === currentStep);
-    const targetStepIndex = stepsConfig.findIndex(s => s.id === stepId);
-
-    if (targetStepIndex <= currentStepIndex) return true; // Can always go back
-
-    for (let i = 0; i < targetStepIndex; i++) {
-        const stepToCheck = stepsConfig[i].id;
-        switch (stepToCheck) {
-            case 'ideas': if (!selectedIdea) return false; break;
-            case 'proposal': if (!proposal) return false; break;
-            // Market analysis, prioritization, mockups, dev prompt are not strict blockers for navigation, but for generation within their step
-            // Save step doesn't block subsequent navigation as it's the last one.
-        }
-    }
+    // Allow navigation to any step for now, as per request.
+    // Specific actions within steps will check their own prerequisites.
     return true;
   };
 
   const navigateToStep = (stepId: AppStep) => {
-    // Allow navigation to any step, prerequisites are checked before generation actions within each step
-    setCurrentStep(stepId);
+    if (isStepAccessible(stepId)) {
+        setCurrentStep(stepId);
+    } else {
+         const currentStepIndex = stepsConfig.findIndex(s => s.id === currentStep);
+         const targetStepIndex = stepsConfig.findIndex(s => s.id === stepId);
+         let firstUncompletedPrerequisite = "";
+         if (targetStepIndex > currentStepIndex) {
+            for (let i = 0; i < targetStepIndex; i++) {
+                if (!isStepCompleted(stepsConfig[i].id)) {
+                    firstUncompletedPrerequisite = stepsConfig[i].title;
+                    break;
+                }
+            }
+         }
+        toast({
+            title: "Cannot Navigate",
+            description: `Please complete previous steps first. ${firstUncompletedPrerequisite ? `"${firstUncompletedPrerequisite}" is not yet complete.` : 'Ensure all prior steps are done.'}`,
+            variant: "destructive",
+        });
+    }
   };
 
   const handleNextStep = () => {
@@ -967,7 +973,7 @@ export default function PromptForgeApp() {
     if (currentIndex < stepsConfig.length - 1) {
       const nextStepId = stepsConfig[currentIndex + 1].id;
        // Check if current step is completed before allowing "Next"
-      if (isStepCompleted(currentStep)) {
+      if (isStepCompleted(currentStep) || (currentStep === 'ideas' && selectedIdea) || (currentStep === 'proposal' && proposal) ) { // Adjusted logic for early steps
         setCurrentStep(nextStepId);
       } else {
          toast({
@@ -1083,8 +1089,10 @@ export default function PromptForgeApp() {
                       className={cn(
                         "w-full justify-start text-left px-3 py-2 h-auto",
                         currentStep === step.id && "shadow-md",
+                         !isStepAccessible(step.id) && "opacity-50 cursor-not-allowed"
                       )}
                       onClick={() => navigateToStep(step.id)}
+                      disabled={!isStepAccessible(step.id)}
                     >
                       <step.icon className={cn("mr-3 h-5 w-5", currentStep === step.id ? "text-primary-foreground" : "text-primary")} />
                       <div>
@@ -1109,7 +1117,7 @@ export default function PromptForgeApp() {
                         className="w-full p-3 border border-input rounded-md bg-background text-foreground shadow-sm"
                     >
                         {stepsConfig.map(step => (
-                            <option key={step.id} value={step.id} >
+                            <option key={step.id} value={step.id} disabled={!isStepAccessible(step.id)}>
                                 {step.title} {isStepCompleted(step.id) ? '✔' : ''}
                             </option>
                         ))}
@@ -2008,3 +2016,4 @@ export default function PromptForgeApp() {
     </React.Fragment>
   );
 }
+
