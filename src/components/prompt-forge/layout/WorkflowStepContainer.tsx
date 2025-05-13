@@ -46,7 +46,7 @@ export default function WorkflowStepContainer({ workflow }: WorkflowStepContaine
     currentProjectId,
     currentStep,
     editingStates,
-    currentUserPlan, // Added from workflow
+    currentUserPlan, 
     handlePromptChange,
     handleGenerateIdeas,
     handleSelectIdea,
@@ -69,13 +69,14 @@ export default function WorkflowStepContainer({ workflow }: WorkflowStepContaine
     isStepCompleted,
     navigateToStep,
     handleNextStep,
-    canStartNewProject, // Added from workflow
+    canStartNewProject, 
+    setShowUpgradeModal,
   } = workflow;
 
   const currentStepDetails = stepsConfig.find(s => s.id === currentStep);
 
   const isCurrentStepPremiumAndLocked = 
-    currentStepDetails && // Ensure currentStepDetails is defined
+    currentStepDetails && 
     PREMIUM_STEP_IDS.includes(currentStepDetails.id) &&
     currentUserPlan === FREE_TIER_NAME &&
     !isStepCompleted(currentStepDetails.id);
@@ -121,6 +122,7 @@ export default function WorkflowStepContainer({ workflow }: WorkflowStepContaine
                 onSelectIdea={handleSelectIdea}
                 error={error}
                 canGenerate={canStartNewProject || selectedIdea != null || currentProjectId != null}
+                currentUserPlan={currentUserPlan}
                 />
             )}
             {currentStep === 'proposal' && (
@@ -206,7 +208,9 @@ export default function WorkflowStepContainer({ workflow }: WorkflowStepContaine
                         onClick={() => {
                             const currentIndex = stepsConfig.findIndex(s => s.id === currentStep);
                             if (currentIndex > 0) {
-                                navigateToStep(stepsConfig[currentIndex - 1].id);
+                                const previousStepId = stepsConfig[currentIndex - 1].id;
+                                // No need to check for premium on previous steps as they must have been completed
+                                navigateToStep(previousStepId);
                             }
                         }}
                         className="mr-auto rounded-md shadow-sm hover:shadow-md transition-shadow"
@@ -216,7 +220,13 @@ export default function WorkflowStepContainer({ workflow }: WorkflowStepContaine
                 )}
                  {nextStep && (
                     <Button 
-                        onClick={handleNextStep}
+                        onClick={() => {
+                            if (PREMIUM_STEP_IDS.includes(nextStep.id) && currentUserPlan === FREE_TIER_NAME && !isStepCompleted(nextStep.id)) {
+                                setShowUpgradeModal(true);
+                            } else {
+                                handleNextStep();
+                            }
+                        }}
                         className="rounded-md shadow-md hover:shadow-lg transition-shadow"
                         disabled={isNextButtonDisabled()}
                     >
