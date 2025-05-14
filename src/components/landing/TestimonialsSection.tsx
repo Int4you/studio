@@ -27,7 +27,7 @@ const testimonials = [
     name: 'Alex K.',
     role: 'Product Manager',
     quote: "Generating developer prompts with this tool is brilliant. It makes handoff to the dev team so much smoother. A must-have for agile workflows.",
-    avatarUrl: 'https://placehold.co/80x80.png',
+    avatarUrl: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxwZXJzb258ZW58MHx8fHwxNzQ3MTY2MzIzfDA&ixlib=rb-4.1.0&q=80&w=1080',
     stars: 4,
     hint: "person avatar",
   },
@@ -79,3 +79,4 @@ const TestimonialsSection = React.memo(() => {
 
 TestimonialsSection.displayName = 'TestimonialsSection';
 export default TestimonialsSection;
+
