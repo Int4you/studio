@@ -21,6 +21,7 @@ const pricingTiers = [
     borderColor: 'border-border/30',
     isPopular: false,
     featureCheckmarkColor: 'text-muted-foreground',
+    buttonVariant: 'secondary' as "default" | "secondary" | "outline", // Changed to secondary
   },
   {
     name: premiumPlanUIDetails.name,
@@ -34,6 +35,7 @@ const pricingTiers = [
     borderColor: 'border-primary shadow-primary/20',
     isPopular: true,
     featureCheckmarkColor: 'text-green-500',
+    buttonVariant: 'default' as "default" | "secondary" | "outline",
   },
 ];
 
@@ -86,7 +88,7 @@ const PricingSection = React.memo(() => {
                 </ul>
               </CardContent>
               <CardFooter className="p-6 md:p-8 mt-auto">
-                <Button asChild size="lg" className={`w-full text-base py-3 shadow-md hover:shadow-lg transition-shadow ${tier.isPopular ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-background hover:bg-accent text-accent-foreground border border-input'}`} variant={tier.isPopular ? 'default' : 'outline'}>
+                <Button asChild size="lg" className={`w-full text-base py-3 shadow-md hover:shadow-lg transition-shadow ${tier.isPopular ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : ''}`} variant={tier.buttonVariant}>
                   <Link href={tier.href}>{tier.cta}</Link>
                 </Button>
               </CardFooter>

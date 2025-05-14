@@ -20,8 +20,8 @@ const tiers = [
     borderColor: 'border-border/30',
     bgColor: 'bg-card',
     textColor: 'text-foreground',
-    buttonVariant: 'outline' as "outline" | "default",
-    featureCheckmarkColor: 'text-muted-foreground', // Gray checkmark for Free Tier
+    buttonVariant: 'secondary' as "outline" | "default" | "secondary", // Changed from 'outline'
+    featureCheckmarkColor: 'text-muted-foreground', 
   },
   {
     name: premiumPlanUIDetails.name,
@@ -35,9 +35,9 @@ const tiers = [
     borderColor: 'border-primary shadow-primary/20',
     bgColor: 'bg-gradient-to-br from-primary/10 via-primary/5 to-background dark:from-primary/20 dark:via-primary/10 dark:to-background',
     textColor: 'text-primary',
-    buttonVariant: 'default' as "outline" | "default",
+    buttonVariant: 'default' as "outline" | "default" | "secondary",
     popular: true,
-    featureCheckmarkColor: 'text-green-500', // Green checkmark for Premium Tier
+    featureCheckmarkColor: 'text-green-500', 
   },
 ];
 
@@ -126,5 +126,3 @@ export default function PricingContent() {
     </section>
   );
 }
-
-
