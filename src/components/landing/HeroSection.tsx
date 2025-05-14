@@ -35,7 +35,7 @@ const HeroSection = React.memo(() => {
           </div>
           <div className="relative aspect-[4/3] md:aspect-square rounded-2xl overflow-hidden shadow-2xl border-2 border-primary/20 group transform transition-all duration-500 hover:scale-105 hover:shadow-primary/20">
             <Image 
-              src="https://images.unsplash.com/photo-1601972599720-36938d4ecd31?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxhcHB8ZW58MHx8fHwxNzQ3MjQ0NzY0fDA&ixlib=rb-4.1.0&q=80&w=1080" 
+              src="https://images.unsplash.com/photo-1523206489230-c012c64b2b48?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxM3x8YXBwfGVufDB8fHx8MTc0NzI0NDc2NHww&ixlib=rb-4.1.0&q=80&w=1080" 
               alt="Mobile phone displaying an app icon, symbolizing app creation" 
               layout="fill"
               objectFit="cover"
