@@ -11,7 +11,7 @@ const testimonials = [
     name: 'Sarah L.',
     role: 'Indie Developer',
     quote: "PromptForge cut my initial app planning time in half! The AI-generated proposals are incredibly detailed and a fantastic starting point.",
-    avatarUrl: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxNHx8cGVyc29ufGVufDB8fHx8MTc0NzE2NjMyM3ww&ixlib=rb-4.1.0&q=80&w=1080',
+    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxwZXJzb258ZW58MHx8fHwxNzQ3MTY2MzIzfDA&ixlib=rb-4.1.0&q=80&w=1080',
     stars: 5,
     hint: "person avatar",
   },
@@ -79,4 +79,3 @@ const TestimonialsSection = React.memo(() => {
 
 TestimonialsSection.displayName = 'TestimonialsSection';
 export default TestimonialsSection;
-
