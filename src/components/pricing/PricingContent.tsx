@@ -21,6 +21,7 @@ const tiers = [
     bgColor: 'bg-card',
     textColor: 'text-foreground',
     buttonVariant: 'outline' as "outline" | "default",
+    featureCheckmarkColor: 'text-muted-foreground', // Gray checkmark for Free Tier
   },
   {
     name: premiumPlanUIDetails.name,
@@ -31,11 +32,12 @@ const tiers = [
     cta: 'Upgrade to Premium',
     href: '/dashboard', 
     icon: <Crown className="h-8 w-8 mb-4 text-amber-500 fill-amber-500" />,
-    borderColor: 'border-primary shadow-primary/20', // Enhanced border
-    bgColor: 'bg-gradient-to-br from-primary/10 via-primary/5 to-background dark:from-primary/20 dark:via-primary/10 dark:to-background', // Gradient background
+    borderColor: 'border-primary shadow-primary/20',
+    bgColor: 'bg-gradient-to-br from-primary/10 via-primary/5 to-background dark:from-primary/20 dark:via-primary/10 dark:to-background',
     textColor: 'text-primary',
     buttonVariant: 'default' as "outline" | "default",
     popular: true,
+    featureCheckmarkColor: 'text-green-500', // Green checkmark for Premium Tier
   },
 ];
 
@@ -82,7 +84,7 @@ export default function PricingContent() {
                 <ul className="space-y-3">
                   {tier.features.map((feature, index) => (
                     <li key={index} className="flex items-start">
-                      <CheckCircle className={`h-5 w-5 ${tier.popular ? 'text-primary' : 'text-green-500'} mr-2.5 mt-0.5 shrink-0`} />
+                      <CheckCircle className={`h-5 w-5 ${tier.featureCheckmarkColor} mr-2.5 mt-0.5 shrink-0`} />
                       <span className="text-sm text-muted-foreground">{feature}</span>
                     </li>
                   ))}
@@ -124,4 +126,5 @@ export default function PricingContent() {
     </section>
   );
 }
+
 
