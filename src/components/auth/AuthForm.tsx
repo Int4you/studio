@@ -18,9 +18,11 @@ import Link from "next/link";
 import { LogIn, UserPlus, KeyRound, Mail as MailIcon, User, CheckCircle, Loader2 } from "lucide-react";
 import { useState, type FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { PREMIUM_CREATOR_NAME } from '@/config/plans'; // Import PREMIUM_CREATOR_NAME
+import { PREMIUM_CREATOR_NAME } from '@/config/plans';
+import { auth } from '@/lib/firebase/firebase'; // Firebase client SDK
+import { signInWithEmailAndPassword, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { signUpWithEmail as signUpServerAction } from '@/app/actions/auth'; // Server action for sign up
 
-const AUTH_TOKEN_KEY = 'promptForgeAuthToken';
 const FREE_CREDITS_STORAGE_KEY = 'promptForgeFreeCreditsUsed';
 
 export default function AuthForm() {
@@ -28,48 +30,93 @@ export default function AuthForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [signupName, setSignupName] = useState('');
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+
 
   useEffect(() => {
-    // Check if user is already authenticated
-    if (localStorage.getItem(AUTH_TOKEN_KEY)) {
-      router.push('/dashboard');
-    } else {
-      setIsCheckingAuth(false);
-    }
+    const unsubscribe = onAuthStateChanged(auth, (user: FirebaseUser | null) => {
+      if (user) {
+        router.push('/dashboard');
+      } else {
+        setIsCheckingAuth(false);
+      }
+    });
+    return () => unsubscribe();
   }, [router]);
 
-  const handleLoginSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleLoginSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
-    // Placeholder for login logic
-    setTimeout(() => {
+    try {
+      await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
       toast({
-        title: "Login Successful (Demo)",
+        title: "Login Successful",
         description: "You are now logged in. Redirecting...",
       });
-      localStorage.setItem(AUTH_TOKEN_KEY, 'dummy-auth-token'); // Simulate auth
-      localStorage.setItem('promptForgeUserPlan', PREMIUM_CREATOR_NAME); // Set to Premium Creator
-      localStorage.removeItem(FREE_CREDITS_STORAGE_KEY); // Clear free credits as they are not relevant for premium
-      router.push('/dashboard');
-      // setIsLoading(false); // Not strictly necessary due to redirect
-    }, 1000);
+      localStorage.setItem('promptForgeUserPlan', PREMIUM_CREATOR_NAME); 
+      localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
+      // router.push('/dashboard'); // onAuthStateChanged will handle redirect
+    } catch (error: any) {
+      toast({
+        title: "Login Failed",
+        description: error.message || "An unknown error occurred.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSignUpSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSignUpSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsLoading(true);
-    // Placeholder for sign up logic
-    setTimeout(() => {
+    if (signupPassword !== signupConfirmPassword) {
       toast({
-        title: "Sign Up Successful (Demo)",
-        description: "Your account has been created. Redirecting...",
+        title: "Sign Up Failed",
+        description: "Passwords do not match.",
+        variant: "destructive",
       });
-      localStorage.setItem(AUTH_TOKEN_KEY, 'dummy-auth-token'); // Simulate auth
-      localStorage.setItem('promptForgeUserPlan', PREMIUM_CREATOR_NAME); // Set to Premium Creator
-      localStorage.removeItem(FREE_CREDITS_STORAGE_KEY); // Clear free credits as they are not relevant for premium
-      router.push('/dashboard');
-      // setIsLoading(false); // Not strictly necessary due to redirect
-    }, 1000);
+      return;
+    }
+    setIsLoading(true);
+    const response = await signUpServerAction(signupEmail, signupPassword);
+    if (response.success) {
+      toast({
+        title: "Sign Up Successful",
+        description: response.message || "Account created. Please sign in.",
+      });
+      // Optionally sign in the user automatically or redirect to login
+      // For simplicity, redirect to login to use the client-side sign-in flow
+      // This also naturally handles if email verification is implemented later
+       // Attempt to sign in the user after successful sign up
+      try {
+        await signInWithEmailAndPassword(auth, signupEmail, signupPassword);
+        localStorage.setItem('promptForgeUserPlan', PREMIUM_CREATOR_NAME);
+        localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
+        // router.push('/dashboard'); // onAuthStateChanged will handle redirect
+      } catch (signInError: any) {
+         toast({
+          title: "Auto Sign-In Failed",
+          description: "Please sign in manually.",
+          variant: "default",
+        });
+        // Redirect to login tab
+        const loginTabTrigger = document.querySelector('button[data-radix-collection-item][value="login"]') as HTMLButtonElement | null;
+        loginTabTrigger?.click();
+      }
+    } else {
+      toast({
+        title: "Sign Up Failed",
+        description: response.error || "An unknown error occurred.",
+        variant: "destructive",
+      });
+    }
+    setIsLoading(false);
   };
 
   if (isCheckingAuth) {
@@ -106,7 +153,15 @@ export default function AuthForm() {
                 <Label htmlFor="login-email" className="flex items-center text-xs font-medium text-muted-foreground">
                   <MailIcon className="mr-1.5 h-3.5 w-3.5" /> Email
                 </Label>
-                <Input id="login-email" type="email" placeholder="m@example.com" required className="rounded-md shadow-sm text-base" />
+                <Input 
+                  id="login-email" 
+                  type="email" 
+                  placeholder="m@example.com" 
+                  required 
+                  className="rounded-md shadow-sm text-base"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)} 
+                />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -116,12 +171,19 @@ export default function AuthForm() {
                     <Link
                         href="#"
                         className="ml-auto inline-block text-xs underline text-muted-foreground hover:text-primary transition-colors"
-                        onClick={(e) => { e.preventDefault(); toast({ title: "Forgot Password", description: "This feature is not yet implemented."}) }}
+                        onClick={(e) => { e.preventDefault(); toast({ title: "Forgot Password", description: "Password reset is not yet implemented."}) }}
                     >
                         Forgot your password?
                     </Link>
                 </div>
-                <Input id="login-password" type="password" required className="rounded-md shadow-sm text-base" />
+                <Input 
+                  id="login-password" 
+                  type="password" 
+                  required 
+                  className="rounded-md shadow-sm text-base"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                />
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4 px-6 pb-6">
@@ -157,25 +219,53 @@ export default function AuthForm() {
                 <Label htmlFor="signup-name" className="flex items-center text-xs font-medium text-muted-foreground">
                     <User className="mr-1.5 h-3.5 w-3.5" /> Full Name (Optional)
                 </Label>
-                <Input id="signup-name" placeholder="Your Name" className="rounded-md shadow-sm text-base" />
+                <Input 
+                  id="signup-name" 
+                  placeholder="Your Name" 
+                  className="rounded-md shadow-sm text-base"
+                  value={signupName}
+                  onChange={(e) => setSignupName(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="signup-email" className="flex items-center text-xs font-medium text-muted-foreground">
                     <MailIcon className="mr-1.5 h-3.5 w-3.5" /> Email
                 </Label>
-                <Input id="signup-email" type="email" placeholder="m@example.com" required className="rounded-md shadow-sm text-base" />
+                <Input 
+                  id="signup-email" 
+                  type="email" 
+                  placeholder="m@example.com" 
+                  required 
+                  className="rounded-md shadow-sm text-base"
+                  value={signupEmail}
+                  onChange={(e) => setSignupEmail(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="signup-password" className="flex items-center text-xs font-medium text-muted-foreground">
                     <KeyRound className="mr-1.5 h-3.5 w-3.5" /> Password
                 </Label>
-                <Input id="signup-password" type="password" required className="rounded-md shadow-sm text-base" />
+                <Input 
+                  id="signup-password" 
+                  type="password" 
+                  required 
+                  className="rounded-md shadow-sm text-base"
+                  value={signupPassword}
+                  onChange={(e) => setSignupPassword(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="signup-confirm-password" className="flex items-center text-xs font-medium text-muted-foreground">
                     <CheckCircle className="mr-1.5 h-3.5 w-3.5" /> Confirm Password
                 </Label>
-                <Input id="signup-confirm-password" type="password" required className="rounded-md shadow-sm text-base" />
+                <Input 
+                  id="signup-confirm-password" 
+                  type="password" 
+                  required 
+                  className="rounded-md shadow-sm text-base"
+                  value={signupConfirmPassword}
+                  onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                />
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4 px-6 pb-6">
@@ -193,4 +283,3 @@ export default function AuthForm() {
     </Card>
   );
 }
-

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -5,21 +6,23 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label'; // Kept for consistency, though not used in this version
+// import { Label } from '@/components/ui/label'; // Not used
 import { Copy, BarChart2, Users, MousePointerClick, DollarSign, ExternalLink, Loader2, ShieldAlert, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { auth } from '@/lib/firebase/firebase'; // Firebase client SDK
+import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 
-const AUTH_TOKEN_KEY = 'promptForgeAuthToken';
 const AFFILIATE_DETAILS_KEY = 'promptForgeAffiliateDetails';
 
-interface AffiliateDetails {
+interface StoredAffiliateDetails {
   id: string;
   name: string;
   email: string;
   website: string;
   promotionMethod: string;
   registeredAt: string;
+  firebaseUserId?: string; // Optional: to link with Firebase User
 }
 
 interface AffiliateStats {
@@ -58,70 +61,80 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, description, is
 export default function AffiliateDashboard() {
   const router = useRouter();
   const { toast } = useToast();
-  const [affiliateDetails, setAffiliateDetails] = useState<AffiliateDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // For initial affiliate details check
-  const [isStatsLoading, setIsStatsLoading] = useState(true); // For stats loading
+  const [affiliateDetails, setAffiliateDetails] = useState<StoredAffiliateDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true); 
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [referralLink, setReferralLink] = useState('');
   const [stats, setStats] = useState<AffiliateStats | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem(AUTH_TOKEN_KEY);
-      if (!token) {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
         router.push('/login');
         setIsLoading(false);
         return;
       }
+      setFirebaseUser(user);
 
       const detailsString = localStorage.getItem(AFFILIATE_DETAILS_KEY);
       if (detailsString) {
-        const parsedDetails = JSON.parse(detailsString) as AffiliateDetails;
-        setAffiliateDetails(parsedDetails);
-        setReferralLink(`https://promptforge.example.com/?ref=${parsedDetails.id}`);
-        setIsLoading(false); // Affiliate details loaded
+        const parsedDetails = JSON.parse(detailsString) as StoredAffiliateDetails;
+        // Ensure the affiliate details belong to the currently logged-in Firebase user
+        if (parsedDetails.firebaseUserId === user.uid || parsedDetails.email === user.email) {
+            setAffiliateDetails(parsedDetails);
+            setReferralLink(`https://promptforge.example.com/?ref=${parsedDetails.id}`);
+            setIsLoading(false); 
 
-        // Simulate fetching/loading stats
-        setIsStatsLoading(true);
-        setTimeout(() => { 
-          const statsStorageKey = `promptForgeAffiliateStats_${parsedDetails.id}`;
-          let loadedStats: AffiliateStats | null = null;
-          const storedStatsString = localStorage.getItem(statsStorageKey);
+            setIsStatsLoading(true);
+            setTimeout(() => { 
+              const statsStorageKey = `promptForgeAffiliateStats_${parsedDetails.id}`;
+              let loadedStats: AffiliateStats | null = null;
+              const storedStatsString = localStorage.getItem(statsStorageKey);
 
-          if (storedStatsString) {
-            try {
-              loadedStats = JSON.parse(storedStatsString);
-            } catch (e) {
-              console.error("Failed to parse stored affiliate stats:", e);
-              localStorage.removeItem(statsStorageKey);
-            }
-          }
+              if (storedStatsString) {
+                try {
+                  loadedStats = JSON.parse(storedStatsString);
+                } catch (e) {
+                  console.error("Failed to parse stored affiliate stats:", e);
+                  localStorage.removeItem(statsStorageKey);
+                }
+              }
 
-          if (loadedStats) {
-            setStats(loadedStats);
-          } else {
-            const baseClicks = Math.floor(Math.random() * 700) + Math.abs(parsedDetails.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % 300); 
-            const baseSignups = Math.floor(baseClicks * ( (Math.random() * 0.04) + 0.015) ); // 1.5-5.5% conversion
+              if (loadedStats) {
+                setStats(loadedStats);
+              } else {
+                // Use a more deterministic seed for random generation if possible
+                const seed = parsedDetails.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                const baseClicks = (seed % 500) + 100 + Math.floor(Math.random() * 200) ; // e.g. 100-800 clicks
+                const baseSignups = Math.floor(baseClicks * ( ( (seed % 30) / 1000) + 0.015) ); // ~1.5-4.5% conversion
 
-            const newStatsData: AffiliateStats = {
-              clicks: baseClicks + Math.floor(Math.random() * 150),
-              signups: baseSignups + Math.floor(Math.random() * (baseSignups * 0.15)),
-              conversionRate: '', 
-              earningsMonth: `$${( (baseSignups + Math.floor(Math.random() * (baseSignups * 0.15))) * ((Math.random() * 0.8) + 0.3) * 4.99 * 0.2).toFixed(2)}`,
-              earningsTotal: `$${( (baseSignups + Math.floor(Math.random() * (baseSignups * 0.15))) * ((Math.random() * 2.5) + 0.8) * 4.99 * 0.2 + (Math.abs(parsedDetails.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % 100))).toFixed(2)}`,
-            };
-            newStatsData.conversionRate = newStatsData.clicks > 0 ? ((newStatsData.signups / newStatsData.clicks) * 100).toFixed(2) + '%' : '0.00%';
-            setStats(newStatsData);
-            localStorage.setItem(statsStorageKey, JSON.stringify(newStatsData));
-          }
-          setIsStatsLoading(false);
-        }, 700); 
-
+                const newStatsData: AffiliateStats = {
+                  clicks: baseClicks + Math.floor(Math.random() * (baseClicks * 0.2)), // Add some variance
+                  signups: baseSignups + Math.floor(Math.random() * (baseSignups * 0.15)),
+                  conversionRate: '', 
+                  earningsMonth: `$${( (baseSignups + Math.floor(Math.random() * (baseSignups * 0.15))) * (( (seed % 5) /10) + 0.3) * 4.99 * 0.2).toFixed(2)}`, // Commission rate: 20%, price: $4.99
+                  earningsTotal: `$${( (baseSignups + Math.floor(Math.random() * (baseSignups * 0.15))) * (( (seed % 15)/10) + 0.8) * 4.99 * 0.2 + (seed % 100)).toFixed(2)}`,
+                };
+                newStatsData.conversionRate = newStatsData.clicks > 0 ? ((newStatsData.signups / newStatsData.clicks) * 100).toFixed(2) + '%' : '0.00%';
+                setStats(newStatsData);
+                localStorage.setItem(statsStorageKey, JSON.stringify(newStatsData));
+              }
+              setIsStatsLoading(false);
+            }, 700);
+        } else {
+            // Affiliate details in localStorage don't match current Firebase user
+            router.push('/affiliate/register'); // Or '/affiliate' if they need to re-evaluate
+            setIsLoading(false);
+        }
       } else {
-        router.push('/affiliate');
+        // No affiliate details found for this user
+        router.push('/affiliate/register'); 
         setIsLoading(false);
-        return;
       }
-    }
+    });
+    return () => unsubscribe();
   }, [router]);
 
   const handleCopyToClipboard = () => {
@@ -144,12 +157,12 @@ export default function AffiliateDashboard() {
         <Card className="max-w-md mx-auto text-center shadow-lg border-destructive/50 bg-destructive/10">
           <CardHeader>
             <ShieldAlert className="mx-auto h-12 w-12 text-destructive mb-3" />
-            <CardTitle className="text-xl font-semibold text-destructive">Access Denied</CardTitle>
+            <CardTitle className="text-xl font-semibold text-destructive">Affiliate Access Denied</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4">You are not registered as an affiliate or not logged in.</p>
+            <p className="text-muted-foreground mb-4">You are not registered as an affiliate or your session is invalid.</p>
             <Button asChild>
-              <Link href="/affiliate">Learn about Affiliate Program</Link>
+              <Link href="/affiliate/register">Register for Affiliate Program</Link>
             </Button>
           </CardContent>
         </Card>

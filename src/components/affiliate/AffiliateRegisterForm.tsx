@@ -11,8 +11,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus, Loader2, Mail, User, Globe, Edit3, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
+import { auth } from '@/lib/firebase/firebase'; // Firebase client SDK
+import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 
-const AUTH_TOKEN_KEY = 'promptForgeAuthToken';
 const AFFILIATE_DETAILS_KEY = 'promptForgeAffiliateDetails';
 
 export default function AffiliateRegisterForm() {
@@ -22,28 +23,47 @@ export default function AffiliateRegisterForm() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAlreadyAffiliate, setIsAlreadyAffiliate] = useState(false);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
 
   const [formData, setFormData] = useState({
     fullName: '',
-    email: '', // This might be pre-filled or read-only if user is logged in
+    email: '', 
     website: '',
     promotionMethod: '',
   });
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem(AUTH_TOKEN_KEY);
-      setIsAuthenticated(!!token);
-
-      const affiliateDetails = localStorage.getItem(AFFILIATE_DETAILS_KEY);
-      if (affiliateDetails) {
-        setIsAlreadyAffiliate(true);
-        router.push('/affiliate/dashboard'); // Redirect if already an affiliate
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+      setFirebaseUser(user);
+      
+      const affiliateDetailsString = localStorage.getItem(AFFILIATE_DETAILS_KEY);
+      if (affiliateDetailsString) {
+          const storedAffiliateDetails = JSON.parse(affiliateDetailsString);
+          // Check if the stored affiliate email matches the current Firebase user's email
+          if (user && storedAffiliateDetails.email === user.email) {
+            setIsAlreadyAffiliate(true);
+            router.push('/affiliate/dashboard'); 
+          } else {
+            // If emails don't match or no Firebase user, it's not this user's affiliate registration
+            setIsAlreadyAffiliate(false);
+          }
       } else {
-        setIsCheckingAuth(false);
+        setIsAlreadyAffiliate(false);
       }
-    }
-  }, [router]);
+      
+      if (user && user.email && formData.email === '') {
+        setFormData(prev => ({ ...prev, email: user.email! }));
+      }
+      if (user && user.displayName && formData.fullName === '') {
+         setFormData(prev => ({ ...prev, fullName: user.displayName! }));
+      }
+
+      setIsCheckingAuth(false);
+    });
+    return () => unsubscribe();
+  }, [router, formData.email, formData.fullName]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -52,7 +72,7 @@ export default function AffiliateRegisterForm() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !firebaseUser) {
       toast({
         title: "Authentication Required",
         description: "Please log in to your PromptForge account to register as an affiliate.",
@@ -63,24 +83,25 @@ export default function AffiliateRegisterForm() {
     }
 
     setIsLoading(true);
-    // Simulate registration logic
     setTimeout(() => {
       const affiliateData = {
-        id: `aff_${formData.email.split('@')[0]}_${Date.now().toString(36)}`, // Simple unique ID
-        name: formData.fullName,
-        email: formData.email,
+        id: `aff_${firebaseUser.uid}_${Date.now().toString(36)}`, // Use Firebase UID for uniqueness
+        name: formData.fullName || firebaseUser.displayName || 'Affiliate User',
+        email: formData.email || firebaseUser.email!, // Prefer form email, fallback to Firebase user email
         website: formData.website,
         promotionMethod: formData.promotionMethod,
         registeredAt: new Date().toISOString(),
+        firebaseUserId: firebaseUser.uid, // Link to Firebase user
       };
       localStorage.setItem(AFFILIATE_DETAILS_KEY, JSON.stringify(affiliateData));
+      // For a real app, this data should be saved to a backend database (e.g., Firestore)
+      // associated with the firebaseUser.uid.
       
       toast({
         title: "Affiliate Registration Successful!",
         description: "Welcome to the PromptForge Affiliate Program. Redirecting to your dashboard...",
       });
       router.push('/affiliate/dashboard');
-      // setIsLoading(false); // Not strictly necessary due to redirect
     }, 1500);
   };
 
@@ -130,13 +151,31 @@ export default function AffiliateRegisterForm() {
             <Label htmlFor="fullName" className="flex items-center text-xs font-medium text-muted-foreground">
               <User className="mr-1.5 h-3.5 w-3.5" /> Full Name
             </Label>
-            <Input id="fullName" name="fullName" value={formData.fullName} onChange={handleChange} placeholder="John Doe" required className="rounded-md shadow-sm text-base" />
+            <Input 
+              id="fullName" 
+              name="fullName" 
+              value={formData.fullName} 
+              onChange={handleChange} 
+              placeholder={firebaseUser?.displayName || "John Doe"} 
+              required 
+              className="rounded-md shadow-sm text-base" 
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email" className="flex items-center text-xs font-medium text-muted-foreground">
               <Mail className="mr-1.5 h-3.5 w-3.5" /> Email Address
             </Label>
-            <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" required className="rounded-md shadow-sm text-base" />
+            <Input 
+              id="email" 
+              name="email" 
+              type="email" 
+              value={formData.email} 
+              onChange={handleChange} 
+              placeholder={firebaseUser?.email || "you@example.com"} 
+              required 
+              readOnly={!!firebaseUser?.email} // Make read-only if pre-filled from Firebase auth
+              className="rounded-md shadow-sm text-base" 
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="website" className="flex items-center text-xs font-medium text-muted-foreground">
