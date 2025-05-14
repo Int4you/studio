@@ -19,7 +19,7 @@ const testimonials = [
     name: 'Mike P.',
     role: 'Startup Founder',
     quote: "The market analysis feature is a game-changer. It gave us insights we hadn't even considered. Highly recommend!",
-    avatarUrl: 'https://images.unsplash.com/photo-1500048993953-d23a436266cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMnx8cGVyc29ufGVufDB8fHx8MTc0NzE2NjMyM3ww&ixlib=rb-4.1.0&q=80&w=1080',
+    avatarUrl: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxNHx8cGVyc29ufGVufDB8fHx8MTc0NzE2NjMyM3ww&ixlib=rb-4.1.0&q=80&w=1080',
     stars: 5,
     hint: "person avatar",
   },
@@ -79,4 +79,5 @@ const TestimonialsSection = React.memo(() => {
 
 TestimonialsSection.displayName = 'TestimonialsSection';
 export default TestimonialsSection;
+
 
