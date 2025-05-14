@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
@@ -19,20 +20,29 @@ let db: Firestore;
 if (typeof window !== 'undefined') {
   if (!getApps().length) {
     try {
+      if (!firebaseConfig.apiKey) {
+        console.error(
+          'Firebase Error: NEXT_PUBLIC_FIREBASE_API_KEY is missing. ' +
+          'Please ensure it is correctly set in your .env file and the server is restarted.'
+        );
+      }
       app = initializeApp(firebaseConfig);
       auth = getAuth(app);
       db = getFirestore(app);
     } catch (error) {
-      console.error("Firebase initialization error:", error);
+      console.error(
+        'Firebase client-side initialization error. ' +
+        'PLEASE CHECK YOUR .env FILE (or .env.local) and ensure all NEXT_PUBLIC_FIREBASE_... variables (especially NEXT_PUBLIC_FIREBASE_API_KEY) are correctly set. ' +
+        'You may need to restart your Next.js development server after changes.',
+        error
+      );
       // Provide placeholder/stub objects to prevent further errors if initialization fails
-      // This is a basic fallback; a more robust app might show a global error message.
       // @ts-ignore
       app = undefined;
       // @ts-ignore
       auth = undefined;
       // @ts-ignore
       db = undefined;
-      // It's critical the user fixes their .env variables.
     }
   } else {
     app = getApp();
