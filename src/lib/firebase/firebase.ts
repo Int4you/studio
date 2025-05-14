@@ -16,23 +16,39 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
-if (typeof window !== 'undefined' && !getApps().length) {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
-} else if (typeof window !== 'undefined') {
-  app = getApp();
-  auth = getAuth(app);
-  db = getFirestore(app);
+if (typeof window !== 'undefined') {
+  if (!getApps().length) {
+    try {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+    } catch (error) {
+      console.error("Firebase initialization error:", error);
+      // Provide placeholder/stub objects to prevent further errors if initialization fails
+      // This is a basic fallback; a more robust app might show a global error message.
+      // @ts-ignore
+      app = undefined;
+      // @ts-ignore
+      auth = undefined;
+      // @ts-ignore
+      db = undefined;
+      // It's critical the user fixes their .env variables.
+    }
+  } else {
+    app = getApp();
+    auth = getAuth(app);
+    db = getFirestore(app);
+  }
 } else {
-  // Handle server-side initialization if needed, or provide stubs
-  // For client-side focused app, this might not be strictly necessary
-  // if Firebase is only used on the client.
-  // However, for Server Actions using Admin SDK, this would be different.
-  // For client SDK usage in Server Components (which is unusual), this needs care.
-  // Given Server Actions for auth, we'll re-init auth there if needed,
-  // but this client-side firebase.ts is primarily for client components.
+  // This block is for server-side or non-browser environments,
+  // which should ideally not be importing this client-side Firebase setup.
+  // However, to prevent crashes during server-side rendering if imported accidentally:
+  // @ts-ignore
+  app = undefined;
+  // @ts-ignore
+  auth = undefined;
+  // @ts-ignore
+  db = undefined;
 }
 
-// @ts-ignore
 export { app, auth, db };
