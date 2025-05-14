@@ -74,7 +74,7 @@ const AppView = React.memo(({
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-8">
+    <div className="flex flex-col md:flex-row gap-4 md:gap-8 h-full">
       <WorkflowSidebarNav 
         {...commonNavProps} 
         resetAppCreationState={resetAppCreationState}
@@ -83,12 +83,12 @@ const AppView = React.memo(({
         selectedIdea={selectedIdea}
       />
       
-      <div className="md:hidden mb-6">
+      <div className="md:hidden mb-4">
           <Button 
             onClick={() => resetAppCreationState(true)} 
             variant="outline" 
             size="sm" 
-            className="w-full mb-4"
+            className="w-full mb-2"
             disabled={!canStartNewProject && !currentProjectId && !selectedIdea}
             title={!canStartNewProject && !currentProjectId && !selectedIdea ? "Free Tier credit limit reached" : "Start a new project"}
           >
@@ -97,7 +97,7 @@ const AppView = React.memo(({
           <WorkflowMobileNav {...commonNavProps} />
       </div>
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 h-full">
         <WorkflowStepContainer workflow={workflow} />
       </div>
 
@@ -111,3 +111,4 @@ const AppView = React.memo(({
 
 AppView.displayName = 'AppView';
 export default AppView;
+

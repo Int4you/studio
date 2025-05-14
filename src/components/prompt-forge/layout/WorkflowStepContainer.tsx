@@ -4,7 +4,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react'; 
+import { ArrowRight, ArrowLeft } from 'lucide-react'; 
 
 import IdeaGenerationStep from '../steps/IdeaGenerationStep';
 import ProposalStep from '../steps/ProposalStep';
@@ -83,6 +83,8 @@ export default function WorkflowStepContainer({ workflow }: WorkflowStepContaine
 
   const nextStepIndex = stepsConfig.findIndex(s => s.id === currentStep) + 1;
   const nextStep = nextStepIndex < stepsConfig.length ? stepsConfig[nextStepIndex] : null;
+  const previousStepIndex = stepsConfig.findIndex(s => s.id === currentStep) - 1;
+  const previousStep = previousStepIndex >= 0 ? stepsConfig[previousStepIndex] : null;
   
   const isNextButtonDisabled = () => {
     if (currentStep === 'ideas' && !selectedIdea) return true;
@@ -96,17 +98,17 @@ export default function WorkflowStepContainer({ workflow }: WorkflowStepContaine
 
 
   return (
-    <Card className="shadow-xl border rounded-xl overflow-hidden">
+    <Card className="shadow-xl border rounded-xl overflow-hidden flex flex-col h-full">
         <CardHeader className="bg-muted/30 dark:bg-muted/10 border-b">
             <div className="flex items-center gap-3">
                 {currentStepDetails?.icon && React.createElement(currentStepDetails.icon, { className: "h-7 w-7 text-primary" })}
                 <div>
-                    <CardTitle className="text-2xl font-bold">{currentStepDetails?.title}</CardTitle>
-                    <CardDescription className="text-sm">{currentStepDetails?.description}</CardDescription>
+                    <CardTitle className="text-xl sm:text-2xl font-bold">{currentStepDetails?.title}</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">{currentStepDetails?.description}</CardDescription>
                 </div>
             </div>
         </CardHeader>
-        <CardContent className="p-6 space-y-6 min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-15rem)]">
+        <CardContent className="p-4 sm:p-6 space-y-6 flex-grow overflow-y-auto min-h-[calc(100vh-24rem)] md:min-h-[calc(100vh-18rem)]">
         {isCurrentStepPremiumAndLocked ? (
             <PremiumFeatureMessage featureName={currentStepDetails?.title} />
         ) : (
@@ -201,23 +203,23 @@ export default function WorkflowStepContainer({ workflow }: WorkflowStepContaine
         )}
         </CardContent>
         <CardFooter className="border-t p-4 bg-muted/50 dark:bg-muted/20">
-            <div className="flex justify-end w-full">
-                {currentStep !== 'ideas' && (
+            <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-2 sm:gap-4">
+                {previousStep && (
                     <Button 
                         variant="outline" 
                         onClick={() => {
-                            const currentIndex = stepsConfig.findIndex(s => s.id === currentStep);
-                            if (currentIndex > 0) {
-                                const previousStepId = stepsConfig[currentIndex - 1].id;
-                                // No need to check for premium on previous steps as they must have been completed
-                                navigateToStep(previousStepId);
-                            }
+                            // No need to check for premium on previous steps as they must have been completed or are free
+                            navigateToStep(previousStep.id);
                         }}
-                        className="mr-auto rounded-md shadow-sm hover:shadow-md transition-shadow"
+                        className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-xs sm:text-sm"
                     >
-                        Previous: {stepsConfig[stepsConfig.findIndex(s => s.id === currentStep) -1]?.title || 'Start'}
+                        <ArrowLeft className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        Previous: {previousStep.title}
                     </Button>
                 )}
+                 {/* Spacer div to push Next button to the right if Previous button is not shown */}
+                {!previousStep && <div className="sm:w-auto"></div>}
+
                  {nextStep && (
                     <Button 
                         onClick={() => {
@@ -227,10 +229,10 @@ export default function WorkflowStepContainer({ workflow }: WorkflowStepContaine
                                 handleNextStep();
                             }
                         }}
-                        className="rounded-md shadow-md hover:shadow-lg transition-shadow"
+                        className="w-full sm:w-auto rounded-md shadow-md hover:shadow-lg transition-shadow text-xs sm:text-sm"
                         disabled={isNextButtonDisabled()}
                     >
-                        Next: {nextStep.title} <ArrowRight className="ml-2 h-4 w-4" />
+                        Next: {nextStep.title} <ArrowRight className="ml-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </Button>
                 )}
             </div>
@@ -238,3 +240,4 @@ export default function WorkflowStepContainer({ workflow }: WorkflowStepContaine
     </Card>
   );
 }
+

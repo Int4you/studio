@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Wand2, Library as LibraryIcon, Milestone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { AppHeader } from '@/components/prompt-forge/layout'; // Updated import
+import { AppHeader } from '@/components/prompt-forge/layout'; 
 
 import RoadmapView from './RoadmapView';
 import LibraryView from './LibraryView';
@@ -175,7 +175,7 @@ export default function AppViewWrapper() {
         savedProjectsCount={savedProjects.length}
       />
 
-      <main className="container mx-auto p-4 md:p-8 max-w-7xl mt-4">
+      <main className="container mx-auto p-2 sm:p-4 md:p-6 lg:p-8 max-w-7xl mt-2 sm:mt-4 flex-grow overflow-y-auto">
         {currentView === 'app' && (
           <AppView 
             initialProject={projectToLoadInApp}
@@ -207,3 +207,4 @@ export default function AppViewWrapper() {
     </>
   );
 }
+

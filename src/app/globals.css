@@ -104,10 +104,10 @@
     @apply border-border;
   }
   html, body {
-    @apply h-full; /* Ensure html and body take full height */
+    @apply h-screen overflow-hidden; /* Ensure html and body take full height and prevent main scroll */
   }
   body {
-    @apply bg-background text-foreground flex flex-col; /* Use flex-col for sticky footer */
+    @apply bg-background text-foreground flex flex-col; /* Use flex-col for layout structure */
     /* font-family set by next/font in layout.tsx */
   }
   /* Ensure headings and other text elements inherit correctly */
@@ -115,3 +115,4 @@
     @apply text-foreground;
   }
 }
+

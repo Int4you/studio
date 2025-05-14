@@ -37,35 +37,35 @@ const AppHeader = React.memo(({
   return (
     <TooltipProvider>
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-2 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-2 group">
-            <Cpu className="h-8 w-8 text-primary transition-transform group-hover:rotate-12" />
-            <h1 className="text-2xl font-bold tracking-tight">
+            <Cpu className="h-7 w-7 sm:h-8 sm:w-8 text-primary transition-transform group-hover:rotate-12" />
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
               Prompt<span className="text-primary">Forge</span>
             </h1>
           </Link>
           
           <Tabs value={currentView} onValueChange={onTabChange} className="hidden sm:block mx-auto">
-            <TabsList className="bg-muted/30 dark:bg-muted/20 p-1 rounded-lg shadow-inner">
-              <TabsTrigger value="app" className="px-4 py-1.5 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md rounded-md">
-                <Wand2 className="mr-1.5 h-4 w-4" /> App
+            <TabsList className="bg-muted/30 dark:bg-muted/20 p-0.5 sm:p-1 rounded-lg shadow-inner">
+              <TabsTrigger value="app" className="px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md rounded-md">
+                <Wand2 className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" /> App
               </TabsTrigger>
-              <TabsTrigger value="roadmap" className="px-4 py-1.5 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md rounded-md">
-                <Milestone className="mr-1.5 h-4 w-4" /> Roadmap
+              <TabsTrigger value="roadmap" className="px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md rounded-md">
+                <Milestone className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Roadmap
               </TabsTrigger>
-              <TabsTrigger value="library" className="px-4 py-1.5 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md rounded-md">
-                <LibraryIcon className="mr-1.5 h-4 w-4" /> My Library ({savedProjectsCount})
+              <TabsTrigger value="library" className="px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md rounded-md">
+                <LibraryIcon className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" /> My Library ({savedProjectsCount})
               </TabsTrigger>
             </TabsList>
           </Tabs>
 
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
             <Popover>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <PopoverTrigger asChild>
-                     <Button variant="outline" size="sm" className="flex items-center gap-1.5 border border-border/50 px-2.5 py-1 rounded-md bg-muted/30 hover:bg-muted/50 dark:bg-muted/10 dark:hover:bg-muted/20 shadow-sm cursor-pointer h-9">
-                      {isPremium ? <Crown className="h-4 w-4 text-amber-500 fill-amber-500" /> : <Zap className="h-4 w-4 text-primary" />}
+                     <Button variant="outline" size="sm" className="flex items-center gap-1 sm:gap-1.5 border border-border/50 px-2 py-1 sm:px-2.5 rounded-md bg-muted/30 hover:bg-muted/50 dark:bg-muted/10 dark:hover:bg-muted/20 shadow-sm cursor-pointer h-8 sm:h-9">
+                      {isPremium ? <Crown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500 fill-amber-500" /> : <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />}
                       <span className={`text-xs font-medium ${isPremium ? 'text-amber-600 dark:text-amber-400' : 'text-foreground'}`}>{currentUserPlan}</span>
                     </Button>
                   </PopoverTrigger>
@@ -119,7 +119,7 @@ const AppHeader = React.memo(({
             {currentUserPlan === FREE_TIER_NAME && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Badge variant={(maxFreeCredits - creditsUsed) > 0 ? "secondary" : "destructive"} className="text-xs cursor-default h-9 px-2.5">
+                        <Badge variant={(maxFreeCredits - creditsUsed) > 0 ? "secondary" : "destructive"} className="text-xs cursor-default h-8 sm:h-9 px-2 sm:px-2.5">
                             {(maxFreeCredits - creditsUsed) > 0 ? `${maxFreeCredits - creditsUsed} Credits Left` : "No Credits Left"}
                         </Badge>
                     </TooltipTrigger>
@@ -129,8 +129,8 @@ const AppHeader = React.memo(({
                 </Tooltip>
             )}
             
-            <Button variant="ghost" size="icon" onClick={onLogout} className="ml-1 h-9 w-9 text-muted-foreground hover:text-destructive">
-              <LogOut className="h-4 w-4" />
+            <Button variant="ghost" size="icon" onClick={onLogout} className="ml-1 h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive">
+              <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span className="sr-only">Logout</span>
             </Button>
           </div>
@@ -138,14 +138,14 @@ const AppHeader = React.memo(({
          <div className="sm:hidden border-t">
             <Tabs value={currentView} onValueChange={onTabChange} className="w-full">
                 <TabsList className="grid w-full grid-cols-3 bg-transparent p-0 border-none rounded-none">
-                    <TabsTrigger value="app" className="data-[state=active]:bg-muted data-[state=active]:shadow-none data-[state=active]:text-primary rounded-none py-2.5 text-xs font-medium flex flex-col items-center gap-1 h-auto">
-                    <Wand2 className="h-4 w-4" /> App
+                    <TabsTrigger value="app" className="data-[state=active]:bg-muted data-[state=active]:shadow-none data-[state=active]:text-primary rounded-none py-2 text-xs font-medium flex flex-col items-center justify-center gap-0.5 h-12">
+                    <Wand2 className="h-4 w-4 mb-0.5" /> App
                     </TabsTrigger>
-                    <TabsTrigger value="roadmap" className="data-[state=active]:bg-muted data-[state=active]:shadow-none data-[state=active]:text-primary rounded-none py-2.5 text-xs font-medium flex flex-col items-center gap-1 h-auto">
-                    <Milestone className="h-4 w-4" /> Roadmap
+                    <TabsTrigger value="roadmap" className="data-[state=active]:bg-muted data-[state=active]:shadow-none data-[state=active]:text-primary rounded-none py-2 text-xs font-medium flex flex-col items-center justify-center gap-0.5 h-12">
+                    <Milestone className="h-4 w-4 mb-0.5" /> Roadmap
                     </TabsTrigger>
-                    <TabsTrigger value="library" className="data-[state=active]:bg-muted data-[state=active]:shadow-none data-[state=active]:text-primary rounded-none py-2.5 text-xs font-medium flex flex-col items-center gap-1 h-auto">
-                    <LibraryIcon className="h-4 w-4" /> Library ({savedProjectsCount})
+                    <TabsTrigger value="library" className="data-[state=active]:bg-muted data-[state=active]:shadow-none data-[state=active]:text-primary rounded-none py-2 text-xs font-medium flex flex-col items-center justify-center gap-0.5 h-12">
+                    <LibraryIcon className="h-4 w-4 mb-0.5" /> Library ({savedProjectsCount})
                     </TabsTrigger>
                 </TabsList>
             </Tabs>
@@ -158,3 +158,4 @@ const AppHeader = React.memo(({
 AppHeader.displayName = 'AppHeader';
 export { AppHeader };
 export default AppHeader;
+

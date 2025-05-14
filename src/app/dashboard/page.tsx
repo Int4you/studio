@@ -1,6 +1,11 @@
 
-import AppView from '@/components/prompt-forge/AppViewWrapper'; // Updated import if wrapper is used
+import AppViewWrapper from '@/components/prompt-forge/AppViewWrapper'; 
 
 export default function DashboardPage() {
-  return <AppView />;
+  return (
+    <div className="flex flex-col h-screen">
+        <AppViewWrapper />
+    </div>
+  );
 }
+
