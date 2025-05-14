@@ -3,56 +3,56 @@
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Lightbulb, FileText, Search, TerminalSquare, TrendingUp, Tag, Sparkles } from 'lucide-react'; 
+import { Lightbulb, FileText, Search, TerminalSquare, TrendingUp, DollarSignIcon as DollarSign, Sparkles } from 'lucide-react'; 
 
 const features = [
   {
-    icon: <Lightbulb className="h-10 w-10 text-primary" />,
+    icon: <Lightbulb className="h-10 w-10" />, // Color applied dynamically
     title: 'AI Idea Generation',
     description: 'Unleash creativity and brainstorm innovative application ideas tailored to your vision with AI.',
-    bgColor: 'bg-yellow-500/10 dark:bg-yellow-500/5',
-    borderColor: 'border-yellow-500/30',
-    textColor: 'text-yellow-500',
+    bgColor: 'bg-yellow-500/15 dark:bg-yellow-500/10', // Slightly more saturated
+    borderColor: 'border-yellow-500/40',
+    textColor: 'text-yellow-600 dark:text-yellow-400',
   },
   {
-    icon: <FileText className="h-10 w-10 text-primary" />,
+    icon: <FileText className="h-10 w-10" />, // Color applied dynamically
     title: 'Detailed AI Proposals',
     description: 'Transform concepts into comprehensive proposals outlining core features and clear UI/UX guidelines.',
-    bgColor: 'bg-sky-500/10 dark:bg-sky-500/5',
-    borderColor: 'border-sky-500/30',
-    textColor: 'text-sky-500',
+    bgColor: 'bg-sky-500/15 dark:bg-sky-500/10', // Slightly more saturated
+    borderColor: 'border-sky-500/40',
+    textColor: 'text-sky-600 dark:text-sky-400',
   },
   {
-    icon: <Search className="h-10 w-10 text-primary" />,
+    icon: <Search className="h-10 w-10" />, // Color applied dynamically
     title: 'Insightful Market Analysis',
     description: 'Gain critical market insights with AI-driven analysis of trends, competitors, and SWOT.',
-    bgColor: 'bg-green-500/10 dark:bg-green-500/5',
-    borderColor: 'border-green-500/30',
-    textColor: 'text-green-500',
+    bgColor: 'bg-green-500/15 dark:bg-green-500/10', // Slightly more saturated
+    borderColor: 'border-green-500/40',
+    textColor: 'text-green-600 dark:text-green-400',
   },
   {
-    icon: <TrendingUp className="h-10 w-10 text-primary" />, 
+    icon: <TrendingUp className="h-10 w-10" />, // Color applied dynamically
     title: 'Intelligent Feature Prioritization',
     description: 'Strategically rank features using AI, balancing market demand with development effort for your MVP.',
-    bgColor: 'bg-purple-500/10 dark:bg-purple-500/5',
-    borderColor: 'border-purple-500/30',
-    textColor: 'text-purple-500',
+    bgColor: 'bg-purple-500/15 dark:bg-purple-500/10', // Slightly more saturated
+    borderColor: 'border-purple-500/40',
+    textColor: 'text-purple-600 dark:text-purple-400',
   },
   {
-    icon: <Tag className="h-10 w-10 text-primary" />,
+    icon: <DollarSign className="h-10 w-10" />, // Changed from Tag, color applied dynamically
     title: 'AI Pricing Strategy',
     description: 'Receive AI-driven recommendations for optimal pricing models and tiers based on your app and market.',
-    bgColor: 'bg-pink-500/10 dark:bg-pink-500/5',
-    borderColor: 'border-pink-500/30',
-    textColor: 'text-pink-500',
+    bgColor: 'bg-pink-500/15 dark:bg-pink-500/10', // Slightly more saturated
+    borderColor: 'border-pink-500/40',
+    textColor: 'text-pink-600 dark:text-pink-400',
   },
   {
-    icon: <TerminalSquare className="h-10 w-10 text-primary" />,
+    icon: <TerminalSquare className="h-10 w-10" />, // Color applied dynamically
     title: 'Developer-Ready AI Prompts',
     description: 'Generate meticulously crafted prompts for Text-to-App AI tools to kickstart development.',
-    bgColor: 'bg-indigo-500/10 dark:bg-indigo-500/5',
-    borderColor: 'border-indigo-500/30',
-    textColor: 'text-indigo-500',
+    bgColor: 'bg-indigo-500/15 dark:bg-indigo-500/10', // Slightly more saturated
+    borderColor: 'border-indigo-500/40',
+    textColor: 'text-indigo-600 dark:text-indigo-400',
   },
 ];
 
@@ -76,9 +76,11 @@ const FeaturesSection = React.memo(() => {
           {features.map((feature, index) => (
             <Card 
               key={index} 
-              className={`bg-card shadow-xl hover:shadow-primary/20 transition-all duration-300 rounded-2xl border border-border/10 group flex flex-col transform hover:-translate-y-1 overflow-hidden ${feature.bgColor}`}
+              // Removed feature.bgColor from card's direct className to use default bg-card
+              className="bg-card shadow-xl hover:shadow-primary/20 transition-all duration-300 rounded-2xl border border-border/10 group flex flex-col transform hover:-translate-y-1 overflow-hidden"
             >
               <CardHeader className="p-6 md:p-8 items-center text-center">
+                {/* Icon container now stands out more with its specific bgColor against the card's neutral background */}
                 <div className={`p-4 rounded-full ${feature.bgColor} inline-block mb-5 border ${feature.borderColor} group-hover:scale-110 transition-transform duration-300`}>
                   {React.cloneElement(feature.icon, { className: `h-10 w-10 ${feature.textColor}` })}
                 </div>
