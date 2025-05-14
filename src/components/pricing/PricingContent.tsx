@@ -3,7 +3,7 @@
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Star, Zap, DollarSignIcon } from 'lucide-react';
+import { CheckCircle, Star, Zap, DollarSignIcon, Crown } from 'lucide-react';
 import Link from 'next/link';
 import { FREE_TIER_NAME, PREMIUM_CREATOR_NAME, freePlanUIDetails, premiumPlanUIDetails } from '@/config/plans';
 
@@ -16,7 +16,7 @@ const tiers = [
     features: freePlanUIDetails.features,
     cta: 'Get Started for Free',
     href: '/dashboard',
-    icon: <Zap className="h-8 w-8 mb-4 text-primary" />,
+    icon: <Zap className="h-8 w-8 mb-4 text-muted-foreground" />,
     borderColor: 'border-border/30',
     bgColor: 'bg-card',
     textColor: 'text-foreground',
@@ -29,10 +29,10 @@ const tiers = [
     description: premiumPlanUIDetails.description,
     features: premiumPlanUIDetails.features,
     cta: 'Upgrade to Premium',
-    href: '/dashboard', // Placeholder, should go to a payment/upgrade page or contact
-    icon: <Star className="h-8 w-8 mb-4 text-primary" />,
-    borderColor: 'border-primary/50',
-    bgColor: 'bg-primary/5 dark:bg-primary/10',
+    href: '/dashboard', 
+    icon: <Crown className="h-8 w-8 mb-4 text-amber-500 fill-amber-500" />,
+    borderColor: 'border-primary shadow-primary/20', // Enhanced border
+    bgColor: 'bg-gradient-to-br from-primary/10 via-primary/5 to-background dark:from-primary/20 dark:via-primary/10 dark:to-background', // Gradient background
     textColor: 'text-primary',
     buttonVariant: 'default' as "outline" | "default",
     popular: true,
@@ -60,20 +60,20 @@ export default function PricingContent() {
           {tiers.map((tier) => (
             <Card 
               key={tier.name} 
-              className={`flex flex-col rounded-xl shadow-xl hover:shadow-primary/10 transition-all duration-300 group ${tier.borderColor} ${tier.bgColor} ${tier.textColor} ${tier.popular ? 'border-2 ring-2 ring-primary/60 ring-offset-2 ring-offset-background' : 'border'}`}
+              className={`flex flex-col rounded-xl shadow-xl hover:shadow-primary/15 transition-all duration-300 group ${tier.borderColor} ${tier.bgColor} ${tier.textColor} ${tier.popular ? 'border-2 ring-2 ring-primary/50 ring-offset-2 ring-offset-background transform md:scale-105' : 'border'}`}
             >
               {tier.popular && (
-                <div className="absolute top-0 right-0 -mt-3 -mr-3">
-                    <div className="bg-primary text-primary-foreground text-xs font-semibold py-1 px-3 rounded-full shadow-md">
+                <div className="absolute top-0 right-0 -mt-3 -mr-3 z-10">
+                    <div className="bg-primary text-primary-foreground text-xs font-semibold py-1 px-3 rounded-full shadow-lg border-2 border-background">
                         POPULAR
                     </div>
                 </div>
               )}
               <CardHeader className="p-6 md:p-8 text-center items-center">
                 {tier.icon}
-                <CardTitle className={`text-3xl font-bold ${tier.textColor}`}>{tier.name}</CardTitle>
+                <CardTitle className={`text-3xl font-bold ${tier.popular ? 'text-primary' : tier.textColor}`}>{tier.name}</CardTitle>
                 <div className="mt-2">
-                  <span className="text-4xl font-extrabold text-foreground">{tier.price}</span>
+                  <span className={`text-4xl font-extrabold ${tier.popular ? 'text-foreground' : 'text-foreground'}`}>{tier.price}</span>
                   <span className="text-base font-medium text-muted-foreground">{tier.frequency}</span>
                 </div>
                 <CardDescription className="mt-3 text-sm text-muted-foreground min-h-[40px]">{tier.description}</CardDescription>
@@ -82,14 +82,14 @@ export default function PricingContent() {
                 <ul className="space-y-3">
                   {tier.features.map((feature, index) => (
                     <li key={index} className="flex items-start">
-                      <CheckCircle className="h-5 w-5 text-green-500 mr-2.5 mt-0.5 shrink-0" />
+                      <CheckCircle className={`h-5 w-5 ${tier.popular ? 'text-primary' : 'text-green-500'} mr-2.5 mt-0.5 shrink-0`} />
                       <span className="text-sm text-muted-foreground">{feature}</span>
                     </li>
                   ))}
                 </ul>
               </CardContent>
               <CardFooter className="p-6 md:p-8 mt-auto">
-                <Button asChild size="lg" className="w-full text-base py-6 shadow-md hover:shadow-lg transition-shadow" variant={tier.buttonVariant}>
+                <Button asChild size="lg" className={`w-full text-base py-6 shadow-md hover:shadow-lg transition-shadow ${tier.popular ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : ''}`} variant={tier.buttonVariant}>
                   <Link href={tier.href}>{tier.cta}</Link>
                 </Button>
               </CardFooter>
