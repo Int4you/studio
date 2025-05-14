@@ -9,12 +9,21 @@ export interface AuthResponse {
   message?: string;
 }
 
+// Basic email regex for validation
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function signUpWithEmail(email: string, password: string): Promise<AuthResponse> {
-  console.warn("Mock Auth: signUpWithEmail called. Basic password security (min length 6) will be checked.");
-  // Mock successful sign-up for demonstration if Firebase is removed
+  console.warn("Mock Auth: signUpWithEmail called. Basic password security (min length 6) and email format will be checked.");
+  
   if (!email || !password) {
     return { success: false, error: "Email and password are required." };
   }
+
+  if (!EMAIL_REGEX.test(email)) {
+    console.log("Mock Auth: Email format check failed for email:", email);
+    return { success: false, error: "Please enter a valid email address." };
+  }
+
   if (password.length < 6) {
     console.log("Mock Auth: Password length check failed for email:", email);
     return { success: false, error: "Password should be at least 6 characters." };
