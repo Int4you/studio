@@ -31,9 +31,9 @@ export default function LandingPage() {
         <MemoizedHeroSection />
         <MemoizedPartnersSection />
         <MemoizedFeaturesSection /> 
+        <MemoizedTestimonialsSection />
         <MemoizedHowItWorksSection />
         <MemoizedPricingSection />
-        <MemoizedTestimonialsSection />
         <MemoizedFaqSection />
         <MemoizedCallToActionSection />
       </main>
@@ -41,3 +41,4 @@ export default function LandingPage() {
     </div>
   );
 }
+
