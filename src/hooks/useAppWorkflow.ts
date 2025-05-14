@@ -162,6 +162,8 @@ export function useAppWorkflow({
     setPrompt(event.target.value);
   };
 
+  const canInitiateNewProjectGeneration = currentUserPlan !== FREE_TIER_NAME || creditsUsed < maxFreeCredits;
+
   const handleGenerateIdeas = async (event?: FormEvent) => {
     event?.preventDefault();
     if (!prompt.trim()) {
@@ -172,7 +174,7 @@ export function useAppWorkflow({
 
     const isStartingNewProjectFromScratch = !selectedIdea && !currentProjectId;
 
-    if (isStartingNewProjectFromScratch && currentUserPlan === FREE_TIER_NAME && creditsUsed >= maxFreeCredits) {
+    if (isStartingNewProjectFromScratch && !canInitiateNewProjectGeneration) {
       setShowUpgradeModal(true);
       return;
     }
@@ -386,7 +388,6 @@ export function useAppWorkflow({
     if (proposal.coreFeatures.some(f => f.feature.trim() === '' || f.description.trim() === '')) { toast({ title: "Incomplete Features", description: "Ensure all features have title and description.", variant: "destructive" }); return; }
     setIsLoadingMarketAnalysis(true); setError(null); setMarketAnalysis(null); setPricingStrategy(null);
     try {
-      // Extract potential USPs from core features if not explicitly provided (example logic)
       const potentialUSPs = proposal.coreFeatures
         .filter(f => f.description.toLowerCase().includes("unique") || f.description.toLowerCase().includes("innovative") || f.feature.toLowerCase().includes("ai"))
         .map(f => f.feature);
@@ -396,7 +397,7 @@ export function useAppWorkflow({
         appDescription: selectedIdea.title + ": " + selectedIdea.description, 
         coreFeatures: proposal.coreFeatures, 
         targetAudience: prompt,
-        uniqueSellingPointsInput: potentialUSPs.length > 0 ? potentialUSPs : undefined // Pass USPs to the flow
+        uniqueSellingPointsInput: potentialUSPs.length > 0 ? potentialUSPs : undefined
       };
       const result = await analyzeMarket(input);
       setMarketAnalysis(result);
@@ -525,9 +526,7 @@ export function useAppWorkflow({
     const success = onProjectSave(projectToSave, currentUserPlan);
     if (success) {
       setCurrentProjectId(projectToSave.id);
-      // Toast is handled by AppViewWrapper to show "Project Saved" or "Project Updated"
     }
-    // If not successful, onProjectSave in AppViewWrapper already shows a toast.
   };
 
 
@@ -605,6 +604,8 @@ export function useAppWorkflow({
     currentStep, setCurrentStep,
     showUpgradeModal, setShowUpgradeModal,
     editingStates, setEditingStates,
+    currentUserPlan, // Make sure this is passed through
+    canInitiateNewProjectGeneration, // Add this
     handlePromptChange,
     handleGenerateIdeas,
     handleSelectIdea,

@@ -46,7 +46,8 @@ export default function WorkflowStepContainer({ workflow }: WorkflowStepContaine
     currentProjectId,
     currentStep,
     editingStates,
-    currentUserPlan, 
+    currentUserPlan,
+    canInitiateNewProjectGeneration, // Destructure this new prop
     handlePromptChange,
     handleGenerateIdeas,
     handleSelectIdea,
@@ -69,7 +70,6 @@ export default function WorkflowStepContainer({ workflow }: WorkflowStepContaine
     isStepCompleted,
     navigateToStep,
     handleNextStep,
-    canStartNewProject, 
     setShowUpgradeModal,
   } = workflow;
 
@@ -123,7 +123,7 @@ export default function WorkflowStepContainer({ workflow }: WorkflowStepContaine
                 selectedIdea={selectedIdea}
                 onSelectIdea={handleSelectIdea}
                 error={error}
-                canGenerate={canStartNewProject || selectedIdea != null || currentProjectId != null}
+                canGenerate={ (selectedIdea != null || currentProjectId != null) || canInitiateNewProjectGeneration }
                 currentUserPlan={currentUserPlan}
                 />
             )}
@@ -208,7 +208,6 @@ export default function WorkflowStepContainer({ workflow }: WorkflowStepContaine
                     <Button 
                         variant="outline" 
                         onClick={() => {
-                            // No need to check for premium on previous steps as they must have been completed or are free
                             navigateToStep(previousStep.id);
                         }}
                         className="w-full sm:w-auto rounded-md shadow-sm hover:shadow-md transition-shadow text-xs sm:text-sm"
@@ -217,7 +216,6 @@ export default function WorkflowStepContainer({ workflow }: WorkflowStepContaine
                         Previous: {previousStep.title}
                     </Button>
                 )}
-                 {/* Spacer div to push Next button to the right if Previous button is not shown */}
                 {!previousStep && <div className="sm:w-auto"></div>}
 
                  {nextStep && (
@@ -240,4 +238,3 @@ export default function WorkflowStepContainer({ workflow }: WorkflowStepContaine
     </Card>
   );
 }
-
