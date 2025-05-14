@@ -18,7 +18,7 @@ interface RoadmapViewProps {
   savedProjects: SavedProject[];
 }
 
-export default function RoadmapView({ savedProjects }: RoadmapViewProps) {
+const RoadmapView = React.memo(({ savedProjects }: RoadmapViewProps) => {
   const [selectedProjectForRoadmap, setSelectedProjectForRoadmap] = useState<SavedProject | null>(null);
   const [generatedRoadmap, setGeneratedRoadmap] = useState<GenerateRoadmapOutput | null>(null);
   const [isLoadingRoadmap, setIsLoadingRoadmap] = useState<boolean>(false);
@@ -215,5 +215,6 @@ export default function RoadmapView({ savedProjects }: RoadmapViewProps) {
       </Card>
     </section>
   );
-}
-
+});
+RoadmapView.displayName = 'RoadmapView';
+export default RoadmapView;

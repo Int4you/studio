@@ -26,7 +26,7 @@ interface MarketAnalysisStepProps {
   onNavigateToStep: (stepId: AppStepId) => void;
 }
 
-const PrerequisiteMessage = ({ message, onAction, buttonText }: { message: string, onAction: () => void, buttonText: string }) => (
+const PrerequisiteMessage = React.memo(({ message, onAction, buttonText }: { message: string, onAction: () => void, buttonText: string }) => (
     <Card className="border-dashed border-amber-500 bg-amber-50/50 dark:bg-amber-900/20 p-4 my-4">
       <CardHeader className="p-0 pb-2">
         <CardTitle className="text-amber-700 dark:text-amber-400 text-base flex items-center gap-2">
@@ -45,9 +45,10 @@ const PrerequisiteMessage = ({ message, onAction, buttonText }: { message: strin
         </Button>
       </CardContent>
     </Card>
-);
+));
+PrerequisiteMessage.displayName = 'PrerequisiteMessage';
 
-const SegmentedDisplay = ({ title, value, segments, segmentsLowToHigh = true, icon: Icon }: { title: string, value: string | undefined, segments: string[], segmentsLowToHigh?: boolean, icon?: React.ElementType }) => {
+const SegmentedDisplay = React.memo(({ title, value, segments, segmentsLowToHigh = true, icon: Icon }: { title: string, value: string | undefined, segments: string[], segmentsLowToHigh?: boolean, icon?: React.ElementType }) => {
   if (!value) return null;
   const orderedSegments = segmentsLowToHigh ? segments : [...segments].reverse();
   
@@ -75,7 +76,8 @@ const SegmentedDisplay = ({ title, value, segments, segmentsLowToHigh = true, ic
       </div>
     </div>
   );
-};
+});
+SegmentedDisplay.displayName = 'SegmentedDisplay';
 
 
 const getRevenuePotentialBadgeVariant = (level?: "Low" | "Medium" | "High" | "Very High" | "Uncertain"): "default" | "secondary" | "outline" | "destructive" => {
@@ -109,7 +111,7 @@ const getTrendImpactBadgeVariant = (impact?: "Significant Positive" | "Moderate 
     }
 };
 
-const InfoList = ({ title, items, icon: Icon }: { title: string, items?: string[], icon?: React.ElementType }) => {
+const InfoList = React.memo(({ title, items, icon: Icon }: { title: string, items?: string[], icon?: React.ElementType }) => {
   if (!items || items.length === 0) return null;
   return (
     <div className="mt-3">
@@ -122,17 +124,18 @@ const InfoList = ({ title, items, icon: Icon }: { title: string, items?: string[
         </ul>
     </div>
   );
-};
+});
+InfoList.displayName = 'InfoList';
 
 
-export default function MarketAnalysisStep({
+const MarketAnalysisStep = React.memo(({
   proposal,
   selectedIdea,
   marketAnalysis,
   isLoadingMarketAnalysis,
   onGenerateMarketAnalysis,
   onNavigateToStep,
-}: MarketAnalysisStepProps) {
+}: MarketAnalysisStepProps) => {
 
   if (!selectedIdea) {
     return <PrerequisiteMessage message="Please complete Step 1 (Idea) first to enable Market Analysis." onAction={() => onNavigateToStep('ideas')} buttonText="Go to Spark Idea Step" />;
@@ -396,23 +399,6 @@ export default function MarketAnalysisStep({
       )}
     </>
   );
-}
-
-const InfoListCard = ({title, items, icon: Icon}: {title: string, items?: string[], icon?: React.ElementType}) => {
-    if (!items || items.length === 0) return null;
-    return (
-        <Card className="shadow-sm">
-            <CardHeader className="pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg">
-                <CardTitle className="text-xl flex items-center gap-2">
-                    {Icon && <Icon className="h-5 w-5 text-primary"/>}
-                    {title}
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-                <ul className="list-disc list-inside text-sm text-muted-foreground space-y-2">
-                    {items.map((item, idx) => <li key={idx} className="leading-relaxed">{item}</li>)}
-                </ul>
-            </CardContent>
-        </Card>
-    );
-}
+});
+MarketAnalysisStep.displayName = 'MarketAnalysisStep';
+export default MarketAnalysisStep;

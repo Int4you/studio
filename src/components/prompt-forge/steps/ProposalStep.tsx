@@ -32,7 +32,7 @@ interface ProposalStepProps {
   onNavigateToStep: (stepId: AppStepId) => void;
 }
 
-const PrerequisiteMessage = ({ message, onAction, buttonText }: { message: string, onAction: () => void, buttonText: string }) => (
+const PrerequisiteMessage = React.memo(({ message, onAction, buttonText }: { message: string, onAction: () => void, buttonText: string }) => (
     <Card className="border-dashed border-amber-500 bg-amber-50/50 dark:bg-amber-900/20 p-4 my-4">
       <CardHeader className="p-0 pb-2">
         <CardTitle className="text-amber-700 dark:text-amber-400 text-base flex items-center gap-2">
@@ -51,10 +51,11 @@ const PrerequisiteMessage = ({ message, onAction, buttonText }: { message: strin
         </Button>
       </CardContent>
     </Card>
-);
+));
+PrerequisiteMessage.displayName = 'PrerequisiteMessage';
 
 
-export default function ProposalStep({
+const ProposalStep = React.memo(({
   selectedIdea,
   proposal,
   isLoadingProposal,
@@ -72,7 +73,7 @@ export default function ProposalStep({
   onToggleEditState,
   currentProjectId,
   onNavigateToStep,
-}: ProposalStepProps) {
+}: ProposalStepProps) => {
 
   if (!selectedIdea) {
     return <PrerequisiteMessage message="Please select an idea from Step 1 to generate a proposal." onAction={() => onNavigateToStep('ideas')} buttonText="Go to Spark Idea Step" />;
@@ -292,5 +293,6 @@ export default function ProposalStep({
       )}
     </>
   );
-}
-
+});
+ProposalStep.displayName = 'ProposalStep';
+export default ProposalStep;

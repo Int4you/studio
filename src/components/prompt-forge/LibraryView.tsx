@@ -30,7 +30,7 @@ const getProjectStageIcon = (project: SavedProject): React.ElementType => {
 };
 
 
-export default function LibraryView({ savedProjects, onLoadProject, onDeleteProject, onStartNewProject }: LibraryViewProps) {
+const LibraryView = React.memo(({ savedProjects, onLoadProject, onDeleteProject, onStartNewProject }: LibraryViewProps) => {
   return (
     <section id="library-view-content" className="space-y-6">
       <Card className="shadow-xl border rounded-xl overflow-hidden">
@@ -153,5 +153,6 @@ export default function LibraryView({ savedProjects, onLoadProject, onDeleteProj
       </Card>
     </section>
   );
-}
-
+});
+LibraryView.displayName = 'LibraryView';
+export default LibraryView;

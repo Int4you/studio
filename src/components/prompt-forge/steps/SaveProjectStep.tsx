@@ -17,7 +17,7 @@ interface SaveProjectStepProps {
   onNavigateToStep: (stepId: AppStepId) => void;
 }
 
-const PrerequisiteMessage = ({ message, onAction, buttonText }: { message: string, onAction: () => void, buttonText: string }) => (
+const PrerequisiteMessage = React.memo(({ message, onAction, buttonText }: { message: string, onAction: () => void, buttonText: string }) => (
     <Card className="border-dashed border-amber-500 bg-amber-50/50 dark:bg-amber-900/20 p-4 my-4">
       <CardHeader className="p-0 pb-2">
         <CardTitle className="text-amber-700 dark:text-amber-400 text-base flex items-center gap-2">
@@ -36,15 +36,17 @@ const PrerequisiteMessage = ({ message, onAction, buttonText }: { message: strin
         </Button>
       </CardContent>
     </Card>
-);
+));
+PrerequisiteMessage.displayName = 'PrerequisiteMessage';
 
-export default function SaveProjectStep({
+
+const SaveProjectStep = React.memo(({
   selectedIdea,
   proposal,
   currentProjectId,
   onSaveToLibrary,
   onNavigateToStep,
-}: SaveProjectStepProps) {
+}: SaveProjectStepProps) => {
 
   if (!selectedIdea || !proposal || !proposal.appName || proposal.appName.trim() === "") {
     return <PrerequisiteMessage 
@@ -64,6 +66,6 @@ export default function SaveProjectStep({
       </Button>
     </>
   );
-}
-
-    
+});
+SaveProjectStep.displayName = 'SaveProjectStep';
+export default SaveProjectStep;

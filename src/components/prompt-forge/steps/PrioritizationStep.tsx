@@ -22,7 +22,7 @@ interface PrioritizationStepProps {
   onNavigateToStep: (stepId: AppStepId) => void;
 }
 
-const PrerequisiteMessage = ({ message, onAction, buttonText }: { message: string, onAction: () => void, buttonText: string }) => (
+const PrerequisiteMessage = React.memo(({ message, onAction, buttonText }: { message: string, onAction: () => void, buttonText: string }) => (
     <Card className="border-dashed border-amber-500 bg-amber-50/50 dark:bg-amber-900/20 p-4 my-4">
       <CardHeader className="p-0 pb-2">
         <CardTitle className="text-amber-700 dark:text-amber-400 text-base flex items-center gap-2">
@@ -41,7 +41,9 @@ const PrerequisiteMessage = ({ message, onAction, buttonText }: { message: strin
         </Button>
       </CardContent>
     </Card>
-);
+));
+PrerequisiteMessage.displayName = 'PrerequisiteMessage';
+
 
 const getPriorityBadgeVariant = (score: number): "default" | "secondary" | "destructive" => {
     if (score >= 8) return "default"; 
@@ -56,7 +58,7 @@ const getImpactEffortBadgeVariant = (level?: "High" | "Medium" | "Low"): "defaul
     return "outline"; 
 };
 
-export default function PrioritizationStep({
+const PrioritizationStep = React.memo(({
   proposal,
   selectedIdea,
   prioritizedFeatures,
@@ -64,7 +66,7 @@ export default function PrioritizationStep({
   onGenerateFeaturePrioritization,
   onRemovePrioritizedFeature,
   onNavigateToStep,
-}: PrioritizationStepProps) {
+}: PrioritizationStepProps) => {
   
   const noFeaturesInProposal = proposal && proposal.coreFeatures.length === 0;
 
@@ -164,5 +166,6 @@ export default function PrioritizationStep({
       )}
     </>
   );
-}
-
+});
+PrioritizationStep.displayName = 'PrioritizationStep';
+export default PrioritizationStep;

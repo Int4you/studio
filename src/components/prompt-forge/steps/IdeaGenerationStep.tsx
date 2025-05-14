@@ -23,7 +23,7 @@ interface IdeaGenerationStepProps {
   currentUserPlan: string;
 }
 
-export default function IdeaGenerationStep({
+const IdeaGenerationStep = React.memo(({
   prompt,
   onPromptChange,
   onGenerateIdeas,
@@ -34,7 +34,7 @@ export default function IdeaGenerationStep({
   error,
   canGenerate,
   currentUserPlan,
-}: IdeaGenerationStepProps) {
+}: IdeaGenerationStepProps) => {
   // Determine if the credit limit message should be shown
   // This message is specific to the Free Tier when they cannot generate a new idea
   const showCreditLimitMessage =
@@ -114,4 +114,6 @@ export default function IdeaGenerationStep({
       )}
     </form>
   );
-}
+});
+IdeaGenerationStep.displayName = 'IdeaGenerationStep';
+export default IdeaGenerationStep;

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CardHeader, CardTitle } from '@/components/ui/card'; // Ensure CardHeader and CardTitle are imported
+import { CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Cpu, Wand2, Library as LibraryIcon, Milestone, LogOut, Zap, Crown, CheckCircle2 } from 'lucide-react';
 import type { CurrentView } from '../AppViewWrapper';
@@ -23,7 +23,7 @@ interface AppHeaderProps {
   savedProjectsCount: number;
 }
 
-export default function AppHeader({
+const AppHeader = React.memo(({
   currentView,
   onTabChange,
   currentUserPlan,
@@ -31,7 +31,7 @@ export default function AppHeader({
   maxFreeCredits,
   onLogout,
   savedProjectsCount,
-}: AppHeaderProps) {
+}: AppHeaderProps) => {
   const isPremium = currentUserPlan === PREMIUM_CREATOR_NAME;
 
   return (
@@ -153,4 +153,8 @@ export default function AppHeader({
       </header>
     </TooltipProvider>
   );
-}
+});
+
+AppHeader.displayName = 'AppHeader';
+export { AppHeader };
+export default AppHeader;

@@ -28,7 +28,7 @@ interface AppViewProps {
   onCreditUsed: () => void;
 }
 
-export default function AppView({ 
+const AppView = React.memo(({ 
     initialProject, 
     onProjectSave, 
     clearInitialProject,
@@ -36,7 +36,7 @@ export default function AppView({
     creditsUsed,
     maxFreeCredits,
     onCreditUsed 
-}: AppViewProps) {
+}: AppViewProps) => {
   const { toast } = useToast();
   const workflow = useAppWorkflow({ 
     initialProject, 
@@ -75,7 +75,13 @@ export default function AppView({
 
   return (
     <div className="flex flex-col md:flex-row gap-8">
-      <WorkflowSidebarNav {...commonNavProps} />
+      <WorkflowSidebarNav 
+        {...commonNavProps} 
+        resetAppCreationState={resetAppCreationState}
+        canStartNewProject={canStartNewProject}
+        currentProjectId={currentProjectId}
+        selectedIdea={selectedIdea}
+      />
       
       <div className="md:hidden mb-6">
           <Button 
@@ -101,4 +107,7 @@ export default function AppView({
       />
     </div>
   );
-}
+});
+
+AppView.displayName = 'AppView';
+export default AppView;
