@@ -12,13 +12,13 @@ import { AppHeader } from '@/components/prompt-forge/layout';
 import RoadmapView from './RoadmapView';
 import LibraryView from './LibraryView';
 import { FREE_TIER_NAME, PREMIUM_CREATOR_NAME, MAX_FREE_CREDITS } from '@/config/plans';
-import { auth } from '@/lib/firebase/firebase'; // Firebase client SDK
-import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth';
-import { signOutUserServerAction } from '@/app/actions/auth'; // Server action for sign out (optional server part)
+// Firebase related imports are removed
 
 export type CurrentView = 'app' | 'roadmap' | 'library';
 const FREE_CREDITS_STORAGE_KEY = 'promptForgeFreeCreditsUsed';
 const USER_PLAN_STORAGE_KEY = 'promptForgeUserPlan';
+const MOCK_USER_SESSION_KEY = 'promptForgeMockUserSession';
+
 
 export default function AppViewWrapper() {
   const { toast } = useToast();
@@ -27,42 +27,46 @@ export default function AppViewWrapper() {
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [currentView, setCurrentView] = useState<CurrentView>('app');
   const [authStatus, setAuthStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  // currentUser state is no longer FirebaseUser, can be a simple object or null
+  const [currentUser, setCurrentUser] = useState<{ email: string; uid: string } | null>(null); 
   const [currentUserPlan, setCurrentUserPlan] = useState<string>(FREE_TIER_NAME); 
   const [creditsUsed, setCreditsUsed] = useState<number>(0);
   
   const [projectToLoadInApp, setProjectToLoadInApp] = useState<SavedProject | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
+    // Simulate checking auth status (e.g., from localStorage)
+    const mockSession = localStorage.getItem(MOCK_USER_SESSION_KEY);
+    if (mockSession) {
+      try {
+        const user = JSON.parse(mockSession);
         setCurrentUser(user);
         setAuthStatus('authenticated');
-        setSavedProjects(getProjectsFromLibrary()); // Load projects for the authenticated user context
+        setSavedProjects(getProjectsFromLibrary());
 
-        // Temporary: Set premium plan on login for demo purposes. In real app, fetch from DB.
         const storedPlan = localStorage.getItem(USER_PLAN_STORAGE_KEY);
         if (storedPlan === PREMIUM_CREATOR_NAME) {
             setCurrentUserPlan(PREMIUM_CREATOR_NAME);
-            localStorage.removeItem(FREE_CREDITS_STORAGE_KEY); // Premium users don't use free credits
+            localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
             setCreditsUsed(0);
         } else {
-            // Default to Free Tier if no premium plan is stored or if it's an old/invalid value
             setCurrentUserPlan(FREE_TIER_NAME);
             const storedCredits = parseInt(localStorage.getItem(FREE_CREDITS_STORAGE_KEY) || '0', 10);
             setCreditsUsed(storedCredits);
         }
-      } else {
-        setCurrentUser(null);
+      } catch (e) {
+        // Invalid session data, treat as unauthenticated
+        localStorage.removeItem(MOCK_USER_SESSION_KEY);
         setAuthStatus('unauthenticated');
-        // Reset to Free Tier defaults for UI consistency before redirect
-        setCurrentUserPlan(FREE_TIER_NAME);
-        setCreditsUsed(0); 
-        setSavedProjects([]); // Clear projects when logged out
         router.push('/login');
       }
-    });
-    return () => unsubscribe();
+    } else {
+      setAuthStatus('unauthenticated');
+      setCurrentUserPlan(FREE_TIER_NAME);
+      setCreditsUsed(0); 
+      setSavedProjects([]);
+      router.push('/login');
+    }
   }, [router]);
 
   const handleTabChange = (value: string) => {
@@ -71,17 +75,14 @@ export default function AppViewWrapper() {
   };
 
   const handleLogout = async () => {
-    try {
-      await signOut(auth); // Firebase client SDK sign out
-      await signOutUserServerAction(); // Optional: Call server action for any server-side cleanup
-
-      localStorage.removeItem(USER_PLAN_STORAGE_KEY);
-      localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
-      // Auth state change will be handled by onAuthStateChanged, triggering redirect
-      toast({ title: "Logged Out", description: "You have been successfully logged out." });
-    } catch (error: any) {
-       toast({ title: "Logout Failed", description: error.message || "Could not log out.", variant: "destructive" });
-    }
+    // Mock logout
+    localStorage.removeItem(MOCK_USER_SESSION_KEY);
+    localStorage.removeItem(USER_PLAN_STORAGE_KEY);
+    localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
+    setCurrentUser(null);
+    setAuthStatus('unauthenticated');
+    toast({ title: "Logged Out", description: "You have been successfully logged out." });
+    router.push('/login'); // Redirect to login after "logging out"
   };
 
   const loadProjectFromLibrary = (projectId: string) => {
@@ -117,7 +118,6 @@ export default function AppViewWrapper() {
   };
 
   const saveProjectToLibrary = (project: SavedProject): boolean => {
-    // Pass the current user's actual plan state for library limit checks
     const success = saveProjectToLibraryService(project, currentUserPlan); 
     if (success) {
         const updatedProjects = getProjectsFromLibrary();
@@ -160,7 +160,6 @@ export default function AppViewWrapper() {
   }
 
   if (authStatus === 'unauthenticated') {
-     // onAuthStateChanged already handles redirect to /login
      return (
        <div className="flex flex-col items-center justify-center min-h-screen bg-background">
          <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -169,7 +168,6 @@ export default function AppViewWrapper() {
      );
   }
   
-  // User is authenticated
   return (
     <>
       <AppHeader

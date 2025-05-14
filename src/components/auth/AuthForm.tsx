@@ -19,11 +19,13 @@ import { LogIn, UserPlus, KeyRound, Mail as MailIcon, User, CheckCircle, Loader2
 import { useState, type FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PREMIUM_CREATOR_NAME } from '@/config/plans';
-import { auth } from '@/lib/firebase/firebase'; // Firebase client SDK
-import { signInWithEmailAndPassword, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+// Firebase related imports are removed
 import { signUpWithEmail as signUpServerAction } from '@/app/actions/auth'; // Server action for sign up
 
 const FREE_CREDITS_STORAGE_KEY = 'promptForgeFreeCreditsUsed';
+const USER_PLAN_STORAGE_KEY = 'promptForgeUserPlan';
+const MOCK_USER_SESSION_KEY = 'promptForgeMockUserSession';
+
 
 export default function AuthForm() {
   const { toast } = useToast();
@@ -40,37 +42,45 @@ export default function AuthForm() {
 
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user: FirebaseUser | null) => {
-      if (user) {
-        router.push('/dashboard');
-      } else {
-        setIsCheckingAuth(false);
-      }
-    });
-    return () => unsubscribe();
+    // Simulate checking auth status
+    const mockSession = localStorage.getItem(MOCK_USER_SESSION_KEY);
+    if (mockSession) {
+      router.push('/dashboard');
+    } else {
+      setIsCheckingAuth(false);
+    }
   }, [router]);
 
   const handleLoginSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+    // Mock login
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (loginEmail === "user@example.com" && loginPassword === "password") { // Example mock credentials
+      localStorage.setItem(MOCK_USER_SESSION_KEY, JSON.stringify({ email: loginEmail, uid: `mock_uid_${Date.now()}` }));
+      localStorage.setItem(USER_PLAN_STORAGE_KEY, PREMIUM_CREATOR_NAME); 
+      localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
       toast({
         title: "Login Successful",
         description: "You are now logged in. Redirecting...",
       });
-      localStorage.setItem('promptForgeUserPlan', PREMIUM_CREATOR_NAME); 
-      localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
-      // router.push('/dashboard'); // onAuthStateChanged will handle redirect
-    } catch (error: any) {
+      router.push('/dashboard');
+    } else if (loginEmail === "free@example.com" && loginPassword === "password") { // Example mock free user
+      localStorage.setItem(MOCK_USER_SESSION_KEY, JSON.stringify({ email: loginEmail, uid: `mock_uid_free_${Date.now()}` }));
+      localStorage.removeItem(USER_PLAN_STORAGE_KEY); // Ensure free plan
+      toast({
+        title: "Login Successful (Free Tier)",
+        description: "You are now logged in. Redirecting...",
+      });
+      router.push('/dashboard');
+    } else {
       toast({
         title: "Login Failed",
-        description: error.message || "An unknown error occurred.",
+        description: "Invalid mock credentials. Try user@example.com / password or free@example.com / password",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   };
 
   const handleSignUpSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -84,31 +94,23 @@ export default function AuthForm() {
       return;
     }
     setIsLoading(true);
-    const response = await signUpServerAction(signupEmail, signupPassword);
+    const response = await signUpServerAction(signupEmail, signupPassword); // Still uses server action
     if (response.success) {
       toast({
         title: "Sign Up Successful",
         description: response.message || "Account created. Please sign in.",
       });
-      // Optionally sign in the user automatically or redirect to login
-      // For simplicity, redirect to login to use the client-side sign-in flow
-      // This also naturally handles if email verification is implemented later
-       // Attempt to sign in the user after successful sign up
-      try {
-        await signInWithEmailAndPassword(auth, signupEmail, signupPassword);
-        localStorage.setItem('promptForgeUserPlan', PREMIUM_CREATOR_NAME);
-        localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
-        // router.push('/dashboard'); // onAuthStateChanged will handle redirect
-      } catch (signInError: any) {
-         toast({
-          title: "Auto Sign-In Failed",
-          description: "Please sign in manually.",
-          variant: "default",
-        });
-        // Redirect to login tab
-        const loginTabTrigger = document.querySelector('button[data-radix-collection-item][value="login"]') as HTMLButtonElement | null;
-        loginTabTrigger?.click();
-      }
+      // Mock successful sign up means user can now log in with these (mocked) credentials
+      // For this example, we'll assume new sign ups are on the free plan by default.
+      // And then they can log in.
+      localStorage.removeItem(USER_PLAN_STORAGE_KEY); 
+
+      // Redirect to login tab
+      const loginTabTrigger = document.querySelector('button[data-radix-collection-item][value="login"]') as HTMLButtonElement | null;
+      loginTabTrigger?.click();
+      setLoginEmail(signupEmail); // Pre-fill login email
+      setLoginPassword(''); // Clear password field for login
+      
     } else {
       toast({
         title: "Sign Up Failed",

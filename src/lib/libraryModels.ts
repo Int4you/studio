@@ -1,5 +1,6 @@
 import type { AnalyzeMarketOutput } from "@/ai/flows/analyze-market-flow";
 import type { GeneratePricingStrategyOutput } from "@/ai/flows/generate-pricing-strategy-flow";
+// No longer importing mockup types as the feature was removed
 
 export interface CoreFeatureData {
   feature: string;
@@ -29,9 +30,10 @@ export interface SavedProject {
   uiUxGuidelines: UiUxGuidelineData[];
   marketAnalysis?: AnalyzeMarketOutput; 
   prioritizedFeatures?: PrioritizedFeatureData[];
-  pricingStrategy?: GeneratePricingStrategyOutput; // Added
+  pricingStrategy?: GeneratePricingStrategyOutput;
   textToAppPrompt?: string;
-  // mockupImageUrls and referenceImageDataUri removed
   savedAt: string; // ISO date string
   originalPrompt?: string; 
+  // Fields related to user (e.g., userId) would be added here if using a backend database
+  // For pure localStorage, projects are not directly tied to a specific user beyond browser session
 }

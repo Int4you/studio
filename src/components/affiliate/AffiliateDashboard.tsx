@@ -6,14 +6,14 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-// import { Label } from '@/components/ui/label'; // Not used
 import { Copy, BarChart2, Users, MousePointerClick, DollarSign, ExternalLink, Loader2, ShieldAlert, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { auth } from '@/lib/firebase/firebase'; // Firebase client SDK
-import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
+// Firebase related imports are removed
 
 const AFFILIATE_DETAILS_KEY = 'promptForgeAffiliateDetails';
+const MOCK_USER_SESSION_KEY = 'promptForgeMockUserSession'; // For checking mock auth state
+
 
 interface StoredAffiliateDetails {
   id: string;
@@ -22,7 +22,7 @@ interface StoredAffiliateDetails {
   website: string;
   promotionMethod: string;
   registeredAt: string;
-  firebaseUserId?: string; // Optional: to link with Firebase User
+  // firebaseUserId?: string; // No longer strictly Firebase-linked, can be a generic userId or removed
 }
 
 interface AffiliateStats {
@@ -66,75 +66,80 @@ export default function AffiliateDashboard() {
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [referralLink, setReferralLink] = useState('');
   const [stats, setStats] = useState<AffiliateStats | null>(null);
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  // No longer FirebaseUser, can be simple session check
+  // const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
 
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        router.push('/login');
-        setIsLoading(false);
-        return;
-      }
-      setFirebaseUser(user);
+    // Check for mock session first
+    const mockSessionData = localStorage.getItem(MOCK_USER_SESSION_KEY);
+    if (!mockSessionData) {
+      router.push('/login');
+      setIsLoading(false);
+      return;
+    }
 
-      const detailsString = localStorage.getItem(AFFILIATE_DETAILS_KEY);
-      if (detailsString) {
-        const parsedDetails = JSON.parse(detailsString) as StoredAffiliateDetails;
-        // Ensure the affiliate details belong to the currently logged-in Firebase user
-        if (parsedDetails.firebaseUserId === user.uid || parsedDetails.email === user.email) {
-            setAffiliateDetails(parsedDetails);
-            setReferralLink(`https://promptforge.example.com/?ref=${parsedDetails.id}`);
-            setIsLoading(false); 
+    let mockUser: { email: string; uid: string } | null = null;
+    try {
+      mockUser = JSON.parse(mockSessionData);
+    } catch (e) {
+      router.push('/login'); // Invalid session
+      setIsLoading(false);
+      return;
+    }
 
-            setIsStatsLoading(true);
-            setTimeout(() => { 
-              const statsStorageKey = `promptForgeAffiliateStats_${parsedDetails.id}`;
-              let loadedStats: AffiliateStats | null = null;
-              const storedStatsString = localStorage.getItem(statsStorageKey);
+    const detailsString = localStorage.getItem(AFFILIATE_DETAILS_KEY);
+    if (detailsString) {
+      const parsedDetails = JSON.parse(detailsString) as StoredAffiliateDetails;
+      // Ensure the affiliate details belong to the currently "logged-in" mock user
+      if (mockUser && parsedDetails.email === mockUser.email) {
+          setAffiliateDetails(parsedDetails);
+          setReferralLink(`https://promptforge.example.com/?ref=${parsedDetails.id}`);
+          setIsLoading(false); 
 
-              if (storedStatsString) {
-                try {
-                  loadedStats = JSON.parse(storedStatsString);
-                } catch (e) {
-                  console.error("Failed to parse stored affiliate stats:", e);
-                  localStorage.removeItem(statsStorageKey);
-                }
+          setIsStatsLoading(true);
+          setTimeout(() => { 
+            const statsStorageKey = `promptForgeAffiliateStats_${parsedDetails.id}`;
+            let loadedStats: AffiliateStats | null = null;
+            const storedStatsString = localStorage.getItem(statsStorageKey);
+
+            if (storedStatsString) {
+              try {
+                loadedStats = JSON.parse(storedStatsString);
+              } catch (e) {
+                console.error("Failed to parse stored affiliate stats:", e);
+                localStorage.removeItem(statsStorageKey);
               }
+            }
 
-              if (loadedStats) {
-                setStats(loadedStats);
-              } else {
-                // Use a more deterministic seed for random generation if possible
-                const seed = parsedDetails.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                const baseClicks = (seed % 500) + 100 + Math.floor(Math.random() * 200) ; // e.g. 100-800 clicks
-                const baseSignups = Math.floor(baseClicks * ( ( (seed % 30) / 1000) + 0.015) ); // ~1.5-4.5% conversion
+            if (loadedStats) {
+              setStats(loadedStats);
+            } else {
+              const seed = parsedDetails.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+              const baseClicks = (seed % 500) + 100 + Math.floor(Math.random() * 200) ; 
+              const baseSignups = Math.floor(baseClicks * ( ( (seed % 30) / 1000) + 0.015) ); 
 
-                const newStatsData: AffiliateStats = {
-                  clicks: baseClicks + Math.floor(Math.random() * (baseClicks * 0.2)), // Add some variance
-                  signups: baseSignups + Math.floor(Math.random() * (baseSignups * 0.15)),
-                  conversionRate: '', 
-                  earningsMonth: `$${( (baseSignups + Math.floor(Math.random() * (baseSignups * 0.15))) * (( (seed % 5) /10) + 0.3) * 4.99 * 0.2).toFixed(2)}`, // Commission rate: 20%, price: $4.99
-                  earningsTotal: `$${( (baseSignups + Math.floor(Math.random() * (baseSignups * 0.15))) * (( (seed % 15)/10) + 0.8) * 4.99 * 0.2 + (seed % 100)).toFixed(2)}`,
-                };
-                newStatsData.conversionRate = newStatsData.clicks > 0 ? ((newStatsData.signups / newStatsData.clicks) * 100).toFixed(2) + '%' : '0.00%';
-                setStats(newStatsData);
-                localStorage.setItem(statsStorageKey, JSON.stringify(newStatsData));
-              }
-              setIsStatsLoading(false);
-            }, 700);
-        } else {
-            // Affiliate details in localStorage don't match current Firebase user
-            router.push('/affiliate/register'); // Or '/affiliate' if they need to re-evaluate
-            setIsLoading(false);
-        }
+              const newStatsData: AffiliateStats = {
+                clicks: baseClicks + Math.floor(Math.random() * (baseClicks * 0.2)),
+                signups: baseSignups + Math.floor(Math.random() * (baseSignups * 0.15)),
+                conversionRate: '', 
+                earningsMonth: `$${( (baseSignups + Math.floor(Math.random() * (baseSignups * 0.15))) * (( (seed % 5) /10) + 0.3) * 4.99 * 0.2).toFixed(2)}`,
+                earningsTotal: `$${( (baseSignups + Math.floor(Math.random() * (baseSignups * 0.15))) * (( (seed % 15)/10) + 0.8) * 4.99 * 0.2 + (seed % 100)).toFixed(2)}`,
+              };
+              newStatsData.conversionRate = newStatsData.clicks > 0 ? ((newStatsData.signups / newStatsData.clicks) * 100).toFixed(2) + '%' : '0.00%';
+              setStats(newStatsData);
+              localStorage.setItem(statsStorageKey, JSON.stringify(newStatsData));
+            }
+            setIsStatsLoading(false);
+          }, 700);
       } else {
-        // No affiliate details found for this user
-        router.push('/affiliate/register'); 
-        setIsLoading(false);
+          router.push('/affiliate/register');
+          setIsLoading(false);
       }
-    });
-    return () => unsubscribe();
+    } else {
+      router.push('/affiliate/register'); 
+      setIsLoading(false);
+    }
   }, [router]);
 
   const handleCopyToClipboard = () => {
