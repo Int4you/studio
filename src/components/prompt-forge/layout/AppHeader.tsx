@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CardHeader, CardTitle } from '@/components/ui/card';
+import { CardHeader, CardTitle } from '@/components/ui/card'; // Corrected: Was AlertDialogHeader
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Cpu, Wand2, Library as LibraryIcon, Milestone, LogOut, Zap, Crown, CheckCircle2 } from 'lucide-react';
 import type { CurrentView } from '../AppViewWrapper';
-import { FREE_TIER_NAME, PREMIUM_CREATOR_NAME, freePlanUIDetails, premiumPlanUIDetails } from '@/config/plans';
+import { FREE_TIER_NAME, PREMIUM_CREATOR_NAME, freePlanUIDetails, premiumPlanUIDetails, MAX_FREE_CREDITS } from '@/config/plans';
 
 interface AppHeaderProps {
   currentView: CurrentView;
@@ -135,17 +135,26 @@ const AppHeader = React.memo(({
             </Button>
           </div>
         </div>
-         <div className="sm:hidden border-t">
+         <div className="sm:hidden border-t"> {/* Container for mobile tabs, appears at bottom of header */}
             <Tabs value={currentView} onValueChange={onTabChange} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 bg-transparent p-0 border-none rounded-none">
-                    <TabsTrigger value="app" className="data-[state=active]:bg-muted data-[state=active]:shadow-none data-[state=active]:text-primary rounded-none py-2 text-xs font-medium flex flex-col items-center justify-center gap-0.5 h-12">
-                    <Wand2 className="h-4 w-4 mb-0.5" /> App
+                <TabsList className="grid w-full grid-cols-3 bg-background p-0 border-none rounded-none"> {/* Use background, ensure borders are handled by parent or here */}
+                    <TabsTrigger 
+                        value="app" 
+                        className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-t-2 data-[state=active]:border-primary rounded-none py-2 text-xs font-medium flex flex-col items-center justify-center gap-0.5 h-12 focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0"
+                    >
+                        <Wand2 className="h-4 w-4 mb-0.5" /> App
                     </TabsTrigger>
-                    <TabsTrigger value="roadmap" className="data-[state=active]:bg-muted data-[state=active]:shadow-none data-[state=active]:text-primary rounded-none py-2 text-xs font-medium flex flex-col items-center justify-center gap-0.5 h-12">
-                    <Milestone className="h-4 w-4 mb-0.5" /> Roadmap
+                    <TabsTrigger 
+                        value="roadmap" 
+                        className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-t-2 data-[state=active]:border-primary rounded-none py-2 text-xs font-medium flex flex-col items-center justify-center gap-0.5 h-12 focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0"
+                    >
+                        <Milestone className="h-4 w-4 mb-0.5" /> Roadmap
                     </TabsTrigger>
-                    <TabsTrigger value="library" className="data-[state=active]:bg-muted data-[state=active]:shadow-none data-[state=active]:text-primary rounded-none py-2 text-xs font-medium flex flex-col items-center justify-center gap-0.5 h-12">
-                    <LibraryIcon className="h-4 w-4 mb-0.5" /> Library ({savedProjectsCount})
+                    <TabsTrigger 
+                        value="library" 
+                        className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-t-2 data-[state=active]:border-primary rounded-none py-2 text-xs font-medium flex flex-col items-center justify-center gap-0.5 h-12 focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0"
+                    >
+                        <LibraryIcon className="h-4 w-4 mb-0.5" /> Library ({savedProjectsCount})
                     </TabsTrigger>
                 </TabsList>
             </Tabs>
@@ -156,6 +165,5 @@ const AppHeader = React.memo(({
 });
 
 AppHeader.displayName = 'AppHeader';
-export { AppHeader };
 export default AppHeader;
 
