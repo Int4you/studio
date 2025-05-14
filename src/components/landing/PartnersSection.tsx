@@ -5,12 +5,12 @@ import React from 'react';
 import Image from 'next/image';
 
 const partners = [
-  { name: "Innovatech", logoUrl: "https://placehold.co/150x50.png", hint: "logo company" },
-  { name: "SolutionCorp", logoUrl: "https://placehold.co/160x50.png", hint: "logo business" },
-  { name: "SynergyHub", logoUrl: "https://placehold.co/140x50.png", hint: "logo tech" },
-  { name: "ApexSolutions", logoUrl: "https://placehold.co/155x50.png", hint: "logo startup" },
-  { name: "FutureWorks", logoUrl: "https://placehold.co/145x50.png", hint: "logo innovation" },
-  { name: "QuantumLeap", logoUrl: "https://placehold.co/150x45.png", hint: "logo digital" },
+  { name: "Innovatech", logoUrl: "https://images.unsplash.com/photo-1530018352490-c6eef07fd7e0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxsb2dvJTIwY29tcGFueXxlbnwwfHx8fDE3NDcyNDM5Nzh8MA&ixlib=rb-4.1.0&q=80&w=1080" },
+  { name: "SolutionCorp", logoUrl: "https://images.unsplash.com/photo-1493421419110-74f4e85ba126?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxsb2dvJTIwYnVzaW5lc3N8ZW58MHx8fHwxNzQ3MjQzOTc4fDA&ixlib=rb-4.1.0&q=80&w=1080" },
+  { name: "SynergyHub", logoUrl: "https://images.unsplash.com/photo-1532455140376-0b97d1a2ee15?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bG9nbyUyMHRlY2h8ZW58MHx8fHwxNzQ3MjQzOTc4fDA&ixlib=rb-4.1.0&q=80&w=1080" },
+  { name: "ApexSolutions", logoUrl: "https://images.unsplash.com/photo-1551263640-1c007852f616?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bG9nbyUyMHN0YXJ0dXB8ZW58MHx8fHwxNzQ3MjQzOTc4fDA&ixlib=rb-4.1.0&q=80&w=1080" },
+  { name: "FutureWorks", logoUrl: "https://images.unsplash.com/photo-1684560207594-a68e6b2f6ff1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxsb2dvJTIwaW5ub3ZhdGlvbnxlbnwwfHx8fDE3NDcyNDM5Nzh8MA&ixlib=rb-4.1.0&q=80&w=1080" },
+  { name: "QuantumLeap", logoUrl: "https://images.unsplash.com/photo-1569605803663-e9337d901ff9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxsb2dvJTIwZGlnaXRhbHxlbnwwfHx8fDE3NDcyNDM5Nzh8MA&ixlib=rb-4.1.0&q=80&w=1080" },
 ];
 
 const PartnersSection = React.memo(() => {
@@ -33,8 +33,7 @@ const PartnersSection = React.memo(() => {
                 alt={`${partner.name} logo`}
                 width={150}
                 height={50}
-                className="object-contain h-10 md:h-12" // Adjusted height for better visual balance
-                data-ai-hint={partner.hint}
+                className="object-contain h-10 md:h-12"
               />
             </div>
           ))}
