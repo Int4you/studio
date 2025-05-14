@@ -19,12 +19,31 @@ import { LogIn, UserPlus, KeyRound, Mail as MailIcon, User, CheckCircle, Loader2
 import { useState, type FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PREMIUM_CREATOR_NAME } from '@/config/plans';
-// Firebase related imports are removed
-import { signUpWithEmail as signUpServerAction } from '@/app/actions/auth'; // Server action for sign up
+import { signUpWithEmail as signUpServerAction } from '@/app/actions/auth';
 
 const FREE_CREDITS_STORAGE_KEY = 'promptForgeFreeCreditsUsed';
 const USER_PLAN_STORAGE_KEY = 'promptForgeUserPlan';
 const MOCK_USER_SESSION_KEY = 'promptForgeMockUserSession';
+const MOCK_REGISTERED_USERS_KEY = 'promptForgeMockRegisteredUsers';
+
+interface MockRegisteredUser {
+  email: string;
+  passwordHash: string; // Store a "hash" or just the password for mock purposes
+}
+
+// Simple "hashing" for mock purposes - in a real app, never store passwords like this.
+const mockHashPassword = async (password: string): Promise<string> => {
+  // In a real app, use bcrypt or Argon2. For mock, just returning the password.
+  // Or a very simple transformation if you want to avoid storing plain text even in mock.
+  // For this example, to keep it simple and allow easy checking, we'll just use it as is.
+  // A slightly better mock would be: `return 'hashed_' + password;`
+  return password;
+};
+
+const mockVerifyPassword = async (submittedPassword: string, storedHash: string): Promise<boolean> => {
+  // Correspondingly simple verification
+  return submittedPassword === storedHash;
+};
 
 
 export default function AuthForm() {
@@ -42,7 +61,6 @@ export default function AuthForm() {
 
 
   useEffect(() => {
-    // Simulate checking auth status
     const mockSession = localStorage.getItem(MOCK_USER_SESSION_KEY);
     if (mockSession) {
       router.push('/dashboard');
@@ -54,9 +72,36 @@ export default function AuthForm() {
   const handleLoginSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
-    // Mock login
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    if (loginEmail === "user@example.com" && loginPassword === "password") { // Example mock credentials
+
+    // 1. Check registered mock users from localStorage
+    const storedRegisteredUsers = localStorage.getItem(MOCK_REGISTERED_USERS_KEY);
+    if (storedRegisteredUsers) {
+      try {
+        const registeredUsers: MockRegisteredUser[] = JSON.parse(storedRegisteredUsers);
+        const foundUser = registeredUsers.find(user => user.email === loginEmail);
+        
+        if (foundUser) {
+          const passwordMatches = await mockVerifyPassword(loginPassword, foundUser.passwordHash);
+          if (passwordMatches) {
+            localStorage.setItem(MOCK_USER_SESSION_KEY, JSON.stringify({ email: loginEmail, uid: `mock_uid_registered_${Date.now()}` }));
+            localStorage.removeItem(USER_PLAN_STORAGE_KEY); // New signups are free tier by default
+            localStorage.removeItem(FREE_CREDITS_STORAGE_KEY); // Reset credits for new login
+            toast({
+              title: "Login Successful",
+              description: "Welcome back! Redirecting...",
+            });
+            router.push('/dashboard');
+            setIsLoading(false);
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("Error reading mock registered users:", e);
+      }
+    }
+
+    // 2. Fallback to hardcoded admin/free users
+    if (loginEmail === "user@example.com" && loginPassword === "password") {
       localStorage.setItem(MOCK_USER_SESSION_KEY, JSON.stringify({ email: loginEmail, uid: `mock_uid_${Date.now()}` }));
       localStorage.setItem(USER_PLAN_STORAGE_KEY, PREMIUM_CREATOR_NAME); 
       localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
@@ -65,9 +110,10 @@ export default function AuthForm() {
         description: "You are now logged in. Redirecting...",
       });
       router.push('/dashboard');
-    } else if (loginEmail === "free@example.com" && loginPassword === "password") { // Example mock free user
+    } else if (loginEmail === "free@example.com" && loginPassword === "password") {
       localStorage.setItem(MOCK_USER_SESSION_KEY, JSON.stringify({ email: loginEmail, uid: `mock_uid_free_${Date.now()}` }));
-      localStorage.removeItem(USER_PLAN_STORAGE_KEY); // Ensure free plan
+      localStorage.removeItem(USER_PLAN_STORAGE_KEY); 
+      localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
       toast({
         title: "Login Successful (Free Tier)",
         description: "You are now logged in. Redirecting...",
@@ -76,7 +122,7 @@ export default function AuthForm() {
     } else {
       toast({
         title: "Login Failed",
-        description: "Invalid mock credentials. Try user@example.com / password or free@example.com / password",
+        description: "Invalid credentials. Please try again or sign up.",
         variant: "destructive",
       });
     }
@@ -94,22 +140,38 @@ export default function AuthForm() {
       return;
     }
     setIsLoading(true);
-    const response = await signUpServerAction(signupEmail, signupPassword); // Still uses server action
+    const response = await signUpServerAction(signupEmail, signupPassword); 
     if (response.success) {
+      // Store mock user in localStorage
+      try {
+        const existingUsersString = localStorage.getItem(MOCK_REGISTERED_USERS_KEY);
+        let users: MockRegisteredUser[] = existingUsersString ? JSON.parse(existingUsersString) : [];
+        
+        const userExists = users.some(user => user.email === signupEmail);
+        if (!userExists) {
+          const hashedPassword = await mockHashPassword(signupPassword); // Use the simple mock hash
+          users.push({ email: signupEmail, passwordHash: hashedPassword });
+          localStorage.setItem(MOCK_REGISTERED_USERS_KEY, JSON.stringify(users));
+        }
+      } catch (e) {
+        console.error("Error saving mock user to localStorage:", e);
+      }
+
       toast({
         title: "Sign Up Successful",
         description: response.message || "Account created. Please sign in.",
       });
-      // Mock successful sign up means user can now log in with these (mocked) credentials
-      // For this example, we'll assume new sign ups are on the free plan by default.
-      // And then they can log in.
-      localStorage.removeItem(USER_PLAN_STORAGE_KEY); 
-
+      
       // Redirect to login tab
       const loginTabTrigger = document.querySelector('button[data-radix-collection-item][value="login"]') as HTMLButtonElement | null;
       loginTabTrigger?.click();
-      setLoginEmail(signupEmail); // Pre-fill login email
-      setLoginPassword(''); // Clear password field for login
+      setLoginEmail(signupEmail); 
+      setLoginPassword(''); 
+      // Clear signup form
+      setSignupName('');
+      setSignupEmail('');
+      setSignupPassword('');
+      setSignupConfirmPassword('');
       
     } else {
       toast({
@@ -160,6 +222,7 @@ export default function AuthForm() {
                   type="email" 
                   placeholder="m@example.com" 
                   required 
+                  autoComplete="email"
                   className="rounded-md shadow-sm text-base"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)} 
@@ -173,7 +236,7 @@ export default function AuthForm() {
                     <Link
                         href="#"
                         className="ml-auto inline-block text-xs underline text-muted-foreground hover:text-primary transition-colors"
-                        onClick={(e) => { e.preventDefault(); toast({ title: "Forgot Password", description: "Password reset is not yet implemented."}) }}
+                        onClick={(e) => { e.preventDefault(); toast({ title: "Forgot Password", description: "Password reset is not yet implemented for this mock."}) }}
                     >
                         Forgot your password?
                     </Link>
@@ -182,6 +245,7 @@ export default function AuthForm() {
                   id="login-password" 
                   type="password" 
                   required 
+                  autoComplete="current-password"
                   className="rounded-md shadow-sm text-base"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
@@ -194,7 +258,7 @@ export default function AuthForm() {
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
               <p className="text-xs text-center text-muted-foreground">
-                Or login with
+                Or login with (mock examples)
               </p>
               <div className="grid grid-cols-2 gap-3">
                   <Button variant="outline" className="w-full rounded-md shadow-sm hover:shadow transition-shadow text-sm" onClick={() => toast({ title: "Social Login", description: "Google login not implemented."})} type="button" disabled={isLoading}>
@@ -224,6 +288,7 @@ export default function AuthForm() {
                 <Input 
                   id="signup-name" 
                   placeholder="Your Name" 
+                  autoComplete="name"
                   className="rounded-md shadow-sm text-base"
                   value={signupName}
                   onChange={(e) => setSignupName(e.target.value)}
@@ -238,6 +303,7 @@ export default function AuthForm() {
                   type="email" 
                   placeholder="m@example.com" 
                   required 
+                  autoComplete="email"
                   className="rounded-md shadow-sm text-base"
                   value={signupEmail}
                   onChange={(e) => setSignupEmail(e.target.value)}
@@ -251,6 +317,7 @@ export default function AuthForm() {
                   id="signup-password" 
                   type="password" 
                   required 
+                  autoComplete="new-password"
                   className="rounded-md shadow-sm text-base"
                   value={signupPassword}
                   onChange={(e) => setSignupPassword(e.target.value)}
@@ -264,6 +331,7 @@ export default function AuthForm() {
                   id="signup-confirm-password" 
                   type="password" 
                   required 
+                  autoComplete="new-password"
                   className="rounded-md shadow-sm text-base"
                   value={signupConfirmPassword}
                   onChange={(e) => setSignupConfirmPassword(e.target.value)}
@@ -285,3 +353,5 @@ export default function AuthForm() {
     </Card>
   );
 }
+
+    
