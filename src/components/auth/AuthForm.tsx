@@ -257,7 +257,6 @@ export default function AuthForm() {
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
-              {/* Social login buttons removed */}
             </CardFooter>
           </form>
         </TabsContent>
@@ -310,6 +309,7 @@ export default function AuthForm() {
                   value={signupPassword}
                   onChange={(e) => setSignupPassword(e.target.value)}
                 />
+                <p className="text-xs text-muted-foreground">Password must be at least 6 characters long.</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="signup-confirm-password" className="flex items-center text-xs font-medium text-muted-foreground">
