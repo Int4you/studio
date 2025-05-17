@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -26,9 +27,9 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent className="max-w-xl rounded-xl border border-border bg-card text-card-foreground shadow-2xl p-4">
-        <AlertDialogHeader className="items-center text-center pb-4">
-          <div className="p-3 rounded-full bg-primary/10 border border-primary/20 shadow-md mb-2">
+      <AlertDialogContent className="max-w-xl rounded-xl border border-border bg-card text-card-foreground shadow-2xl p-0">
+        <AlertDialogHeader className="items-center text-center pt-6 pb-4 px-6 border-b border-border/20 bg-muted/30 dark:bg-muted/10">
+          <div className="p-3 rounded-full bg-primary/10 border border-primary/20 shadow-md mb-2 w-16 h-16 flex items-center justify-center">
             <Crown className="h-8 w-8 text-primary" />
           </div>
           <AlertDialogTitle className="text-2xl font-bold text-foreground">
@@ -40,7 +41,7 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
           </AlertDialogDescription>
         </AlertDialogHeader>
         
-        <div className="py-3">
+        <div className="py-6 px-6">
             <div className="flex flex-col md:flex-row gap-4 items-stretch">
                 {/* Free Tier Card */}
                 <div className="flex-1 p-4 bg-muted/20 dark:bg-muted/10 rounded-lg border border-border/30 shadow-sm flex flex-col">
@@ -80,7 +81,7 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
             </div>
         </div>
 
-        <AlertDialogFooter className="flex-col sm:flex-row sm:justify-center gap-2 pt-3">
+        <AlertDialogFooter className="flex-col sm:flex-row sm:justify-center gap-2 py-4 px-6 border-t border-border/20 bg-muted/30 dark:bg-muted/10">
           <AlertDialogCancel asChild>
             <Button variant="outline" onClick={onClose} className="rounded-md text-xs shadow-sm hover:shadow w-full sm:w-auto py-2 px-4 h-9">
               Maybe Later
@@ -89,10 +90,12 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
           <AlertDialogAction asChild>
             <Button 
               onClick={onClose} 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md text-xs shadow-md hover:shadow-lg transition-shadow w-full sm:w-auto py-2 px-4 h-9"
+              variant="default"
+              size="sm"
+              className="w-full sm:w-auto py-2 px-4 h-9"
             >
               <Link href="/pricing" className="flex items-center justify-center w-full">
-                Upgrade to {PREMIUM_CREATOR_NAME} ({premiumPlanUIDetails.price}{premiumPlanUIDetails.frequency})
+                Upgrade to Premium
                 <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
               </Link>
             </Button>
@@ -102,3 +105,4 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
     </AlertDialog>
   );
 }
+

@@ -6,13 +6,19 @@ import AppView from '@/components/prompt-forge/AppView';
 import type { SavedProject } from '@/lib/libraryModels';
 import { getProjectsFromLibrary, saveProjectToLibrary as saveProjectToLibraryService, deleteProjectFromLibrary as deleteProjectFromLibraryService, getProjectById as getProjectByIdService } from '@/lib/libraryService';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Award, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AppHeader } from '@/components/prompt-forge/layout'; 
 import RoadmapView from './RoadmapView';
 import LibraryView from './LibraryView';
-import { FREE_TIER_NAME, PREMIUM_CREATOR_NAME, MAX_FREE_CREDITS } from '@/config/plans';
-// Firebase related imports are removed
+import { FREE_TIER_NAME, PREMIUM_CREATOR_NAME, MAX_FREE_CREDITS, freePlanUIDetails, premiumPlanUIDetails } from '@/config/plans';
+import { Button } from '@/components/ui/button'; // Added
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'; // Added
+import { CardHeader, CardTitle } from '@/components/ui/card'; // Added
+import { Zap, Crown, CheckCircle2 } from 'lucide-react'; // Added
+import { Badge } from '@/components/ui/badge'; // Added
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Added
+import Link from 'next/link'; // Added
 
 export type CurrentView = 'app' | 'roadmap' | 'library';
 const FREE_CREDITS_STORAGE_KEY = 'promptForgeFreeCreditsUsed';
@@ -27,7 +33,6 @@ export default function AppViewWrapper() {
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [currentView, setCurrentView] = useState<CurrentView>('app');
   const [authStatus, setAuthStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
-  // currentUser state is no longer FirebaseUser, can be a simple object or null
   const [currentUser, setCurrentUser] = useState<{ email: string; uid: string } | null>(null); 
   const [currentUserPlan, setCurrentUserPlan] = useState<string>(FREE_TIER_NAME); 
   const [creditsUsed, setCreditsUsed] = useState<number>(0);
@@ -35,7 +40,6 @@ export default function AppViewWrapper() {
   const [projectToLoadInApp, setProjectToLoadInApp] = useState<SavedProject | null>(null);
 
   useEffect(() => {
-    // Simulate checking auth status (e.g., from localStorage)
     const mockSession = localStorage.getItem(MOCK_USER_SESSION_KEY);
     if (mockSession) {
       try {
@@ -55,7 +59,6 @@ export default function AppViewWrapper() {
             setCreditsUsed(storedCredits);
         }
       } catch (e) {
-        // Invalid session data, treat as unauthenticated
         localStorage.removeItem(MOCK_USER_SESSION_KEY);
         setAuthStatus('unauthenticated');
         router.push('/login');
@@ -75,14 +78,13 @@ export default function AppViewWrapper() {
   };
 
   const handleLogout = async () => {
-    // Mock logout
     localStorage.removeItem(MOCK_USER_SESSION_KEY);
     localStorage.removeItem(USER_PLAN_STORAGE_KEY);
     localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
     setCurrentUser(null);
     setAuthStatus('unauthenticated');
     toast({ title: "Logged Out", description: "You have been successfully logged out." });
-    router.push('/login'); // Redirect to login after "logging out"
+    router.push('/login'); 
   };
 
   const loadProjectFromLibrary = (projectId: string) => {
@@ -168,8 +170,10 @@ export default function AppViewWrapper() {
      );
   }
   
+  const isPremium = currentUserPlan === PREMIUM_CREATOR_NAME;
+  
   return (
-    <>
+    <TooltipProvider>
       <AppHeader
         currentView={currentView}
         onTabChange={handleTabChange}
@@ -209,6 +213,7 @@ export default function AppViewWrapper() {
           />
         )}
       </main>
-    </>
+    </TooltipProvider>
   );
 }
+
