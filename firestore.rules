@@ -1,0 +1,50 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users can manage their own profile data (e.g., plan, credits if stored here)
+    match /users/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // Users can read, write, update, and delete their own projects
+    match /users/{userId}/projects/{projectId} {
+      allow read, create, update, delete: if request.auth.uid == userId;
+
+      // Optional: Add data validation for project documents
+      // allow write: if request.auth.uid == userId &&
+      //                 request.resource.data.appName is string &&
+      //                 request.resource.data.appName.size() > 0 &&
+      //                 request.resource.data.appName.size() < 100 &&
+      //                 request.resource.data.ideaTitle is string &&
+      //                 request.resource.data.ideaTitle.size() > 0 &&
+      //                 request.resource.data.coreFeatures is list &&
+      //                 (request.resource.data.originalPrompt is string || request.resource.data.originalPrompt == null) &&
+      //                 request.resource.data.savedAt is timestamp; // Ensure savedAt is a timestamp
+
+      // Example for coreFeatures list items (could be more granular)
+      // function isValidCoreFeature(feature) {
+      //   return feature.feature is string && feature.feature.size() > 0 &&
+      //          feature.description is string && feature.description.size() > 0;
+      // }
+      // allow write: if request.auth.uid == userId &&
+      //                 request.resource.data.coreFeatures.size() == 0 ||
+      //                 request.resource.data.coreFeatures.all(f -> isValidCoreFeature(f));
+
+    }
+
+    // Affiliate data - rules depend on how you structure this.
+    // Example: if affiliates are stored in a top-level collection
+    // match /affiliates/{affiliateId} {
+    //   allow read: if request.auth != null; // Anyone logged in can see general affiliate info?
+    //   allow write: if request.auth.uid == affiliateId; // Affiliate can manage their own details
+    // }
+
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

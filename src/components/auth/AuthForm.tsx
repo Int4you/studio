@@ -18,32 +18,18 @@ import Link from "next/link";
 import { LogIn, UserPlus, KeyRound, Mail as MailIcon, User, CheckCircle, Loader2 } from "lucide-react";
 import { useState, type FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { PREMIUM_CREATOR_NAME } from '@/config/plans';
 import { signUpWithEmail as signUpServerAction } from '@/app/actions/auth';
+import { auth } from '@/lib/firebase/firebase'; // Import Firebase auth
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  type User as FirebaseUser
+} from "firebase/auth";
+import { PREMIUM_CREATOR_NAME } from '@/config/plans';
 
-const FREE_CREDITS_STORAGE_KEY = 'promptForgeFreeCreditsUsed';
 const USER_PLAN_STORAGE_KEY = 'promptForgeUserPlan';
-const MOCK_USER_SESSION_KEY = 'promptForgeMockUserSession';
-const MOCK_REGISTERED_USERS_KEY = 'promptForgeMockRegisteredUsers';
-
-interface MockRegisteredUser {
-  email: string;
-  passwordHash: string; // Store a "hash" or just the password for mock purposes
-}
-
-// Simple "hashing" for mock purposes - in a real app, never store passwords like this.
-const mockHashPassword = async (password: string): Promise<string> => {
-  // In a real app, use bcrypt or Argon2. For mock, just returning the password.
-  // Or a very simple transformation if you want to avoid storing plain text even in mock.
-  // For this example, to keep it simple and allow easy checking, we'll just use it as is.
-  // A slightly better mock would be: `return 'hashed_' + password;`
-  return password;
-};
-
-const mockVerifyPassword = async (submittedPassword: string, storedHash: string): Promise<boolean> => {
-  // Correspondingly simple verification
-  return submittedPassword === storedHash;
-};
+const FREE_CREDITS_STORAGE_KEY = 'promptForgeFreeCreditsUsed';
 
 
 export default function AuthForm() {
@@ -54,75 +40,65 @@ export default function AuthForm() {
   
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  const [signupName, setSignupName] = useState('');
+  const [signupName, setSignupName] = useState(''); // Retained for potential future use
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
 
 
   useEffect(() => {
-    const mockSession = localStorage.getItem(MOCK_USER_SESSION_KEY);
-    if (mockSession) {
-      router.push('/dashboard');
-    } else {
+    if (!auth) {
+      console.error("Firebase auth is not initialized in AuthForm.");
       setIsCheckingAuth(false);
+      return;
     }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        router.push('/dashboard');
+      } else {
+        setIsCheckingAuth(false);
+      }
+    });
+    return () => unsubscribe();
   }, [router]);
 
   const handleLoginSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
-
-    // 1. Check registered mock users from localStorage
-    const storedRegisteredUsers = localStorage.getItem(MOCK_REGISTERED_USERS_KEY);
-    if (storedRegisteredUsers) {
-      try {
-        const registeredUsers: MockRegisteredUser[] = JSON.parse(storedRegisteredUsers);
-        const foundUser = registeredUsers.find(user => user.email === loginEmail);
-        
-        if (foundUser) {
-          const passwordMatches = await mockVerifyPassword(loginPassword, foundUser.passwordHash);
-          if (passwordMatches) {
-            localStorage.setItem(MOCK_USER_SESSION_KEY, JSON.stringify({ email: loginEmail, uid: `mock_uid_registered_${Date.now()}` }));
-            localStorage.removeItem(USER_PLAN_STORAGE_KEY); // New signups are free tier by default
-            localStorage.removeItem(FREE_CREDITS_STORAGE_KEY); // Reset credits for new login
-            toast({
-              title: "Login Successful",
-              description: "Welcome back! Redirecting...",
-            });
-            router.push('/dashboard');
-            setIsLoading(false);
-            return;
-          }
-        }
-      } catch (e) {
-        console.error("Error reading mock registered users:", e);
-      }
+    if (!auth) {
+      toast({ title: "Authentication Error", description: "Auth service not ready.", variant: "destructive" });
+      setIsLoading(false);
+      return;
     }
 
-    // 2. Fallback to hardcoded admin/free users
-    if (loginEmail === "user@example.com" && loginPassword === "password") {
-      localStorage.setItem(MOCK_USER_SESSION_KEY, JSON.stringify({ email: loginEmail, uid: `mock_uid_${Date.now()}` }));
-      localStorage.setItem(USER_PLAN_STORAGE_KEY, PREMIUM_CREATOR_NAME); 
-      localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+      // Handle successful login
+      // You might want to differentiate between mock admin/free users and regular users if still needed
+      if (loginEmail === "user@example.com") { // Example: hardcoded premium user
+         localStorage.setItem(USER_PLAN_STORAGE_KEY, PREMIUM_CREATOR_NAME);
+         localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
+      } else { // Default to free tier for other users
+         localStorage.removeItem(USER_PLAN_STORAGE_KEY);
+         localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
+      }
+
       toast({
         title: "Login Successful",
-        description: "You are now logged in. Redirecting...",
+        description: "Welcome back! Redirecting...",
       });
       router.push('/dashboard');
-    } else if (loginEmail === "free@example.com" && loginPassword === "password") {
-      localStorage.setItem(MOCK_USER_SESSION_KEY, JSON.stringify({ email: loginEmail, uid: `mock_uid_free_${Date.now()}` }));
-      localStorage.removeItem(USER_PLAN_STORAGE_KEY); 
-      localStorage.removeItem(FREE_CREDITS_STORAGE_KEY);
-      toast({
-        title: "Login Successful (Free Tier)",
-        description: "You are now logged in. Redirecting...",
-      });
-      router.push('/dashboard');
-    } else {
+    } catch (error: any) {
+      let errorMessage = "Invalid credentials. Please try again or sign up.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        errorMessage = "Incorrect email or password.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "Please enter a valid email address.";
+      }
+      console.error("Firebase login error:", error);
       toast({
         title: "Login Failed",
-        description: "Invalid credentials. Please try again or sign up.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -132,47 +108,32 @@ export default function AuthForm() {
   const handleSignUpSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (signupPassword !== signupConfirmPassword) {
-      toast({
-        title: "Sign Up Failed",
-        description: "Passwords do not match.",
-        variant: "destructive",
-      });
+      toast({ title: "Sign Up Failed", description: "Passwords do not match.", variant: "destructive" });
+      return;
+    }
+    if (!auth) {
+      toast({ title: "Authentication Error", description: "Auth service not ready.", variant: "destructive" });
+      setIsLoading(false);
       return;
     }
     setIsLoading(true);
+    
+    // Use server action for actual user creation to keep admin privileges server-side
     const response = await signUpServerAction(signupEmail, signupPassword); 
+    
     if (response.success) {
-      // Store mock user in localStorage
-      try {
-        const existingUsersString = localStorage.getItem(MOCK_REGISTERED_USERS_KEY);
-        let users: MockRegisteredUser[] = existingUsersString ? JSON.parse(existingUsersString) : [];
-        
-        const userExists = users.some(user => user.email === signupEmail);
-        if (!userExists) {
-          const hashedPassword = await mockHashPassword(signupPassword); // Use the simple mock hash
-          users.push({ email: signupEmail, passwordHash: hashedPassword });
-          localStorage.setItem(MOCK_REGISTERED_USERS_KEY, JSON.stringify(users));
-        }
-      } catch (e) {
-        console.error("Error saving mock user to localStorage:", e);
-      }
-
       toast({
         title: "Sign Up Successful",
         description: response.message || "Account created. Please sign in.",
       });
-      
-      // Redirect to login tab
       const loginTabTrigger = document.querySelector('button[data-radix-collection-item][value="login"]') as HTMLButtonElement | null;
       loginTabTrigger?.click();
       setLoginEmail(signupEmail); 
       setLoginPassword(''); 
-      // Clear signup form
       setSignupName('');
       setSignupEmail('');
       setSignupPassword('');
       setSignupConfirmPassword('');
-      
     } else {
       toast({
         title: "Sign Up Failed",
@@ -234,9 +195,12 @@ export default function AuthForm() {
                         <KeyRound className="mr-1.5 h-3.5 w-3.5" /> Password
                     </Label>
                     <Link
-                        href="#"
+                        href="#" // Placeholder, implement password reset if needed
                         className="ml-auto inline-block text-xs underline text-muted-foreground hover:text-primary transition-colors"
-                        onClick={(e) => { e.preventDefault(); toast({ title: "Forgot Password", description: "Password reset is not yet implemented for this mock."}) }}
+                        onClick={(e) => { 
+                            e.preventDefault(); 
+                            toast({ title: "Forgot Password", description: "Password reset functionality is not yet implemented for Firebase auth."}) 
+                        }}
                     >
                         Forgot your password?
                     </Link>

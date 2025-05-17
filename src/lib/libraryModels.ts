@@ -1,6 +1,6 @@
+
 import type { AnalyzeMarketOutput } from "@/ai/flows/analyze-market-flow";
 import type { GeneratePricingStrategyOutput } from "@/ai/flows/generate-pricing-strategy-flow";
-// No longer importing mockup types as the feature was removed
 
 export interface CoreFeatureData {
   feature: string;
@@ -22,7 +22,8 @@ export interface PrioritizedFeatureData {
 }
 
 export interface SavedProject {
-  id: string;
+  id: string; // Document ID in Firestore
+  userId?: string; // UID of the Firebase authenticated user who owns this project
   appName: string;
   ideaTitle: string;
   ideaDescription: string;
@@ -32,8 +33,6 @@ export interface SavedProject {
   prioritizedFeatures?: PrioritizedFeatureData[];
   pricingStrategy?: GeneratePricingStrategyOutput;
   textToAppPrompt?: string;
-  savedAt: string; // ISO date string
+  savedAt: string; // ISO date string for client-side, Firestore Timestamp for storage
   originalPrompt?: string; 
-  // Fields related to user (e.g., userId) would be added here if using a backend database
-  // For pure localStorage, projects are not directly tied to a specific user beyond browser session
 }
