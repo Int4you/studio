@@ -12,13 +12,13 @@ import { AppHeader } from '@/components/prompt-forge/layout';
 import RoadmapView from './RoadmapView';
 import LibraryView from './LibraryView';
 import { FREE_TIER_NAME, PREMIUM_CREATOR_NAME, MAX_FREE_CREDITS, freePlanUIDetails, premiumPlanUIDetails } from '@/config/plans';
-import { Button } from '@/components/ui/button'; // Added
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'; // Added
-import { CardHeader, CardTitle } from '@/components/ui/card'; // Added
-import { Zap, Crown, CheckCircle2 } from 'lucide-react'; // Added
-import { Badge } from '@/components/ui/badge'; // Added
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Added
-import Link from 'next/link'; // Added
+import { Button } from '@/components/ui/button'; 
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'; 
+import { CardHeader, CardTitle } from '@/components/ui/card'; 
+import { Zap, Crown, CheckCircle2 } from 'lucide-react'; 
+import { Badge } from '@/components/ui/badge'; 
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; 
+import Link from 'next/link'; 
 
 export type CurrentView = 'app' | 'roadmap' | 'library';
 const FREE_CREDITS_STORAGE_KEY = 'promptForgeFreeCreditsUsed';
@@ -216,4 +216,3 @@ export default function AppViewWrapper() {
     </TooltipProvider>
   );
 }
-
