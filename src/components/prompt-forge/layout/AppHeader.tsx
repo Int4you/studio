@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CardHeader, CardTitle } from '@/components/ui/card'; // Corrected: Was AlertDialogHeader
+import { CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Cpu, Wand2, Library as LibraryIcon, Milestone, LogOut, Zap, Crown, CheckCircle2 } from 'lucide-react';
+import { Cpu, Wand2, Library as LibraryIcon, Milestone, LogOut, Zap, Crown, CheckCircle2, ArrowRight } from 'lucide-react';
 import type { CurrentView } from '../AppViewWrapper';
 import { FREE_TIER_NAME, PREMIUM_CREATOR_NAME, freePlanUIDetails, premiumPlanUIDetails, MAX_FREE_CREDITS } from '@/config/plans';
 
@@ -18,7 +18,6 @@ interface AppHeaderProps {
   onTabChange: (value: string) => void;
   currentUserPlan: string;
   creditsUsed: number;
-  maxFreeCredits: number;
   onLogout: () => void;
   savedProjectsCount: number;
 }
@@ -28,7 +27,6 @@ const AppHeader = React.memo(({
   onTabChange,
   currentUserPlan,
   creditsUsed,
-  maxFreeCredits,
   onLogout,
   savedProjectsCount,
 }: AppHeaderProps) => {
@@ -74,7 +72,7 @@ const AppHeader = React.memo(({
                   <p>Click to see plan details.</p>
                 </TooltipContent>
               </Tooltip>
-              <PopoverContent className="w-80 p-0 shadow-xl rounded-xl border-border/30 bg-card overflow-hidden max-w-xs sm:max-w-sm">
+              <PopoverContent className="w-80 p-0 shadow-xl rounded-lg border-border/30 bg-card overflow-hidden max-w-xs sm:max-w-sm">
                 <CardHeader className="items-center text-center p-4 border-b bg-muted/20 dark:bg-muted/10">
                   <div className="p-2.5 rounded-full bg-primary/10 border border-primary/20 shadow-sm mb-1.5 inline-block">
                      {isPremium ? <Crown className="h-7 w-7 text-amber-500 fill-amber-500" /> : <Zap className="h-7 w-7 text-primary" />}
@@ -100,18 +98,20 @@ const AppHeader = React.memo(({
                     </ul>
                     {!isPremium && (
                         <p className="text-xs text-muted-foreground mt-2.5">
-                            Credits Used: {creditsUsed} / {maxFreeCredits}
+                            Credits Used: {creditsUsed} / {MAX_FREE_CREDITS}
                         </p>
                     )}
                   </div>
 
                   {!isPremium && (
-                    <div className="pt-3 border-t mt-3">
-                      <Button asChild size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground dark:bg-primary dark:hover:bg-primary/90 dark:text-primary-foreground shadow-md hover:shadow-lg transition-shadow">
-                        <Link href="/pricing">Upgrade to {PREMIUM_CREATOR_NAME} ({premiumPlanUIDetails.price}{premiumPlanUIDetails.frequency})</Link>
-                      </Button>
-                    </div>
-                  )}
+                        <div className="pt-3 border-t mt-3">
+                          <Button asChild size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground dark:bg-primary dark:hover:bg-primary/90 dark:text-primary-foreground shadow-md hover:shadow-lg transition-shadow">
+                            <Link href="/pricing" className="flex items-center justify-center">
+                              Upgrade to Premium <ArrowRight className="ml-1.5 h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </div>
+                    )}
                 </div>
               </PopoverContent>
             </Popover>
@@ -119,12 +119,12 @@ const AppHeader = React.memo(({
             {currentUserPlan === FREE_TIER_NAME && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Badge variant={(maxFreeCredits - creditsUsed) > 0 ? "secondary" : "destructive"} className="text-xs cursor-default h-8 sm:h-9 px-2 sm:px-2.5">
-                            {(maxFreeCredits - creditsUsed) > 0 ? `${maxFreeCredits - creditsUsed} Credits Left` : "No Credits Left"}
+                        <Badge variant={(MAX_FREE_CREDITS - creditsUsed) > 0 ? "secondary" : "destructive"} className="text-xs cursor-default h-8 sm:h-9 px-2 sm:px-2.5">
+                            {(MAX_FREE_CREDITS - creditsUsed) > 0 ? `${MAX_FREE_CREDITS - creditsUsed} Credits Left` : "No Credits Left"}
                         </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
-                        <p>{(maxFreeCredits - creditsUsed) > 0 ? `You have ${maxFreeCredits - creditsUsed} project credits remaining on the ${FREE_TIER_NAME}.` : `You have used all project credits on the ${FREE_TIER_NAME}. Upgrade for unlimited.`}</p>
+                        <p>{(MAX_FREE_CREDITS - creditsUsed) > 0 ? `You have ${MAX_FREE_CREDITS - creditsUsed} project credits remaining on the ${FREE_TIER_NAME}.` : `You have used all project credits on the ${FREE_TIER_NAME}. Upgrade for unlimited.`}</p>
                     </TooltipContent>
                 </Tooltip>
             )}
