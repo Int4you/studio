@@ -14,8 +14,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function signUpWithEmail(email: string, password: string): Promise<AuthResponse> {
   if (!adminAuth || typeof adminAuth.createUser !== 'function') {
-    console.error("Firebase Admin Auth is not initialized. Cannot sign up user.");
-    return { success: false, error: "Server authentication service is unavailable." };
+    console.error("Firebase Admin Auth is not initialized or 'createUser' is not a function. This might be due to a missing or invalid FIREBASE_SERVICE_ACCOUNT_KEY_JSON environment variable. Cannot sign up user.");
+    return { success: false, error: "Server authentication setup error. Please contact support or check server logs." };
   }
 
   if (!email || !password) {
