@@ -7,6 +7,15 @@ let adminApp: admin.app.App;
 let adminAuth: admin.auth.Auth;
 let adminDb: admin.firestore.Firestore;
 
+const firebaseConfig = {
+  apiKey: "AIzaSyCmIJpR_r82kXyuOsSW4Ex3yjEGZUqOIbY",
+  authDomain: "promptforge-anwjb.firebaseapp.com",
+  projectId: "promptforge-anwjb",
+  storageBucket: "promptforge-anwjb.firebasestorage.app",
+  messagingSenderId: "1074512255399",
+  appId: "1:1074512255399:web:3a86448c2379216a033e82"
+};
+
 if (!admin.apps.length) {
   if (!serviceAccountKeyJson) {
     console.warn(
